@@ -32,6 +32,8 @@ import sys
 
 log = Path(sys.argv[1]).read_text(encoding="utf-8")
 issues = json.loads(Path(sys.argv[2]).read_text(encoding="utf-8"))["issues"]
+assert "Eclipse cleanup analysis: 0 violation(s)." in log, log
+assert "Duplicate Eclipse findings suppressed: 3." in log, log
 for rule, cleanup in [
     ("S1128", "cleanup.remove_unused_imports"),
     ("S1161", "cleanup.add_missing_override_annotations"),
@@ -52,11 +54,13 @@ mvn -B -ntp -f "$fixture/pom.xml" process-classes \
     | tee "$output/sonar-disabled.log"
 python3 - "$output/sonar-disabled.log" <<'PY'
 from pathlib import Path
+import re
 import sys
 
 log = Path(sys.argv[1]).read_text(encoding="utf-8")
 for cleanup in ("cleanup.add_missing_override_annotations", "cleanup.try_with_resource"):
-    assert "[eclipse:" + cleanup + "]" in log, "No fallback warning for " + cleanup
+    count = len(re.findall(r"(?m)^\\[WARNING\\].*\\[eclipse:" + re.escape(cleanup) + r"\\]", log))
+    assert count == 1, f"Expected one Eclipse fallback warning for {cleanup}, received {count}"
 PY
 test "$(sha256sum "$java_file")" = "$source_hash"
 echo "Real Sonar and Eclipse overlap integration passed"

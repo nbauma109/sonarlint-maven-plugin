@@ -81,3 +81,9 @@ The refactoring CLI now emits a concrete `cleanup.*` option identifier when exac
 ### Verified source-range matching
 
 The Maven integration suite uses a compiled Java fixture with genuine Sonar findings for S1128, S1481 and S1905 and a deterministic Eclipse diagnostic mock. It verifies all three positive mappings, disabled-rule fallback, unrelated edits on the same line, and the opt-out policy. This establishes the matching behavior but does not yet establish full detection equivalence between those Eclipse cleanups and their Sonar counterparts. Real Eclipse end-to-end comparisons remain necessary before broadening the approved mappings.
+
+## Combined real-engine duplicate regression
+
+The [real Eclipse integration workflow](../.github/workflows/real-eclipse-integration.yml) builds the Maven plugin, installs the pinned Java 25 Eclipse distribution and a pinned GPLv3 refactoring CLI, then analyzes one compiled Java fixture using both engines in the same Maven goal. It asserts that `S1128`, `S1161` and `S2093` each produce exactly one Sonar warning and zero duplicate Eclipse warnings, including the same original source range. It also reruns with only the unused-import Sonar rule enabled and demands exactly one Eclipse fallback warning for each of the other two cleanups. Source bytes must remain unchanged.
+
+Missing `@Override` cleanup requires both `cleanup.add_missing_annotations` and `cleanup.add_missing_override_annotations` enabled. Eclipse's try-with-resources conversion is narrower than Sonar's rule: the reproducible fixture uses `java.io.Closeable`, not merely `AutoCloseable`. Eclipse can generate multiple text edits for a single try-with-resources conversion; the CLI groups those refactoring edits into one diagnostic opportunity before the plugin filters by the matching Sonar issue. These are targeted verified overlaps, not a guarantee of identical detection on all Java programs.
