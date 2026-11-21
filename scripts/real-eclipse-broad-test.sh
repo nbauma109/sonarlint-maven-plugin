@@ -47,7 +47,7 @@ for system, log_file, report_file in (
     for line in log.splitlines():
         if "[java:S" not in line or "BroadComplementaryCleanups.java:" not in line:
             continue
-        match = re.search(r"BroadComplementaryCleanups\\.java:(\\d+).*\\[(java:S\\d+)\\]", line)
+        match = re.search(r"BroadComplementaryCleanups\.java:(\d+).*\[(java:S\d+)\]", line)
         if match:
             sonar.setdefault(int(match.group(1)), set()).add(match.group(2))
     overlap = {
