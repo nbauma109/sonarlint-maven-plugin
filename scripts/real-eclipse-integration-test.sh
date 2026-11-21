@@ -66,8 +66,8 @@ for rule, cleanup in [
     ("S1161", "cleanup.add_missing_override_annotations"),
     ("S2093", "cleanup.try_with_resource"),
 ]:
-    sonar = len(re.findall(r"(?m)^\\[WARNING\\].*\\[java:" + rule + r"\\]", log))
-    eclipse = len(re.findall(r"(?m)^\\[WARNING\\].*\\[eclipse:" + re.escape(cleanup) + r"\\]", log))
+    sonar = len(re.findall(r"(?m)^\[WARNING\].*\[java:" + rule + r"\]", log))
+    eclipse = len(re.findall(r"(?m)^\[WARNING\].*\[eclipse:" + re.escape(cleanup) + r"\]", log))
     print(f"Deduplication disabled {rule}/{cleanup}: sonar={sonar}, eclipse={eclipse}")
     assert sonar == 1, f"Expected exactly one Sonar warning for {rule}"
     assert eclipse == 1, f"Expected exactly one Eclipse warning for {cleanup}"
