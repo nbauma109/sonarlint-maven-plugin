@@ -47,6 +47,11 @@ gradlePlugin {
 
 tasks.named('test') {
     useJUnitPlatform()
+    testLogging {
+        events 'failed'
+        exceptionFormat 'full'
+        showStandardStreams = true
+    }
     systemProperty 'staticAnalysis.fixtureDirectory', file('../src/it/cognitive-complexity/src/main/java').absolutePath
 }
 
