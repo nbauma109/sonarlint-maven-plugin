@@ -45,7 +45,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: nbauma109/refactoring-cli
-          ref: c2dce342418eb050bb311f61e85aa8db73251109
+          ref: 5da25d4b405e87bb66fbb31d60686e40c6977b10
           path: refactoring-cli-source
       - name: Build Eclipse cleanup CLI
         run: mvn -B -ntp -f refactoring-cli-source/pom.xml package
