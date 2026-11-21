@@ -39,3 +39,7 @@ dependency-reduced-pom.xml
 .classpath
 .settings/
 .vscode/
+
+# Gradle adapter state
+gradle-plugin/.gradle/
+gradle-plugin/build/

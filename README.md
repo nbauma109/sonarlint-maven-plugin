@@ -89,6 +89,15 @@ Only production Java sources are analyzed. Symbolic execution, test sources, sec
 
 See [the design](docs/design.md) and [licensing considerations](docs/licensing.md).
 
+## Gradle support (experimental)
+
+A separate Gradle binary plugin is maintained in [gradle-plugin](gradle-plugin/README.md),
+using the same offline SonarJava rule catalog and Eclipse cleanup report importer as this Maven
+plugin. Its identifier is `io.github.nbauma109.static-analysis` and it provides the
+`staticAnalysis` task, also attached to the Java `check` lifecycle. The Gradle adapter
+is not yet released to the Gradle Plugin Portal; see its README for how to build and
+publish a local snapshot with Gradle 9.9.2.
+
 ## License
 
 Our original project code is licensed under the [GNU General Public License version 3](LICENSE) (GPL-3.0-only). Third-party components retain their respective licenses. This project is independent of SonarSource and is not endorsed by it.
