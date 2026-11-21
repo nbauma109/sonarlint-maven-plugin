@@ -62,3 +62,7 @@ First extend refactoring-cli with a tested, structured report-only mode. Then in
 - [Action runtime](https://github.com/nbauma109/refactoring-cleanup-action/blob/master/Dockerfile)
 - [Existing CleanupRunner](https://github.com/nbauma109/refactoring-cli/blob/master/src/main/java/io/github/nbauma109/refactoring/cli/CleanupRunner.java)
 - [Pinned Sonar rule metadata](https://github.com/SonarSource/sonar-java/tree/8.6.0.37351/sonar-java-plugin/src/main/resources/org/sonar/l10n/java/rules/java)
+
+## GPLv3 project licensing
+
+The Maven plugin is now published as GNU GPL version 3 only. Our separately maintained refactoring CLI is also GPLv3, which can simplify reuse of our original CLI implementation. Eclipse Public License 2.0 is not automatically GPLv3-compatible: verify the particular Eclipse components' secondary-license notices and other distribution terms before any direct linking or bundling. The isolated process architecture remains the default pending that review.

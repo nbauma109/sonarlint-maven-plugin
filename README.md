@@ -1,6 +1,6 @@
-# SonarLint Maven Plugin
+# Static Analysis Maven Plugin
 
-Local Java static analysis for Maven with Checkstyle-like warnings, using Sonar's standalone analysis engine.
+Local Java static analysis for Maven with Checkstyle-like warnings, using the standalone SonarJava engine. Complementary Eclipse cleanups are planned.
 
 ## Status
 
@@ -22,7 +22,7 @@ The script verifies source-located findings on Java 8 fixtures, offline executio
 ```xml
 <plugin>
     <groupId>io.github.nbauma109</groupId>
-    <artifactId>sonarlint-maven-plugin</artifactId>
+    <artifactId>static-analysis-maven-plugin</artifactId>
     <version>0.1.0-SNAPSHOT</version>
     <executions>
         <execution>
@@ -37,17 +37,17 @@ The script verifies source-located findings on Java 8 fixtures, offline executio
 Run `mvn process-classes`, `mvn test` or a later lifecycle phase. The goal runs after compilation. For a direct invocation:
 
 ```sh
-mvn compile io.github.nbauma109:sonarlint-maven-plugin:0.1.0-SNAPSHOT:check
+mvn compile io.github.nbauma109:static-analysis-maven-plugin:0.1.0-SNAPSHOT:check
 ```
 
 | Property | Default | Purpose |
 | --- | --- | --- |
-| `sonarlint.skip` | `false` | Skip analysis |
-| `sonarlint.failOnViolation` | `false` | Fail if any violation is reported |
-| `sonarlint.cognitiveComplexityThreshold` | `15` | Maximum allowed cognitive complexity |
-| `sonarlint.profile` | `priority` | priority, complexity, sonar-way or none |
-| `sonarlint.enabledRules` | empty | Comma-separated additional rule keys |
-| `sonarlint.disabledRules` | empty | Comma-separated exclusions, taking precedence |
+| `staticAnalysis.skip` | `false` | Skip analysis |
+| `staticAnalysis.failOnViolation` | `false` | Fail if any violation is reported |
+| `staticAnalysis.cognitiveComplexityThreshold` | `15` | Maximum allowed cognitive complexity |
+| `staticAnalysis.profile` | `priority` | priority, complexity, sonar-way or none |
+| `staticAnalysis.enabledRules` | empty | Comma-separated additional rule keys |
+| `staticAnalysis.disabledRules` | empty | Comma-separated exclusions, taking precedence |
 
 The plugin analyzes production Java source roots and their resolved compile classpath. It has no server configuration, authentication token or report upload. Normal Maven dependency downloads may occur on the first build. Once dependencies are cached, use Maven offline mode (`-o`).
 
@@ -61,7 +61,7 @@ The plugin analyzes production Java source roots and their resolved compile clas
 Example:
 
 ```sh
-mvn process-classes -Dsonarlint.profile=none -Dsonarlint.enabledRules=java:S100,java:S3776
+mvn process-classes -DstaticAnalysis.profile=none -DstaticAnalysis.enabledRules=java:S100,java:S3776
 ```
 
 Per-rule properties can also be supplied in the plugin configuration:
@@ -91,4 +91,8 @@ See [the design](docs/design.md) and [licensing considerations](docs/licensing.m
 
 ## License
 
-Our original project code is licensed under the [MIT License](LICENSE). Third-party components retain their respective licenses. This project is independent of SonarSource and is not endorsed by it.
+Our original project code is licensed under the [GNU General Public License version 3](LICENSE) (GPL-3.0-only). Third-party components retain their respective licenses. This project is independent of SonarSource and is not endorsed by it.
+
+## Project name
+
+The descriptive name **Static Analysis Maven Plugin** refers to this independent project, not an official SonarSource or Eclipse Foundation product. Our rule implementation still uses the pinned SonarJava and SonarLint Core upstream libraries. We use their names only to describe compatibility and dependencies.

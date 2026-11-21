@@ -1,4 +1,4 @@
-package io.github.nbauma109.sonarlint;
+package io.github.nbauma109.staticanalysis;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -10,18 +10,18 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import org.apache.maven.plugin.logging.Log;
-import org.sonarsource.sonarlint.core.analysis.api.AnalysisConfiguration;
-import org.sonarsource.sonarlint.core.analysis.api.AnalysisEngineConfiguration;
-import org.sonarsource.sonarlint.core.analysis.api.AnalysisResults;
-import org.sonarsource.sonarlint.core.analysis.api.Issue;
-import org.sonarsource.sonarlint.core.analysis.container.global.GlobalAnalysisContainer;
-import org.sonarsource.sonarlint.core.analysis.container.module.ModuleContainer;
-import org.sonarsource.sonarlint.core.commons.api.SonarLanguage;
-import org.sonarsource.sonarlint.core.commons.log.LogOutput;
-import org.sonarsource.sonarlint.core.commons.log.SonarLintLogger;
-import org.sonarsource.sonarlint.core.commons.progress.ProgressMonitor;
-import org.sonarsource.sonarlint.core.plugin.commons.PluginsLoadResult;
-import org.sonarsource.sonarlint.core.plugin.commons.PluginsLoader;
+import org.sonarsource.staticAnalysis.core.analysis.api.AnalysisConfiguration;
+import org.sonarsource.staticAnalysis.core.analysis.api.AnalysisEngineConfiguration;
+import org.sonarsource.staticAnalysis.core.analysis.api.AnalysisResults;
+import org.sonarsource.staticAnalysis.core.analysis.api.Issue;
+import org.sonarsource.staticAnalysis.core.analysis.container.global.GlobalAnalysisContainer;
+import org.sonarsource.staticAnalysis.core.analysis.container.module.ModuleContainer;
+import org.sonarsource.staticAnalysis.core.commons.api.SonarLanguage;
+import org.sonarsource.staticAnalysis.core.commons.log.LogOutput;
+import org.sonarsource.staticAnalysis.core.commons.log.SonarLintLogger;
+import org.sonarsource.staticAnalysis.core.commons.progress.ProgressMonitor;
+import org.sonarsource.staticAnalysis.core.plugin.commons.PluginsLoadResult;
+import org.sonarsource.staticAnalysis.core.plugin.commons.PluginsLoader;
 
 final class StandaloneAnalyzer {
 

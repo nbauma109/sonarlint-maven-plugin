@@ -34,7 +34,7 @@ The symbolic execution resource directory is named javase, but the actual reposi
 
 ## Verification status
 
-The [first integration run](https://github.com/nbauma109/sonarlint-maven-plugin/actions/runs/44886653239) compiled the plugin and produced the real java:S3776 finding (complexity 21 versus 15) in both the normal and Maven offline invocations on Java 17. The failure-on-violation case also failed as expected. The threshold override case was unsuccessful because SonarJava's rule property is case-sensitive (Threshold); the original implementation used threshold. The corrective commit changes the key; the corrected test requires a new run. No other rules have been exercised in our plugin.
+The [first integration run](https://github.com/nbauma109/static-analysis-maven-plugin/actions/runs/44886653239) compiled the plugin and produced the real java:S3776 finding (complexity 21 versus 15) in both the normal and Maven offline invocations on Java 17. The failure-on-violation case also failed as expected. The threshold override case was unsuccessful because SonarJava's rule property is case-sensitive (Threshold); the original implementation used threshold. The corrective commit changes the key; the corrected test requires a new run. No other rules have been exercised in our plugin.
 
 UPSTREAM_STANDALONE_TEST indicates a positive upstream SonarLint fixture, not a successful test on our Maven adapter. Upstream SonarLintTest confirms S106, S1481 and S2925 as examples. All other candidates require local fixtures. Do not report aggregate offline coverage from these counts.
 

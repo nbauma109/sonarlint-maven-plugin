@@ -1,4 +1,4 @@
-package io.github.nbauma109.sonarlint;
+package io.github.nbauma109.staticanalysis;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -6,8 +6,8 @@ import java.net.URI;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import org.sonarsource.sonarlint.core.analysis.api.ClientInputFile;
-import org.sonarsource.sonarlint.core.commons.api.SonarLanguage;
+import org.sonarsource.staticAnalysis.core.analysis.api.ClientInputFile;
+import org.sonarsource.staticAnalysis.core.commons.api.SonarLanguage;
 
 final class JavaSourceFile implements ClientInputFile {
 

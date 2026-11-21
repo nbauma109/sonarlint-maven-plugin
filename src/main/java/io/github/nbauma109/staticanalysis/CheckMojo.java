@@ -1,4 +1,4 @@
-package io.github.nbauma109.sonarlint;
+package io.github.nbauma109.staticanalysis;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -23,10 +23,10 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
-import org.sonarsource.sonarlint.core.analysis.api.AnalysisConfiguration;
-import org.sonarsource.sonarlint.core.analysis.api.ClientInputFile;
-import org.sonarsource.sonarlint.core.analysis.api.Issue;
-import org.sonarsource.sonarlint.core.commons.api.TextRange;
+import org.sonarsource.staticAnalysis.core.analysis.api.AnalysisConfiguration;
+import org.sonarsource.staticAnalysis.core.analysis.api.ClientInputFile;
+import org.sonarsource.staticAnalysis.core.analysis.api.Issue;
+import org.sonarsource.staticAnalysis.core.commons.api.TextRange;
 
 /**
  * Performs local Java static analysis after compilation.
@@ -42,27 +42,27 @@ public final class CheckMojo extends AbstractMojo {
     private List<Artifact> pluginArtifacts;
 
     /** Skip local analysis. */
-    @Parameter(property = "sonarlint.skip", defaultValue = "false")
+    @Parameter(property = "staticAnalysis.skip", defaultValue = "false")
     private boolean skip;
 
     /** Fail the build when violations are found. */
-    @Parameter(property = "sonarlint.failOnViolation", defaultValue = "false")
+    @Parameter(property = "staticAnalysis.failOnViolation", defaultValue = "false")
     private boolean failOnViolation;
 
     /** Maximum cognitive complexity allowed for a method. */
-    @Parameter(property = "sonarlint.cognitiveComplexityThreshold", defaultValue = "15")
+    @Parameter(property = "staticAnalysis.cognitiveComplexityThreshold", defaultValue = "15")
     private int cognitiveComplexityThreshold;
 
     /** Default rule profile: priority, complexity, sonar-way or none. */
-    @Parameter(property = "sonarlint.profile", defaultValue = "priority")
+    @Parameter(property = "staticAnalysis.profile", defaultValue = "priority")
     private String profile;
 
     /** Comma-separated additional Java rule keys. */
-    @Parameter(property = "sonarlint.enabledRules", defaultValue = "")
+    @Parameter(property = "staticAnalysis.enabledRules", defaultValue = "")
     private String enabledRules;
 
     /** Comma-separated Java rule keys to disable, taking precedence over activation. */
-    @Parameter(property = "sonarlint.disabledRules", defaultValue = "")
+    @Parameter(property = "staticAnalysis.disabledRules", defaultValue = "")
     private String disabledRules;
 
     /** Explicit per-rule parameter overrides using exact upstream parameter names. */
@@ -109,7 +109,7 @@ public final class CheckMojo extends AbstractMojo {
             if (!Files.isDirectory(binaries)) {
                 throw new MojoExecutionException("Compiled classes are missing. Run Maven compile first.");
             }
-            Path workDirectory = Path.of(project.getBuild().getDirectory(), "sonarlint").toAbsolutePath();
+            Path workDirectory = Path.of(project.getBuild().getDirectory(), "static-analysis").toAbsolutePath();
             Path analyzer = findAnalyzer();
             RuleCatalog catalog = RuleCatalog.load(analyzer);
             var activeRules = catalog.select(profile, enabledRules, disabledRules,
