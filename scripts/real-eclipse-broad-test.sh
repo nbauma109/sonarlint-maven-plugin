@@ -47,9 +47,24 @@ for system, log_file, report_file in (
     for issue in issues:
         eclipse.setdefault(issue["cleanup"], set()).add(issue["line"])
         counts[issue["cleanup"]] = counts.get(issue["cleanup"], 0) + 1
-    assert counts.get("cleanup.remove_redundant_modifiers", 0) == 1, (
+    expected = {
+        "cleanup.system_property_javaversion",
+        "cleanup.system_property_javaspecversion",
+        "cleanup.add_all",
+        "cleanup.array_with_curly",
+        "cleanup.reduce_indentation",
+        "cleanup.remove_redundant_modifiers",
+        "cleanup.module_imports",
+    }
+    assert set(counts) == expected, (system, counts, issues)
+    assert counts["cleanup.remove_redundant_modifiers"] == 1, (
         system, counts, issues
     )
+    assert "Duplicate Eclipse findings suppressed: 0." in log, (system, log)
+    for cleanup, count in counts.items():
+        assert log.count("[eclipse:" + cleanup + "]") == count, (
+            system, cleanup, count, log
+        )
     sonar = {}
     for line in log.splitlines():
         if "[java:S" not in line or "BroadComplementaryCleanups.java:" not in line:
@@ -67,10 +82,16 @@ for system, log_file, report_file in (
         }
         for key, lines in sorted(eclipse.items())
     }
+    for cleanup, details in overlap.items():
+        for source_line, rule_keys in details["sonar_on_lines"].items():
+            if cleanup == "cleanup.array_with_curly":
+                assert rule_keys == ["java:S1488"], (system, cleanup, source_line, rule_keys)
+            else:
+                assert not rule_keys, (system, cleanup, source_line, rule_keys)
     findings[system] = overlap
-    print("BROAD ECLIPSE CANDIDATES", system, json.dumps(overlap, sort_keys=True))
+    print("VERIFIED COMPLEMENTARY ECLIPSE OPTIONS", system, json.dumps(overlap, sort_keys=True))
 assert findings["Maven"] == findings["Gradle"], findings
-print("Both build adapters produce identical option identifiers and positions")
+print("Both build adapters report the same seven verified complementary options")
 PY
 
 test "$(sha256sum "$source_file")" = "$original_sha"
