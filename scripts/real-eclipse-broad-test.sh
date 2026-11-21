@@ -41,8 +41,13 @@ for system, log_file, report_file in (
         assert issue["file"] == "src/main/java/example/BroadComplementaryCleanups.java", issue
         assert 0 <= issue["startOffset"] <= issue["endOffset"] <= len(source), issue
     eclipse = {}
+    counts = {}
     for issue in issues:
         eclipse.setdefault(issue["cleanup"], set()).add(issue["line"])
+        counts[issue["cleanup"]] = counts.get(issue["cleanup"], 0) + 1
+    assert counts.get("cleanup.remove_redundant_modifiers", 0) == 1, (
+        system, counts, issues
+    )
     sonar = {}
     for line in log.splitlines():
         if "[java:S" not in line or "BroadComplementaryCleanups.java:" not in line:
