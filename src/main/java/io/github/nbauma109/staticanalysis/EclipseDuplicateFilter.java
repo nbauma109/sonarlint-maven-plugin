@@ -51,14 +51,14 @@ final class EclipseDuplicateFilter {
     }
 
     private static boolean isImportEdit(String source, EclipseCleanupRunner.Diagnostic finding) {
-        List<Integer> starts = lineStarts(source);
-        if (finding.line() > starts.size()) {
-            return false;
+        String editedSource = source.substring(finding.startOffset(), finding.endOffset());
+        for (String line : editedSource.split("\\R")) {
+            String statement = line.stripLeading();
+            if (statement.startsWith("import ") && !statement.startsWith("import module ")) {
+                return true;
+            }
         }
-        int start = starts.get(finding.line() - 1);
-        int end = finding.line() < starts.size() ? starts.get(finding.line()) : source.length();
-        String line = source.substring(start, end).strip();
-        return line.startsWith("import ") && !line.startsWith("import module ");
+        return false;
     }
 
     private static boolean matchesIssue(Issue issue, EclipseCleanupRunner.Diagnostic finding,
