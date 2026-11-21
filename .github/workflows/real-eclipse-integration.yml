@@ -1,8 +1,8 @@
 name: Real Eclipse and Sonar duplicate integration
 
 on:
-  push:
   pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -19,8 +19,20 @@ jobs:
           distribution: temurin
           java-version: '25'
           cache: maven
+          cache-dependency-path: pom.xml
       - name: Build Maven analysis plugin
-        run: mvn -B -ntp install
+        shell: bash
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3 4; do
+            if mvn -B -ntp -Dmaven.wagon.http.retryHandler.count=5 install; then
+              exit 0
+            fi
+            if [ "$attempt" -lt 4 ]; then
+              sleep "$((attempt * 15))"
+            fi
+          done
+          exit 1
       - name: Checkout the compatible Eclipse cleanup CLI
         uses: actions/checkout@v4
         with:
