@@ -129,3 +129,10 @@ On Linux build agents without a graphical display, configure `eclipseExecutable`
 Duplicate suppression is conservative and source-range aware. Five mappings are enabled for exact Eclipse cleanup identifiers: unused imports (`S1128`), unnecessary casts (`S1905`), unused local variables (`S1481`), missing `@Override` (`S1161`) and try-with-resources (`S2093`). Real Eclipse and Sonar integration tests verify the latter two using a concrete overridden method and a `java.io.Closeable` resource. The Eclipse CLI groups related refactoring text edits so one cleanup opportunity produces one warning. We retain Eclipse findings when no matching Sonar issue is reported, and ambiguous cleanup modules remain visible. Other potential overlaps require rule-by-rule verification.
 
 The Eclipse report-only CLI currently rejects profiles enabling its custom `cleanup.instanceof` fallback; create a reporting profile with that option disabled until a safe preview mechanism is available. The separate Java 25 Eclipse process is not covered by the Maven plugin's Java 17 minimum runtime. See the [integration design](docs/eclipse-cleanup-integration.md).
+
+## Five complementary Eclipse warnings
+
+We also provide an opt-in profile for five system-property modernization cleanups
+that are not mapped to Sonar rule duplicates. The same profile works with Maven and
+Gradle without source modifications. See [the complementary Eclipse rule guide](docs/eclipse-complementary-system-properties.md)
+and [the example profile](src/it/complementary-eclipse/eclipse-cleanups.xml).
