@@ -39,7 +39,7 @@ for rule, cleanup in [
     ("S1161", "cleanup.add_missing_override_annotations"),
     ("S2093", "cleanup.try_with_resource"),
     ("S818", "cleanup.number_suffix"),
-    ("S1125", "cleanup.boolean_literal"),
+    ("S1125", "cleanup.boolean_value_rather_than_comparison"),
 ]:
     sonar_count = len(re.findall(r"(?m)^\[WARNING\].*\[java:" + rule + r"\]", log))
     eclipse_count = len(re.findall(r"(?m)^\[WARNING\].*\[eclipse:" + re.escape(cleanup) + r"\]", log))
@@ -68,7 +68,7 @@ for rule, cleanup in [
     ("S1161", "cleanup.add_missing_override_annotations"),
     ("S2093", "cleanup.try_with_resource"),
     ("S818", "cleanup.number_suffix"),
-    ("S1125", "cleanup.boolean_literal"),
+    ("S1125", "cleanup.boolean_value_rather_than_comparison"),
 ]:
     sonar = len(re.findall(r"(?m)^\[WARNING\].*\[java:" + rule + r"\]", log))
     eclipse = len(re.findall(r"(?m)^\[WARNING\].*\[eclipse:" + re.escape(cleanup) + r"\]", log))
@@ -88,7 +88,7 @@ import sys
 
 log = Path(sys.argv[1]).read_text(encoding="utf-8")
 for cleanup in ("cleanup.add_missing_override_annotations", "cleanup.try_with_resource",
-                "cleanup.number_suffix", "cleanup.boolean_literal"):
+                "cleanup.number_suffix", "cleanup.boolean_value_rather_than_comparison"):
     count = len(re.findall(r"(?m)^\[WARNING\].*\[eclipse:" + re.escape(cleanup) + r"\]", log))
     assert count == 1, f"Expected one Eclipse fallback warning for {cleanup}, received {count}"
 PY

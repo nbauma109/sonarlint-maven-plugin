@@ -6,6 +6,6 @@
         <setting id="cleanup.add_missing_override_annotations" value="true"/>
         <setting id="cleanup.try_with_resource" value="true"/>
         <setting id="cleanup.number_suffix" value="true"/>
-        <setting id="cleanup.boolean_literal" value="true"/>
+        <setting id="cleanup.boolean_value_rather_than_comparison" value="true"/>
     </profile>
 </profiles>

@@ -35,7 +35,7 @@ rules = [
     ("S1161", "cleanup.add_missing_override_annotations"),
     ("S2093", "cleanup.try_with_resource"),
     ("S818", "cleanup.number_suffix"),
-    ("S1125", "cleanup.boolean_literal"),
+    ("S1125", "cleanup.boolean_value_rather_than_comparison"),
 ]
 
 def count(text, identifier):

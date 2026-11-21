@@ -94,4 +94,6 @@ The [same real-engine integration workflow](../.github/workflows/real-eclipse-in
 
 ## Numeric suffix and boolean literal overlap candidates
 
-The experimental duplicate mappings for `cleanup.number_suffix`/`S818` and `cleanup.boolean_literal`/`S1125` require exact cleanup identifiers and overlapping Sonar text ranges. The real-engine workflow checks whether Eclipse emits exactly one cleanup opportunity and Sonar reports exactly one rule violation for each source, and compares enabled, disabled and missing-Sonar modes. This does not imply complete equivalence for every Java construct or every cleanup profile.
+The experimental duplicate mappings for `cleanup.number_suffix`/`S818` and `cleanup.boolean_value_rather_than_comparison`/`S1125` require exact cleanup identifiers and overlapping Sonar text ranges. The real-engine workflow checks whether Eclipse emits exactly one cleanup opportunity and Sonar reports exactly one rule violation for each source, and compares enabled, disabled and missing-Sonar modes. This does not imply complete equivalence for every Java construct or every cleanup profile.
+
+The Eclipse option `cleanup.boolean_literal` converts `Boolean.TRUE` and `Boolean.FALSE` to primitive literals; it is **not** mapped to S1125. That candidate was corrected to `cleanup.boolean_value_rather_than_comparison`, which simplifies comparisons with true or false.

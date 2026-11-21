@@ -25,7 +25,7 @@ final class EclipseDuplicateFilter {
             "cleanup.add_missing_override_annotations", "java:S1161",
             "cleanup.try_with_resource", "java:S2093",
             "cleanup.number_suffix", "java:S818",
-            "cleanup.boolean_literal", "java:S1125");
+            "cleanup.boolean_value_rather_than_comparison", "java:S1125");
 
     private EclipseDuplicateFilter() {
     }
