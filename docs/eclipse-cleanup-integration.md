@@ -26,19 +26,20 @@ Prefer Sonar for a proven equivalent finding when its rule is active, supports t
 
 Group related text edits into one issue per cleanup opportunity rather than one warning per edit. Keep the cleanup option ID distinct from a cleanup module that may serve multiple options. When needed, isolate option groups with prerequisite flags or produce a conservative module-level diagnostic until the option can be attributed. Do not claim per-option coverage without tests. Evaluate against original source rather than sequentially rewritten files.
 
-## Proposed configuration (not implemented)
+## Implemented opt-in configuration
 
 ```xml
 <configuration>
     <profile>sonar-way</profile>
     <failOnViolation>false</failOnViolation>
     <eclipseEnabled>true</eclipseEnabled>
+    <eclipseExecutable>/path/to/eclipse/executable</eclipseExecutable>
     <eclipseCleanupProfile>${project.basedir}/eclipse-cleanups.xml</eclipseCleanupProfile>
     <eclipseDuplicatePolicy>prefer-sonar</eclipseDuplicatePolicy>
 </configuration>
 ```
 
-The existing goal remains unchanged until implementation. Keep warning output distinct, for example `[java:S1128]` and `[eclipse:cleanup.pull_up_assignment]`, with original file and line. Consider a neutral artifact name only after the combined feature works.
+The existing goal now supports this opt-in configuration. Keep warning output distinct, for example `[java:S1128]` and `[eclipse:cleanup.pull_up_assignment]`, with original file and line. Consider a neutral artifact name only after the combined feature works.
 
 ## Acceptance tests
 
@@ -66,3 +67,11 @@ First extend refactoring-cli with a tested, structured report-only mode. Then in
 ## GPLv3 project licensing
 
 The Maven plugin is now published as GNU GPL version 3 only. Our separately maintained refactoring CLI is also GPLv3, which can simplify reuse of our original CLI implementation. Eclipse Public License 2.0 is not automatically GPLv3-compatible: verify the particular Eclipse components' secondary-license notices and other distribution terms before any direct linking or bundling. The isolated process architecture remains the default pending that review.
+
+## Current implementation status
+
+The integration is implemented in [EclipseCleanupRunner.java](../src/main/java/io/github/nbauma109/staticanalysis/EclipseCleanupRunner.java). It requires a separately installed Eclipse executable with the updated `refactoring-cli` plugin that understands `--report` and `--source-root`. The adapter passes only Maven production source roots and the resolved compilation classpath, launches the application in a separate process, refuses missing or malformed reports, and emits Eclipse warnings. On Linux without a graphical display, use a launcher wrapper with `xvfb-run`.
+
+The duplicate policy currently removes **only** import cleanup edits on an import line when Sonar reports `java:S1128` on the same file and line. The remaining overlap mappings in the CSV are proposed candidates, not active suppression rules. The test script supplies a deterministic stub Eclipse report to exercise the Maven adapter without requiring an Eclipse installation on Java 17/21 agents. The actual `refactoring-cli` GitHub workflow uses an Eclipse Java 25 distribution and independently verifies report-only execution and source immutability. A true combined real-engine integration test is still outstanding.
+
+The Eclipse CLI does not yet safely preview its custom `cleanup.instanceof` fallback, so report-only mode rejects profiles that enable it. It also reports cleanup module class names, not exact individual option keys. The eventual implementation should resolve those caveats before claiming all Eclipse cleanups are covered.

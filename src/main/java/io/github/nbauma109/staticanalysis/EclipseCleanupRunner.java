@@ -5,6 +5,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
@@ -102,7 +103,8 @@ final class EclipseCleanupRunner {
     }
 
     private static List<String> createCommand(Path executable, Path profile, Path project,
-            Path work, Path report, String source, List<String> sourceRoots, List<String> classpath) {
+            Path work, Path report, String source, List<String> sourceRoots, List<String> classpath)
+            throws IOException {
         List<String> arguments = new ArrayList<>(List.of(
                 executable.toAbsolutePath().toString(),
                 "-nosplash", "-consoleLog",
@@ -112,16 +114,21 @@ final class EclipseCleanupRunner {
                 "--profile", profile.toAbsolutePath().toString(),
                 project.toString(),
                 "--report", report.toString()));
+        int enabledRoots = 0;
         for (String sourceRoot : sourceRoots) {
             Path directory = project.resolve(sourceRoot).toAbsolutePath().normalize();
             if (Files.isDirectory(directory)) {
                 arguments.add("--source-root");
                 arguments.add(directory.toString());
+                enabledRoots++;
             }
+        }
+        if (enabledRoots == 0) {
+            throw new IOException("No existing production source roots for Eclipse analysis.");
         }
         if (!classpath.isEmpty()) {
             arguments.add("--classpath");
-            arguments.add(String.join(java.io.File.pathSeparator, classpath));
+            arguments.add(String.join(File.pathSeparator, classpath));
         }
         return arguments;
     }

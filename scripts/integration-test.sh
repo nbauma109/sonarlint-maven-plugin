@@ -73,6 +73,14 @@ mvn -B -ntp -o -f "$priority_fixture" process-classes \
     -DstaticAnalysis.eclipseEnabled=true \
     -DstaticAnalysis.eclipseExecutable="$eclipse_executable" \
     -DstaticAnalysis.eclipseCleanupProfile="$eclipse_profile" \
+    -DstaticAnalysis.eclipseDuplicatePolicy=none | tee "$logs/eclipse-without-deduplication.log"
+grep -F '[eclipse:UnnecessaryCodeCleanUp]' "$logs/eclipse-without-deduplication.log"
+grep -F 'Duplicate Eclipse findings suppressed: 0.' "$logs/eclipse-without-deduplication.log"
+
+mvn -B -ntp -o -f "$priority_fixture" process-classes \
+    -DstaticAnalysis.eclipseEnabled=true \
+    -DstaticAnalysis.eclipseExecutable="$eclipse_executable" \
+    -DstaticAnalysis.eclipseCleanupProfile="$eclipse_profile" \
     -DstaticAnalysis.disabledRules=java:S1128 | tee "$logs/eclipse-without-sonar-import.log"
 grep -F '[eclipse:UnnecessaryCodeCleanUp]' "$logs/eclipse-without-sonar-import.log"
 grep -F 'Eclipse cleanup analysis: 2 violation(s).' "$logs/eclipse-without-sonar-import.log"
