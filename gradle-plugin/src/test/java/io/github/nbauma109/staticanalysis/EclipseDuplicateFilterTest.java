@@ -180,6 +180,9 @@ class EclipseDuplicateFilterTest {
                 finding("cleanup.boolean_value_rather_than_comparison", "== true", source),
                 List.of(booleanLiteral), project));
         assertFalse(EclipseDuplicateFilter.isDuplicate(
+                finding("cleanup.boolean_literal", "== true", source),
+                List.of(booleanLiteral), project));
+        assertFalse(EclipseDuplicateFilter.isDuplicate(
                 finding("cleanup.boolean_value_rather_than_comparison", "7l", source),
                 List.of(suffix), project));
         assertFalse(EclipseDuplicateFilter.isDuplicate(
