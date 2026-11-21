@@ -55,6 +55,9 @@ for system, log_file, report_file in (
         "cleanup.reduce_indentation",
         "cleanup.remove_redundant_modifiers",
         "cleanup.module_imports",
+        "cleanup.use_string_is_blank",
+        "cleanup.extract_increment",
+        "cleanup.pull_up_assignment",
     }
     assert set(counts) == expected, (system, counts, issues)
     assert counts["cleanup.remove_redundant_modifiers"] == 1, (
@@ -91,7 +94,7 @@ for system, log_file, report_file in (
     findings[system] = overlap
     print("VERIFIED COMPLEMENTARY ECLIPSE OPTIONS", system, json.dumps(overlap, sort_keys=True))
 assert findings["Maven"] == findings["Gradle"], findings
-print("Both build adapters report the same seven verified complementary options")
+print("Both build adapters report the same ten complementary cleanup options")
 PY
 
 test "$(sha256sum "$source_file")" = "$original_sha"
