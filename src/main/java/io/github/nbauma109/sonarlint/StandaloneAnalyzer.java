@@ -48,7 +48,7 @@ final class StandaloneAnalyzer {
 
     static ActiveRule cognitiveComplexityRule(int threshold) {
         ActiveRule rule = new ActiveRule("java:S3776", "java");
-        rule.setParams(Map.of("threshold", Integer.toString(threshold)));
+        rule.setParams(Map.of("Threshold", Integer.toString(threshold)));
         return rule;
     }
 
