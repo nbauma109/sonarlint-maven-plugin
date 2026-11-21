@@ -50,6 +50,31 @@ PY
 
 mvn -B -ntp -f "$fixture/pom.xml" process-classes \
     "${common[@]}" \
+    -DstaticAnalysis.eclipseDuplicatePolicy=none \
+    -DstaticAnalysis.enabledRules=java:S1128,java:S1161,java:S2093 \
+    | tee "$output/deduplication-disabled.log"
+python3 - "$output/deduplication-disabled.log" <<'PY'
+from pathlib import Path
+import re
+import sys
+
+log = Path(sys.argv[1]).read_text(encoding="utf-8")
+assert "Eclipse cleanup analysis: 3 violation(s)." in log, log
+assert "Duplicate Eclipse findings suppressed: 0." in log, log
+for rule, cleanup in [
+    ("S1128", "cleanup.remove_unused_imports"),
+    ("S1161", "cleanup.add_missing_override_annotations"),
+    ("S2093", "cleanup.try_with_resource"),
+]:
+    sonar = len(re.findall(r"(?m)^\\[WARNING\\].*\\[java:" + rule + r"\\]", log))
+    eclipse = len(re.findall(r"(?m)^\\[WARNING\\].*\\[eclipse:" + re.escape(cleanup) + r"\\]", log))
+    print(f"Deduplication disabled {rule}/{cleanup}: sonar={sonar}, eclipse={eclipse}")
+    assert sonar == 1, f"Expected exactly one Sonar warning for {rule}"
+    assert eclipse == 1, f"Expected exactly one Eclipse warning for {cleanup}"
+PY
+
+mvn -B -ntp -f "$fixture/pom.xml" process-classes \
+    "${common[@]}" \
     -DstaticAnalysis.enabledRules=java:S1128 \
     | tee "$output/sonar-disabled.log"
 python3 - "$output/sonar-disabled.log" <<'PY'
