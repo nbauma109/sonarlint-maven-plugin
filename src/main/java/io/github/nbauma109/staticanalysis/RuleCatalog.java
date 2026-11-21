@@ -16,7 +16,7 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
-import org.sonarsource.staticAnalysis.core.analysis.api.ActiveRule;
+import org.sonarsource.sonarlint.core.analysis.api.ActiveRule;
 
 final class RuleCatalog {
 

@@ -23,10 +23,10 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
-import org.sonarsource.staticAnalysis.core.analysis.api.AnalysisConfiguration;
-import org.sonarsource.staticAnalysis.core.analysis.api.ClientInputFile;
-import org.sonarsource.staticAnalysis.core.analysis.api.Issue;
-import org.sonarsource.staticAnalysis.core.commons.api.TextRange;
+import org.sonarsource.sonarlint.core.analysis.api.AnalysisConfiguration;
+import org.sonarsource.sonarlint.core.analysis.api.ClientInputFile;
+import org.sonarsource.sonarlint.core.analysis.api.Issue;
+import org.sonarsource.sonarlint.core.commons.api.TextRange;
 
 /**
  * Performs local Java static analysis after compilation.
