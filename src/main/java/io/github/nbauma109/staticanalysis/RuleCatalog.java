@@ -1,4 +1,4 @@
-package io.github.nbauma109.sonarlint;
+package io.github.nbauma109.staticanalysis;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;

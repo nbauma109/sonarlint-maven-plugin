@@ -1,4 +1,4 @@
-package io.github.nbauma109.sonarlint;
+package io.github.nbauma109.staticanalysis;
 
 import java.io.IOException;
 import java.io.InputStream;

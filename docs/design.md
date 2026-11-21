@@ -4,7 +4,7 @@
 
 The Maven plugin will expose a `check` goal with `process-classes` as its default phase and compile-scope dependency resolution. Running `mvn compile` alone does not reach this phase; `mvn process-classes`, `mvn test` and later phases do. Direct invocation should either require compiled classes or fail with a useful diagnostic.
 
-Maven coordinates: `io.github.nbauma109:sonarlint-maven-plugin`. Initial development version: `0.1.0-SNAPSHOT`.
+Maven coordinates: `io.github.nbauma109:static-analysis-maven-plugin`. Initial development version: `0.1.0-SNAPSHOT`.
 
 ## Component boundaries
 

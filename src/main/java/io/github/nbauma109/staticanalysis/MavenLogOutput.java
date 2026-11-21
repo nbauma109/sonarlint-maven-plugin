@@ -1,4 +1,4 @@
-package io.github.nbauma109.sonarlint;
+package io.github.nbauma109.staticanalysis;
 
 import org.apache.maven.plugin.logging.Log;
 import org.sonarsource.sonarlint.core.commons.log.LogOutput;

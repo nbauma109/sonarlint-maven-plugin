@@ -1,4 +1,4 @@
-# Analyzer licensing
+# Licensing and release compliance
 
 This is a release-blocking design concern, not legal advice.
 
@@ -16,3 +16,22 @@ The project should prefer the newest analyzer permitted for our intended open-so
 - [SonarSource licensing overview](https://www.sonarsource.com/license/)
 - [Sonar Source-Available License](https://www.sonarsource.com/license/ssal/)
 - [SonarJava 8.6.0.37351 artifact](https://central.sonatype.com/artifact/org.sonarsource.java/sonar-java-plugin/8.6.0.37351)
+
+## Our licence: GPL version 3 only
+
+Our original project source code is available under the GNU General Public License version 3 only (SPDX: GPL-3.0-only). We retain exact copyright and license notices for dependencies; our choice of GPL does not relicense SonarSource's LGPLv3 libraries, Eclipse's EPLv2 components or other third-party software. The complete GPLv3 license text is in [LICENSE](../LICENSE). Our project copyright and attribution are in [COPYRIGHT.md](../COPYRIGHT.md), with dependencies in [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md).
+
+LGPLv3 components can generally be combined with GPLv3 code, subject to the applicable combined-work and distribution obligations. The historical SonarJava 8.6.0.37351 and SonarLint Core 10.13.0.79996 releases are the versions currently selected. Do not update the analyzers to Sonar Source-Available License versions without a separate permission and compatibility review.
+
+The existing `refactoring-cli` is itself GPLv3, so GPL licensing removes the MIT-versus-GPL issue for original CLI code that we own or are licensed to modify. It **does not** solve Eclipse Public License 2.0 compatibility by itself: the EPLv2 secondary GPL licensing option applies only where the appropriate notice and conditions are met. Keep Eclipse JDT in its own executable/runtime until the specific integrated licensing path has been checked. Even in a separate process, reproduce applicable license and attribution notices when distributing the executable.
+
+The project name now avoids SonarSource's product marks. Upstream library names can be used for accurate attribution and description, not as a claim of sponsorship. Do not restore a SonarSource mark to the distributed plugin name without written permission. The language name Java is similarly used descriptively in our technical documentation rather than as the product brand.
+
+Running this GPL-licensed analysis plugin against a separate project does not automatically change the licence of the analyzed project's source code. That differs from incorporating GPL implementation code into the analyzed application.
+
+## Additional references
+
+- [Free Software Foundation GPL compatibility](https://www.gnu.org/licenses/gpl-faq.en.html)
+- [Eclipse Public License 2.0 secondary licensing](https://www.eclipse.org/legal/epl/epl-v20.html)
+- [SonarSource trademark policy](https://www.sonarsource.com/trademark-use/)
+- [Apache Maven third-party plugin naming](https://maven.apache.org/guides/introduction/introduction-to-plugin-prefix-mapping.html)
