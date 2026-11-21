@@ -146,7 +146,7 @@ public final class CheckMojo extends AbstractMojo {
             return EclipseCleanupRunner.run(eclipseExecutable.toPath(), eclipseCleanupProfile.toPath(),
                     baseDirectory, workDirectory, javaSource, project.getCompileSourceRoots(),
                     project.getCompileClasspathElements(), eclipseTimeoutSeconds,
-                    eclipseDuplicatePolicy, sonarIssues, getLog());
+                    eclipseDuplicatePolicy, sonarIssues, getLog()::info);
         } catch (IOException | DependencyResolutionRequiredException | RuntimeException exception) {
             throw new MojoExecutionException("Eclipse cleanup analysis failed: " + exception.getMessage(), exception);
         } catch (InterruptedException exception) {
@@ -195,7 +195,7 @@ public final class CheckMojo extends AbstractMojo {
                     .addActiveRules(activeRules)
                     .build();
             getLog().info("Analyzing " + files.size() + " Java source file(s) locally.");
-            return new StandaloneAnalyzer(analyzer, workDirectory, getLog()).analyze(configuration);
+            return new StandaloneAnalyzer(analyzer, workDirectory, new MavenLogOutput(getLog())).analyze(configuration);
         } catch (IOException | DependencyResolutionRequiredException | RuntimeException exception) {
             throw new MojoExecutionException("Local Sonar analysis could not complete: " + exception.getMessage(), exception);
         }

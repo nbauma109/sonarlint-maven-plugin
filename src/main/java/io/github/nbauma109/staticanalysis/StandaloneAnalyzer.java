@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import org.apache.maven.plugin.logging.Log;
 import org.sonarsource.sonarlint.core.analysis.api.AnalysisConfiguration;
 import org.sonarsource.sonarlint.core.analysis.api.AnalysisEngineConfiguration;
 import org.sonarsource.sonarlint.core.analysis.api.AnalysisResults;
@@ -27,9 +26,9 @@ final class StandaloneAnalyzer {
 
     private final Path analyzerJar;
     private final Path workDirectory;
-    private final Log logger;
+    private final LogOutput logger;
 
-    StandaloneAnalyzer(Path analyzerJar, Path workDirectory, Log logger) {
+    StandaloneAnalyzer(Path analyzerJar, Path workDirectory, LogOutput logger) {
         this.analyzerJar = analyzerJar;
         this.workDirectory = workDirectory;
         this.logger = logger;
@@ -37,7 +36,7 @@ final class StandaloneAnalyzer {
 
     List<Issue> analyze(AnalysisConfiguration configuration) throws IOException {
         LogOutput previousTarget = SonarLintLogger.getTargetForCopy();
-        SonarLintLogger.setTarget(new MavenLogOutput(logger));
+        SonarLintLogger.setTarget(logger);
         try {
             return analyzeLocally(configuration);
         } finally {

@@ -18,7 +18,7 @@ import java.util.Deque;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
-import org.apache.maven.plugin.logging.Log;
+import java.util.function.Consumer;
 import org.sonarsource.sonarlint.core.analysis.api.ClientInputFile;
 import org.sonarsource.sonarlint.core.analysis.api.Issue;
 import org.sonarsource.sonarlint.core.commons.api.TextRange;
@@ -42,7 +42,7 @@ final class EclipseCleanupRunner {
 
     static Result run(Path executable, Path profile, Path baseDirectory, Path workDirectory,
             String source, List<String> sourceRoots, List<String> classpath, long timeoutSeconds,
-            String duplicatePolicy, List<Issue> sonarIssues, Log log)
+            String duplicatePolicy, List<Issue> sonarIssues, Consumer<String> log)
             throws IOException, InterruptedException {
         validateConfiguration(executable, profile, duplicatePolicy);
         Files.createDirectories(workDirectory);
@@ -55,7 +55,7 @@ final class EclipseCleanupRunner {
                 .directory(baseDirectory.toFile())
                 .redirectErrorStream(true)
                 .redirectOutput(output.toFile());
-        log.info("Running Eclipse cleanup analysis without modifying sources.");
+        log.accept("Running Eclipse cleanup analysis without modifying sources.");
         Process process = builder.start();
         if (!process.waitFor(timeoutSeconds, TimeUnit.SECONDS)) {
             process.destroyForcibly();

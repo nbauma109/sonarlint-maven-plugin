@@ -3,7 +3,7 @@ package io.github.nbauma109.staticanalysis;
 import java.util.Map;
 
 /**
- * Maven configuration for exact, case-sensitive analyzer rule properties.
+ * Configuration for exact, case-sensitive analyzer rule properties.
  */
 public final class RuleParameters {
 
