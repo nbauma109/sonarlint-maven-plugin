@@ -78,6 +78,8 @@ jobs:
           gradle-version: '9.9.2'
       - name: Assert real Gradle engine warnings appear only once
         run: bash scripts/real-gradle-eclipse-integration-test.sh
+      - name: Verify five complementary Eclipse warnings in Maven and Gradle
+        run: bash scripts/real-eclipse-complementary-test.sh
       - name: Upload real integration logs
         if: always()
         uses: actions/upload-artifact@v4
@@ -85,5 +87,8 @@ jobs:
           name: real-eclipse-integration
           path: |
             target/real-eclipse-integration/
+            target/real-eclipse-complementary/
             src/it/real-eclipse/target/static-analysis/eclipse/
             src/it/real-eclipse/build/static-analysis/eclipse/
+            src/it/complementary-eclipse/target/static-analysis/eclipse/
+            src/it/complementary-eclipse/build/static-analysis/eclipse/
