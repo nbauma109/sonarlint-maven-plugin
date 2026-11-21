@@ -34,14 +34,16 @@ rules = [
     ("S1128", "cleanup.remove_unused_imports"),
     ("S1161", "cleanup.add_missing_override_annotations"),
     ("S2093", "cleanup.try_with_resource"),
+    ("S818", "cleanup.number_suffix"),
+    ("S1125", "cleanup.boolean_literal"),
 ]
 
 def count(text, identifier):
     return len(re.findall(r"(?m)^[^\n]*\[" + re.escape(identifier) + r"\]", text))
 
 assert "Eclipse cleanup analysis: 0 violation(s)." in combined, combined
-assert "Duplicate Eclipse findings suppressed: 3." in combined, combined
-assert "Eclipse cleanup analysis: 3 violation(s)." in unfiltered, unfiltered
+assert "Duplicate Eclipse findings suppressed: 5." in combined, combined
+assert "Eclipse cleanup analysis: 5 violation(s)." in unfiltered, unfiltered
 assert "Duplicate Eclipse findings suppressed: 0." in unfiltered, unfiltered
 for rule, cleanup in rules:
     sonar = "java:" + rule

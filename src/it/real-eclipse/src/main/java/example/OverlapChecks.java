@@ -17,6 +17,14 @@ public final class OverlapChecks extends ParentChecks {
         }
     }
 
+    long numericSuffix() {
+        return 7l;
+    }
+
+    boolean redundantBoolean(boolean active) {
+        return active == true;
+    }
+
     static final class Resource implements java.io.Closeable {
 
         void work() {

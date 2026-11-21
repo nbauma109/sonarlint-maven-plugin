@@ -91,3 +91,7 @@ Missing `@Override` cleanup requires both `cleanup.add_missing_annotations` and 
 ## Gradle real-engine duplicate regression
 
 The [same real-engine integration workflow](../.github/workflows/real-eclipse-integration.yml) also executes the Gradle adapter against the same compiled Java fixture, Eclipse distribution and cleanup profile. Gradle resolves the plugin through an included build rather than Maven. The assertions verify three mappings (S1128, S1161 and S2093): with deduplication active, each problem produces one Sonar warning and no Eclipse warning; with it disabled, both engines emit one warning; when the matching Sonar rule is inactive, Eclipse's warning is retained. Original sources must remain byte-for-byte unchanged. The Gradle fixture is at [src/it/real-eclipse/build.gradle](../src/it/real-eclipse/build.gradle).
+
+## Numeric suffix and boolean literal overlap candidates
+
+The experimental duplicate mappings for `cleanup.number_suffix`/`S818` and `cleanup.boolean_literal`/`S1125` require exact cleanup identifiers and overlapping Sonar text ranges. The real-engine workflow checks whether Eclipse emits exactly one cleanup opportunity and Sonar reports exactly one rule violation for each source, and compares enabled, disabled and missing-Sonar modes. This does not imply complete equivalence for every Java construct or every cleanup profile.

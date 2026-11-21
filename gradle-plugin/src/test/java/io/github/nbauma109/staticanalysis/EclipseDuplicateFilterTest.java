@@ -161,6 +161,35 @@ class EclipseDuplicateFilterTest {
         assertFalse(EclipseDuplicateFilter.isDuplicate(unrelated, List.of(issue), project));
     }
 
+    @Test
+    void suppressesOnlyExactNumericSuffixAndBooleanLiteralEdits() throws IOException {
+        String source = """
+                package example;
+                final class Sample {
+                    long value() { return 7l; }
+                    boolean booleanValue(boolean enabled) { return enabled == true; }
+                }
+                """;
+        writeSource(source);
+        Issue suffix = sonarIssue("java:S818", "l;", source);
+        Issue booleanLiteral = sonarIssue("java:S1125", "true", source);
+        assertTrue(EclipseDuplicateFilter.isDuplicate(
+                finding("cleanup.number_suffix", "7l", source),
+                List.of(suffix), project));
+        assertTrue(EclipseDuplicateFilter.isDuplicate(
+                finding("cleanup.boolean_literal", "== true", source),
+                List.of(booleanLiteral), project));
+        assertFalse(EclipseDuplicateFilter.isDuplicate(
+                finding("cleanup.boolean_literal", "7l", source),
+                List.of(suffix), project));
+        assertFalse(EclipseDuplicateFilter.isDuplicate(
+                finding("cleanup.number_suffix", "== true", source),
+                List.of(booleanLiteral), project));
+        assertFalse(EclipseDuplicateFilter.isDuplicate(
+                finding("cleanup.number_suffix", "7l", source),
+                List.of(), project));
+    }
+
     private void writeSource(String source) throws IOException {
         Path file = project.resolve(RELATIVE_FILE);
         Files.createDirectories(file.getParent());

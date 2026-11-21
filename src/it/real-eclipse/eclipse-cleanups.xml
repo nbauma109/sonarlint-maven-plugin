@@ -5,5 +5,7 @@
         <setting id="cleanup.add_missing_annotations" value="true"/>
         <setting id="cleanup.add_missing_override_annotations" value="true"/>
         <setting id="cleanup.try_with_resource" value="true"/>
+        <setting id="cleanup.number_suffix" value="true"/>
+        <setting id="cleanup.boolean_literal" value="true"/>
     </profile>
 </profiles>

@@ -23,7 +23,9 @@ final class EclipseDuplicateFilter {
             "cleanup.remove_unnecessary_casts", "java:S1905",
             "cleanup.remove_unused_local_variables", "java:S1481",
             "cleanup.add_missing_override_annotations", "java:S1161",
-            "cleanup.try_with_resource", "java:S2093");
+            "cleanup.try_with_resource", "java:S2093",
+            "cleanup.number_suffix", "java:S818",
+            "cleanup.boolean_literal", "java:S1125");
 
     private EclipseDuplicateFilter() {
     }
