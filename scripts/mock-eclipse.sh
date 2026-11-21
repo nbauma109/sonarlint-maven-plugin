@@ -58,7 +58,7 @@ issues = [
     issue("int unused = 1;", "cleanup.remove_unused_local_variables", "Remove unused local variable"),
     issue("(String)", "cleanup.remove_unnecessary_casts", "Remove unnecessary cast"),
     issue("return", "cleanup.remove_unnecessary_casts", "Unrelated edit on the cast line",
-          occurrence=2),
+          occurrence=1),
     issue("public void BadName()", "cleanup.pull_up_assignment", "Unrelated cleanup"),
 ]
 destination.write_text(json.dumps({"formatVersion": 1, "issues": issues}), encoding="utf-8")
