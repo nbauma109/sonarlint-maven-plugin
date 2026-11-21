@@ -62,12 +62,37 @@ mvn -B -ntp -o -f "$priority_fixture" process-classes \
     -DstaticAnalysis.eclipseExecutable="$eclipse_executable" \
     -DstaticAnalysis.eclipseCleanupProfile="$eclipse_profile" | tee "$logs/eclipse.log"
 grep -F '[eclipse:cleanup.pull_up_assignment]' "$logs/eclipse.log"
-grep -F 'Eclipse cleanup analysis: 1 violation(s).' "$logs/eclipse.log"
-grep -F 'Duplicate Eclipse findings suppressed: 1.' "$logs/eclipse.log"
+grep -F 'Eclipse cleanup analysis: 3 violation(s).' "$logs/eclipse.log"
+grep -F 'Duplicate Eclipse findings suppressed: 2.' "$logs/eclipse.log"
 if grep -F '[eclipse:cleanup.remove_unused_imports]' "$logs/eclipse.log"; then
     echo "The duplicate unused import warning was not filtered." >&2
     exit 1
 fi
+
+mvn -B -ntp -o -f "$priority_fixture" process-classes \
+    -DstaticAnalysis.eclipseEnabled=true \
+    -DstaticAnalysis.eclipseExecutable="$eclipse_executable" \
+    -DstaticAnalysis.eclipseCleanupProfile="$eclipse_profile" \
+    -DstaticAnalysis.enabledRules=java:S1905 | tee "$logs/eclipse-mapped.log"
+grep -F '[java:S1905]' "$logs/eclipse-mapped.log"
+grep -F 'Eclipse cleanup analysis: 2 violation(s).' "$logs/eclipse-mapped.log"
+grep -F 'Duplicate Eclipse findings suppressed: 3.' "$logs/eclipse-mapped.log"
+grep -F 'Unrelated edit on the cast line' "$logs/eclipse-mapped.log"
+grep -F '[eclipse:cleanup.pull_up_assignment]' "$logs/eclipse-mapped.log"
+if grep -F 'Remove unnecessary cast' "$logs/eclipse-mapped.log"         || grep -F 'Remove unused local variable' "$logs/eclipse-mapped.log"; then
+    echo "A matching Eclipse warning was not suppressed." >&2
+    exit 1
+fi
+
+mvn -B -ntp -o -f "$priority_fixture" process-classes \
+    -DstaticAnalysis.eclipseEnabled=true \
+    -DstaticAnalysis.eclipseExecutable="$eclipse_executable" \
+    -DstaticAnalysis.eclipseCleanupProfile="$eclipse_profile" \
+    -DstaticAnalysis.enabledRules=java:S1905 \
+    -DstaticAnalysis.disabledRules=java:S1905,java:S1481 | tee "$logs/eclipse-mapped-disabled.log"
+grep -F 'Remove unnecessary cast' "$logs/eclipse-mapped-disabled.log"
+grep -F 'Remove unused local variable' "$logs/eclipse-mapped-disabled.log"
+grep -F 'Duplicate Eclipse findings suppressed: 1.' "$logs/eclipse-mapped-disabled.log"
 
 mvn -B -ntp -o -f "$priority_fixture" process-classes \
     -DstaticAnalysis.eclipseEnabled=true \
@@ -83,8 +108,8 @@ mvn -B -ntp -o -f "$priority_fixture" process-classes \
     -DstaticAnalysis.eclipseCleanupProfile="$eclipse_profile" \
     -DstaticAnalysis.disabledRules=java:S1128 | tee "$logs/eclipse-without-sonar-import.log"
 grep -F '[eclipse:cleanup.remove_unused_imports]' "$logs/eclipse-without-sonar-import.log"
-grep -F 'Eclipse cleanup analysis: 2 violation(s).' "$logs/eclipse-without-sonar-import.log"
-grep -F 'Duplicate Eclipse findings suppressed: 0.' "$logs/eclipse-without-sonar-import.log"
+grep -F 'Eclipse cleanup analysis: 4 violation(s).' "$logs/eclipse-without-sonar-import.log"
+grep -F 'Duplicate Eclipse findings suppressed: 1.' "$logs/eclipse-without-sonar-import.log"
 
 if mvn -B -ntp -o -f "$priority_fixture" process-classes \
     -DstaticAnalysis.eclipseEnabled=true \

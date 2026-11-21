@@ -16,12 +16,9 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Deque;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
-import org.sonarsource.sonarlint.core.analysis.api.ClientInputFile;
 import org.sonarsource.sonarlint.core.analysis.api.Issue;
-import org.sonarsource.sonarlint.core.commons.api.TextRange;
 
 /**
  * Runs the standalone Eclipse cleanup application in non-mutating report mode.
@@ -75,7 +72,7 @@ final class EclipseCleanupRunner {
         int suppressed = 0;
         for (Diagnostic finding : findings) {
             if ("prefer-sonar".equals(duplicatePolicy)
-                    && overlapsUnusedImport(finding, sonarIssues, baseDirectory)) {
+                    && EclipseDuplicateFilter.isDuplicate(finding, sonarIssues, baseDirectory)) {
                 suppressed++;
             } else {
                 retained.add(finding);
@@ -201,28 +198,4 @@ final class EclipseCleanupRunner {
         return false;
     }
 
-    private static boolean overlapsUnusedImport(Diagnostic finding, List<Issue> sonarIssues,
-            Path project) throws IOException {
-        if (!"cleanup.remove_unused_imports".equals(finding.cleanup())) {
-            return false;
-        }
-        Path file = project.resolve(finding.file());
-        List<String> lines = Files.readAllLines(file, StandardCharsets.UTF_8);
-        if (finding.line() > lines.size()
-                || !lines.get(finding.line() - 1).strip().startsWith("import ")
-                || lines.get(finding.line() - 1).strip().startsWith("import module ")) {
-            return false;
-        }
-        for (Issue issue : sonarIssues) {
-            String reportedFile = Optional.ofNullable(issue.getInputFile())
-                    .map(ClientInputFile::relativePath).orElse("");
-            int reportedLine = Optional.ofNullable(issue.getTextRange())
-                    .map(TextRange::getStartLine).orElse(-1);
-            if ("java:S1128".equals(issue.getRuleKey())
-                    && finding.file().equals(reportedFile) && finding.line() == reportedLine) {
-                return true;
-            }
-        }
-        return false;
-    }
 }
