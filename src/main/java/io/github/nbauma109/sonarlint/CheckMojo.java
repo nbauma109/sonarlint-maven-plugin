@@ -53,6 +53,22 @@ public final class CheckMojo extends AbstractMojo {
     @Parameter(property = "sonarlint.cognitiveComplexityThreshold", defaultValue = "15")
     private int cognitiveComplexityThreshold;
 
+    /** Default rule profile: priority, complexity, sonar-way or none. */
+    @Parameter(property = "sonarlint.profile", defaultValue = "priority")
+    private String profile;
+
+    /** Comma-separated additional Java rule keys. */
+    @Parameter(property = "sonarlint.enabledRules", defaultValue = "")
+    private String enabledRules;
+
+    /** Comma-separated Java rule keys to disable, taking precedence over activation. */
+    @Parameter(property = "sonarlint.disabledRules", defaultValue = "")
+    private String disabledRules;
+
+    /** Explicit per-rule parameter overrides using exact upstream parameter names. */
+    @Parameter
+    private List<RuleParameters> ruleParameters;
+
     /** Source encoding; defaults to UTF-8 when not specified by the project. */
     @Parameter(defaultValue = "${project.build.sourceEncoding}")
     private String encoding;
@@ -94,16 +110,25 @@ public final class CheckMojo extends AbstractMojo {
                 throw new MojoExecutionException("Compiled classes are missing. Run Maven compile first.");
             }
             Path workDirectory = Path.of(project.getBuild().getDirectory(), "sonarlint").toAbsolutePath();
+            Path analyzer = findAnalyzer();
+            RuleCatalog catalog = RuleCatalog.load(analyzer);
+            var activeRules = catalog.select(profile, enabledRules, disabledRules,
+                    cognitiveComplexityThreshold, Optional.ofNullable(ruleParameters).orElse(List.of()));
+            if (activeRules.isEmpty()) {
+                getLog().info("No local Sonar rules selected.");
+                return List.of();
+            }
+            getLog().info("Activated " + activeRules.size() + " local Java rule(s).");
             AnalysisConfiguration configuration = AnalysisConfiguration.builder()
                     .setBaseDir(baseDirectory)
                     .addInputFiles(files)
                     .putAllExtraProperties(analysisProperties(binaries))
-                    .addActiveRule(StandaloneAnalyzer.cognitiveComplexityRule(cognitiveComplexityThreshold))
+                    .addActiveRules(activeRules)
                     .build();
             getLog().info("Analyzing " + files.size() + " Java source file(s) locally.");
-            return new StandaloneAnalyzer(findAnalyzer(), workDirectory, getLog()).analyze(configuration);
+            return new StandaloneAnalyzer(analyzer, workDirectory, getLog()).analyze(configuration);
         } catch (IOException | DependencyResolutionRequiredException | RuntimeException exception) {
-            throw new MojoExecutionException("Local Sonar analysis could not complete.", exception);
+            throw new MojoExecutionException("Local Sonar analysis could not complete: " + exception.getMessage(), exception);
         }
     }
 

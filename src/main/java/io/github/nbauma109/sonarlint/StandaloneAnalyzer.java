@@ -10,7 +10,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import org.apache.maven.plugin.logging.Log;
-import org.sonarsource.sonarlint.core.analysis.api.ActiveRule;
 import org.sonarsource.sonarlint.core.analysis.api.AnalysisConfiguration;
 import org.sonarsource.sonarlint.core.analysis.api.AnalysisEngineConfiguration;
 import org.sonarsource.sonarlint.core.analysis.api.AnalysisResults;
@@ -44,12 +43,6 @@ final class StandaloneAnalyzer {
         } finally {
             SonarLintLogger.setTarget(previousTarget);
         }
-    }
-
-    static ActiveRule cognitiveComplexityRule(int threshold) {
-        ActiveRule rule = new ActiveRule("java:S3776", "java");
-        rule.setParams(Map.of("Threshold", Integer.toString(threshold)));
-        return rule;
     }
 
     private List<Issue> analyzeLocally(AnalysisConfiguration configuration) throws IOException {

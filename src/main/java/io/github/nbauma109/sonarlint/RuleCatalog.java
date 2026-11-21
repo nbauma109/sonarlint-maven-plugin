@@ -1,0 +1,188 @@
+package io.github.nbauma109.sonarlint;
+
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+import org.sonarsource.sonarlint.core.analysis.api.ActiveRule;
+
+final class RuleCatalog {
+
+    private static final String RESOURCE_PATH = "org/sonar/l10n/java/rules/java/";
+    private static final String PREFIX = "java:";
+    private static final String COMPLEXITY = "java:S3776";
+    private static final Set<String> PRIORITY = Set.of(COMPLEXITY, "java:S100", "java:S107",
+            "java:S1192", "java:S1066", "java:S1128", "java:S1481", "java:S112");
+    private static final Set<String> TEMPLATES = Set.of("java:S124", "java:S2253",
+            "java:S3688", "java:S4011");
+    private static final Gson GSON = new Gson();
+
+    private final Map<String, RuleMetadata> metadata;
+    private final Set<String> sonarWay;
+
+    private RuleCatalog(Map<String, RuleMetadata> metadata, Set<String> sonarWay) {
+        this.metadata = Map.copyOf(metadata);
+        this.sonarWay = Set.copyOf(sonarWay);
+    }
+
+    static RuleCatalog load(Path analyzer) throws IOException {
+        try (ZipFile archive = new ZipFile(analyzer.toFile())) {
+            Map<String, RuleMetadata> definitions = new TreeMap<>();
+            var entries = archive.entries();
+            while (entries.hasMoreElements()) {
+                ZipEntry entry = entries.nextElement();
+                if (isRuleEntry(entry.getName())) {
+                    String key = PREFIX + entry.getName().substring(
+                            RESOURCE_PATH.length(), entry.getName().length() - 5);
+                    JsonObject definition = readJson(archive, entry);
+                    definitions.put(key, new RuleMetadata(
+                            definition.get("scope").getAsString(),
+                            definition.get("status").getAsString(),
+                            definition.get("type").getAsString()));
+                }
+            }
+            ZipEntry profile = archive.getEntry(RESOURCE_PATH + "Sonar_way_profile.json");
+            if (profile == null || definitions.isEmpty()) {
+                throw new IOException("The analyzer does not contain Java rule metadata and Sonar Way profile.");
+            }
+            Set<String> defaults = new TreeSet<>();
+            for (var key : readJson(archive, profile).getAsJsonArray("ruleKeys")) {
+                defaults.add(PREFIX + key.getAsString());
+            }
+            return new RuleCatalog(definitions, defaults);
+        }
+    }
+
+    private static boolean isRuleEntry(String name) {
+        if (!name.startsWith(RESOURCE_PATH)) {
+            return false;
+        }
+        return name.substring(RESOURCE_PATH.length()).matches("(S[0-9]+|NoSonar)\\.json");
+    }
+
+    private static JsonObject readJson(ZipFile archive, ZipEntry entry) throws IOException {
+        try (Reader reader = new InputStreamReader(archive.getInputStream(entry), StandardCharsets.UTF_8)) {
+            return GSON.fromJson(reader, JsonObject.class);
+        }
+    }
+
+    List<ActiveRule> select(String profile, String enabledRules, String disabledRules,
+            int threshold, List<RuleParameters> configuration) {
+        Set<String> selected = new TreeSet<>(profileRules(profile));
+        Set<String> enabled = parseKeys(enabledRules);
+        Set<String> disabled = parseKeys(disabledRules);
+        for (String key : enabled) {
+            if (!disabled.contains(key)) {
+                requireEligible(key);
+                selected.add(key);
+            }
+        }
+        for (String key : disabled) {
+            if (!metadata.containsKey(key)) {
+                throw new IllegalArgumentException("Unknown local Java rule: " + key);
+            }
+        }
+        selected.removeAll(disabled);
+        Map<String, Map<String, String>> overrides = parameterOverrides(configuration, selected);
+        List<ActiveRule> result = new ArrayList<>();
+        for (String key : selected) {
+            requireEligible(key);
+            result.add(activeRule(key, threshold, overrides.getOrDefault(key, Map.of())));
+        }
+        return result;
+    }
+
+    private Set<String> profileRules(String profile) {
+        return switch (profile) {
+            case "priority" -> PRIORITY;
+            case "complexity" -> Set.of(COMPLEXITY);
+            case "none" -> Set.of();
+            case "sonar-way" -> standardSonarWay();
+            default -> throw new IllegalArgumentException("Unknown rule profile: " + profile);
+        };
+    }
+
+    private Set<String> standardSonarWay() {
+        Set<String> selected = new TreeSet<>();
+        for (String key : sonarWay) {
+            RuleMetadata rule = metadata.get(key);
+            if (eligible(key, rule) && !"SECURITY_HOTSPOT".equals(rule.type())
+                    && !"VULNERABILITY".equals(rule.type())) {
+                selected.add(key);
+            }
+        }
+        return selected;
+    }
+
+    private void requireEligible(String key) {
+        RuleMetadata rule = metadata.get(key);
+        if (!eligible(key, rule)) {
+            throw new IllegalArgumentException("Rule " + key
+                    + " is not an eligible standard production Java rule in the pinned analyzer. "
+                    + "Check the rule catalog for symbolic, test, template or server requirements.");
+        }
+        if ("SECURITY_HOTSPOT".equals(rule.type()) || "VULNERABILITY".equals(rule.type())) {
+            throw new IllegalArgumentException("Security review reporting is not implemented for " + key);
+        }
+    }
+
+    private static boolean eligible(String key, RuleMetadata rule) {
+        return rule != null && !TEMPLATES.contains(key)
+                && "ready".equals(rule.status()) && !"Tests".equals(rule.scope());
+    }
+
+    private static Set<String> parseKeys(String value) {
+        Set<String> keys = new TreeSet<>();
+        if (value != null && !value.isBlank()) {
+            for (String part : value.split(",", -1)) {
+                String key = part.trim();
+                if (key.isEmpty()) {
+                    throw new IllegalArgumentException("Rule lists must not contain blank entries.");
+                }
+                keys.add(key);
+            }
+        }
+        return keys;
+    }
+
+    private static Map<String, Map<String, String>> parameterOverrides(
+            List<RuleParameters> configuration, Set<String> selected) {
+        Map<String, Map<String, String>> overrides = new LinkedHashMap<>();
+        for (RuleParameters rule : configuration) {
+            String key = rule.getKey();
+            if (!selected.contains(key)) {
+                throw new IllegalArgumentException("Parameters configured for inactive rule: " + key);
+            }
+            if (overrides.putIfAbsent(key, rule.getProperties()) != null) {
+                throw new IllegalArgumentException("Duplicate parameter configuration for " + key);
+            }
+        }
+        return overrides;
+    }
+
+    private static ActiveRule activeRule(String key, int threshold, Map<String, String> overrides) {
+        ActiveRule rule = new ActiveRule(key, "java");
+        Map<String, String> parameters = new TreeMap<>();
+        if (COMPLEXITY.equals(key)) {
+            parameters.put("Threshold", Integer.toString(threshold));
+        }
+        parameters.putAll(overrides);
+        rule.setParams(parameters);
+        return rule;
+    }
+
+    private record RuleMetadata(String scope, String status, String type) {
+    }
+}
