@@ -11,7 +11,7 @@ All are supported by the same report-only importer in Maven and Gradle.
 | `cleanup.add_all` | Replace a loop of collection additions with an `addAll` operation | Distinct Eclipse warning on our Java 25 fixture |
 | `cleanup.array_with_curly` | Simplify array initializers to curly braces where appropriate | Sonar's nearby `S1488` addresses a temporary return variable, not the initializer |
 | `cleanup.reduce_indentation` | Reduce unnecessary nesting after terminating branches | Distinct Eclipse warning |
-| `cleanup.remove_redundant_modifiers` | Remove redundant interface member modifiers | Grouped as one warning per declaration |
+| `cleanup.remove_redundant_modifiers` | Remove redundant interface member modifiers | The fixture exercises a single redundant modifier and requires one warning |
 | `cleanup.system_property_javaversion` | Modernize a Java runtime-version property lookup | Distinct Eclipse warning |
 | `cleanup.system_property_javaspecversion` | Modernize a Java specification-version property lookup | Distinct Eclipse warning |
 | `cleanup.module_imports` | Consolidate ordinary Java imports with Java 25 module imports | Requires Java 25 and module-aware compilation |
