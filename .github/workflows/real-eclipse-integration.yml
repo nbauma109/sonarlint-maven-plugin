@@ -45,7 +45,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: nbauma109/refactoring-cli
-          ref: df54148e47049d3c267c52d6d170522f1355ffc0
+          ref: 5da25d4b405e87bb66fbb31d60686e40c6977b10
           path: refactoring-cli-source
       - name: Build Eclipse cleanup CLI
         run: mvn -B -ntp -f refactoring-cli-source/pom.xml package
@@ -80,6 +80,8 @@ jobs:
         run: bash scripts/real-gradle-eclipse-integration-test.sh
       - name: Verify five complementary Eclipse warnings in Maven and Gradle
         run: bash scripts/real-eclipse-complementary-test.sh
+      - name: Probe broad complementary Eclipse diagnostics in Maven and Gradle
+        run: bash scripts/real-eclipse-broad-test.sh
       - name: Upload real integration logs
         if: always()
         uses: actions/upload-artifact@v4
@@ -88,6 +90,7 @@ jobs:
           path: |
             target/real-eclipse-integration/
             target/real-eclipse-complementary/
+            target/real-eclipse-broad/
             src/it/real-eclipse/target/static-analysis/eclipse/
             src/it/real-eclipse/build/static-analysis/eclipse/
             src/it/complementary-eclipse/target/static-analysis/eclipse/

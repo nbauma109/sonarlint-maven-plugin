@@ -136,3 +136,11 @@ We also provide an opt-in profile for five system-property modernization cleanup
 that are not mapped to Sonar rule duplicates. The same profile works with Maven and
 Gradle without source modifications. See [the complementary Eclipse rule guide](docs/eclipse-complementary-system-properties.md)
 and [the example profile](src/it/complementary-eclipse/eclipse-cleanups.xml).
+
+## Broader complementary Eclipse cleanup profile
+
+A [Java 25 complementary profile](docs/eclipse-complementary-broad.md) enables 15 Eclipse
+cleanup options (ten added in the latest batch, plus our five system-property cleanups).
+Both Maven and Gradle can use the [XML profile](src/it/broad-complementary/eclipse-cleanups.xml)
+with `eclipseEnabled` enabled and the configured external Eclipse runtime. These options
+remain opt-in because cleanup suggestions may have compatibility implications.

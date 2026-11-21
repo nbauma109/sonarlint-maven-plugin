@@ -1,0 +1,23 @@
+plugins {
+    id 'java'
+    id 'io.github.nbauma109.static-analysis'
+}
+
+repositories {
+    mavenCentral()
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_25
+    targetCompatibility = JavaVersion.VERSION_25
+}
+
+staticAnalysis {
+    profile = providers.gradleProperty('profile').getOrElse('sonar-way')
+    enabledRules = ''
+    failOnViolation = false
+    eclipseEnabled = true
+    eclipseExecutable = file(System.getenv('RUNNER_TEMP') + '/eclipse-check.sh')
+    eclipseCleanupProfile = file('eclipse-cleanups.xml')
+    eclipseDuplicatePolicy = providers.gradleProperty('duplicatePolicy').getOrElse('prefer-sonar')
+}
