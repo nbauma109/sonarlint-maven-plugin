@@ -131,4 +131,17 @@ if mvn -B -ntp -o -f "$priority_fixture" process-classes \
 fi
 grep -F 'The Eclipse cleanup profile does not exist' "$logs/eclipse-missing-profile.log"
 
+
+mvn -B -ntp -o -f src/it/real-eclipse/pom.xml process-classes \
+    -DstaticAnalysis.profile=none \
+    -DstaticAnalysis.enabledRules=java:S818,java:S1125 \
+    | tee "$logs/boolean-and-suffix-sonar.log"
+for rule in S818 S1125; do
+    count="$(grep -Ec "\\[WARNING\\].*\\[java:$rule\\]" "$logs/boolean-and-suffix-sonar.log" || true)"
+    if [ "$count" -ne 1 ]; then
+        echo "Expected exactly one genuine Sonar warning for $rule, received $count" >&2
+        exit 1
+    fi
+done
+
 test "$(sha256sum "$source_file")" = "$source_checksum"
