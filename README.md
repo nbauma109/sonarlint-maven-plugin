@@ -47,7 +47,7 @@ mvn compile io.github.nbauma109:static-analysis-maven-plugin:0.1.0-SNAPSHOT:chec
 | `staticAnalysis.cognitiveComplexityThreshold` | `15` | Maximum allowed cognitive complexity |
 | `staticAnalysis.profile` | `priority` | priority, complexity, sonar-way or none |
 | `staticAnalysis.enabledRules` | empty | Comma-separated additional rule keys |
-| `staticAnalysis.disabledRules` | empty | Comma-separated exclusions, taking precedence |
+| `staticAnalysis.disabledRules` | empty | Comma-separated exclusions, taking precedence |\n| `staticAnalysis.eclipseEnabled` | `false` | Enable a separate Eclipse cleanup process |\n| `staticAnalysis.eclipseExecutable` | empty | Eclipse executable or launcher wrapper |\n| `staticAnalysis.eclipseCleanupProfile` | empty | Exported Eclipse cleanup profile |\n| `staticAnalysis.eclipseDuplicatePolicy` | `prefer-sonar` | Suppress verified overlapping Sonar findings, or `none` |\n| `staticAnalysis.eclipseTimeoutSeconds` | `600` | Eclipse process timeout in seconds |
 
 The plugin analyzes production Java source roots and their resolved compile classpath. It has no server configuration, authentication token or report upload. Normal Maven dependency downloads may occur on the first build. Once dependencies are cached, use Maven offline mode (`-o`).
 
@@ -96,3 +96,22 @@ Our original project code is licensed under the [GNU General Public License vers
 ## Project name
 
 The descriptive name **Static Analysis Maven Plugin** refers to this independent project, not an official SonarSource or Eclipse Foundation product. Our rule implementation still uses the pinned SonarJava and SonarLint Core upstream libraries. We use their names only to describe compatibility and dependencies.
+
+## Eclipse cleanup warnings (experimental)
+
+An opt-in second analysis engine reports Eclipse Java Development Tools cleanup opportunities **without changing source files**. This requires an Eclipse installation with a version of [refactoring-cli](https://github.com/nbauma109/refactoring-cli) supporting `--report` and `--source-root`; the previously released 2.0.0 CLI cannot produce these reports. No automatic runtime downloads occur inside the goal.
+
+```xml
+<configuration>
+    <eclipseEnabled>true</eclipseEnabled>
+    <eclipseExecutable>/path/to/eclipse/eclipse</eclipseExecutable>
+    <eclipseCleanupProfile>${project.basedir}/eclipse-cleanups.xml</eclipseCleanupProfile>
+    <eclipseDuplicatePolicy>prefer-sonar</eclipseDuplicatePolicy>
+</configuration>
+```
+
+On Linux build agents without a graphical display, configure `eclipseExecutable` to an executable wrapper that starts Eclipse through `xvfb-run` and forwards all arguments. The Eclipse runtime and its refactoring CLI plugin must be installed separately. Eclipse analysis runs in a separate process, and the application writes structured diagnostics under `target/static-analysis/eclipse`. A nonzero exit code, missing profile, missing executable or malformed report fails analysis instead of silently succeeding.
+
+At present, duplicate suppression is deliberately conservative: only an unused-import edit on the same source line as a reported `java:S1128` finding is suppressed. Selecting a Sonar rule without obtaining a matching issue is not sufficient. Other potential overlaps are retained until rule-by-rule equivalence is tested. The cleanup process still identifies modules rather than precise individual cleanup options.
+
+The Eclipse report-only CLI currently rejects profiles enabling its custom `cleanup.instanceof` fallback; create a reporting profile with that option disabled until a safe preview mechanism is available. The separate Java 25 Eclipse process is not covered by the Maven plugin's Java 17 minimum runtime. See the [integration design](docs/eclipse-cleanup-integration.md).

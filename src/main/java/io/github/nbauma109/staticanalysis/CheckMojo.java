@@ -1,5 +1,6 @@
 package io.github.nbauma109.staticanalysis;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
@@ -69,6 +70,26 @@ public final class CheckMojo extends AbstractMojo {
     @Parameter
     private List<RuleParameters> ruleParameters;
 
+    /** Enable the separately installed Eclipse cleanup analyzer. */
+    @Parameter(property = "staticAnalysis.eclipseEnabled", defaultValue = "false")
+    private boolean eclipseEnabled;
+
+    /** Executable or wrapper that launches the Eclipse application. */
+    @Parameter(property = "staticAnalysis.eclipseExecutable")
+    private File eclipseExecutable;
+
+    /** Existing exported Eclipse cleanup profile. */
+    @Parameter(property = "staticAnalysis.eclipseCleanupProfile")
+    private File eclipseCleanupProfile;
+
+    /** Maximum runtime for the external Eclipse cleanup process. */
+    @Parameter(property = "staticAnalysis.eclipseTimeoutSeconds", defaultValue = "600")
+    private long eclipseTimeoutSeconds;
+
+    /** Duplicate handling: prefer-sonar or none. */
+    @Parameter(property = "staticAnalysis.eclipseDuplicatePolicy", defaultValue = "prefer-sonar")
+    private String eclipseDuplicatePolicy;
+
     /** Source encoding; defaults to UTF-8 when not specified by the project. */
     @Parameter(defaultValue = "${project.build.sourceEncoding}")
     private String encoding;
@@ -91,9 +112,57 @@ public final class CheckMojo extends AbstractMojo {
             throw new MojoExecutionException("Cognitive complexity threshold must not be negative.");
         }
         List<Issue> issues = analyzeProject();
+        EclipseCleanupRunner.Result eclipse = analyzeEclipse(issues);
         reportIssues(issues);
-        if (failOnViolation && !issues.isEmpty()) {
-            throw new MojoFailureException("Sonar found " + issues.size() + " violation(s).");
+        reportEclipseIssues(eclipse);
+        int total = issues.size() + eclipse.findings().size();
+        if (failOnViolation && total > 0) {
+            if (eclipseEnabled) {
+                throw new MojoFailureException("Static analysis found " + total + " violation(s).");
+            }
+            throw new MojoFailureException("Sonar found " + total + " violation(s).");
+        }
+    }
+
+
+    private EclipseCleanupRunner.Result analyzeEclipse(List<Issue> sonarIssues)
+            throws MojoExecutionException {
+        if (!eclipseEnabled) {
+            return new EclipseCleanupRunner.Result(List.of(), 0);
+        }
+        if (eclipseExecutable == null || eclipseCleanupProfile == null) {
+            throw new MojoExecutionException("Eclipse analysis requires eclipseExecutable and eclipseCleanupProfile.");
+        }
+        if (eclipseTimeoutSeconds <= 0) {
+            throw new MojoExecutionException("The Eclipse analysis timeout must be positive.");
+        }
+        try {
+            Path baseDirectory = project.getBasedir().toPath().toAbsolutePath().normalize();
+            Path workDirectory = Path.of(project.getBuild().getDirectory(), "static-analysis", "eclipse")
+                    .toAbsolutePath().normalize();
+            String javaSource = Optional.ofNullable(release).filter(value -> !value.isBlank())
+                    .or(() -> Optional.ofNullable(source).filter(value -> !value.isBlank()))
+                    .orElse("17");
+            return EclipseCleanupRunner.run(eclipseExecutable.toPath(), eclipseCleanupProfile.toPath(),
+                    baseDirectory, workDirectory, javaSource, project.getCompileSourceRoots(),
+                    project.getCompileClasspathElements(), eclipseTimeoutSeconds,
+                    eclipseDuplicatePolicy, sonarIssues, getLog());
+        } catch (IOException | DependencyResolutionRequiredException | RuntimeException exception) {
+            throw new MojoExecutionException("Eclipse cleanup analysis failed: " + exception.getMessage(), exception);
+        } catch (InterruptedException exception) {
+            Thread.currentThread().interrupt();
+            throw new MojoExecutionException("Eclipse cleanup analysis was interrupted.", exception);
+        }
+    }
+
+    private void reportEclipseIssues(EclipseCleanupRunner.Result result) {
+        for (EclipseCleanupRunner.Diagnostic finding : result.findings()) {
+            getLog().warn(finding.file() + ":" + finding.line() + ":" + finding.column()
+                    + " [eclipse:" + finding.cleanup() + "] " + finding.message());
+        }
+        if (eclipseEnabled) {
+            getLog().info("Eclipse cleanup analysis: " + result.findings().size() + " violation(s).");
+            getLog().info("Duplicate Eclipse findings suppressed: " + result.suppressed() + ".");
         }
     }
 

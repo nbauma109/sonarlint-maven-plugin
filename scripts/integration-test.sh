@@ -51,3 +51,51 @@ grep -F 'Rule javasecurity:S3649 is not an eligible standard production Java rul
 mvn -B -ntp -o -f "$priority_fixture" process-classes \
     -DstaticAnalysis.profile=sonar-way | tee "$logs/sonar-way.log"
 grep -F '[java:S3776]' "$logs/sonar-way.log"
+
+eclipse_executable="$(pwd)/scripts/mock-eclipse.sh"
+eclipse_profile="$(pwd)/src/it/priority-rules/eclipse-cleanup-profile.xml"
+source_file="src/it/priority-rules/src/main/java/example/PriorityViolations.java"
+source_checksum="$(sha256sum "$source_file")"
+
+mvn -B -ntp -o -f "$priority_fixture" process-classes \
+    -DstaticAnalysis.eclipseEnabled=true \
+    -DstaticAnalysis.eclipseExecutable="$eclipse_executable" \
+    -DstaticAnalysis.eclipseCleanupProfile="$eclipse_profile" | tee "$logs/eclipse.log"
+grep -F '[eclipse:PullUpAssignmentCleanUp]' "$logs/eclipse.log"
+grep -F 'Eclipse cleanup analysis: 1 violation(s).' "$logs/eclipse.log"
+grep -F 'Duplicate Eclipse findings suppressed: 1.' "$logs/eclipse.log"
+if grep -F '[eclipse:UnnecessaryCodeCleanUp]' "$logs/eclipse.log"; then
+    echo "The duplicate unused import warning was not filtered." >&2
+    exit 1
+fi
+
+mvn -B -ntp -o -f "$priority_fixture" process-classes \
+    -DstaticAnalysis.eclipseEnabled=true \
+    -DstaticAnalysis.eclipseExecutable="$eclipse_executable" \
+    -DstaticAnalysis.eclipseCleanupProfile="$eclipse_profile" \
+    -DstaticAnalysis.disabledRules=java:S1128 | tee "$logs/eclipse-without-sonar-import.log"
+grep -F '[eclipse:UnnecessaryCodeCleanUp]' "$logs/eclipse-without-sonar-import.log"
+grep -F 'Eclipse cleanup analysis: 2 violation(s).' "$logs/eclipse-without-sonar-import.log"
+grep -F 'Duplicate Eclipse findings suppressed: 0.' "$logs/eclipse-without-sonar-import.log"
+
+if mvn -B -ntp -o -f "$priority_fixture" process-classes \
+    -DstaticAnalysis.eclipseEnabled=true \
+    -DstaticAnalysis.eclipseExecutable="$eclipse_executable" \
+    -DstaticAnalysis.eclipseCleanupProfile="$eclipse_profile" \
+    -DstaticAnalysis.failOnViolation=true > "$logs/eclipse-fail.log" 2>&1; then
+    echo "Expected combined analysis to fail the build." >&2
+    exit 1
+fi
+grep -F 'Static analysis found' "$logs/eclipse-fail.log"
+
+if mvn -B -ntp -o -f "$priority_fixture" process-classes \
+    -DstaticAnalysis.eclipseEnabled=true \
+    -DstaticAnalysis.eclipseExecutable="$eclipse_executable" \
+    -DstaticAnalysis.eclipseCleanupProfile="$(pwd)/src/it/priority-rules/missing-profile.xml" \
+    > "$logs/eclipse-missing-profile.log" 2>&1; then
+    echo "Expected a missing Eclipse profile to fail analysis." >&2
+    exit 1
+fi
+grep -F 'The Eclipse cleanup profile does not exist' "$logs/eclipse-missing-profile.log"
+
+test "$(sha256sum "$source_file")" = "$source_checksum"

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<profiles version="2">
+    <profile kind="CleanUpProfile" name="static-analysis-integration" version="2">
+        <setting id="cleanup.remove_unused_imports" value="true"/>
+        <setting id="cleanup.pull_up_assignment" value="true"/>
+    </profile>
+</profiles>
