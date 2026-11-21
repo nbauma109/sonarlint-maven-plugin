@@ -19,5 +19,5 @@ if [ -z "$report" ]; then
 fi
 
 cat > "$report" <<'JSON'
-{"formatVersion":1,"issues":[{"file":"src/main/java/example/PriorityViolations.java","line":3,"column":1,"cleanup":"UnnecessaryCodeCleanUp","message":"Remove unused import","startOffset":18,"endOffset":40},{"file":"src/main/java/example/PriorityViolations.java","line":7,"column":5,"cleanup":"PullUpAssignmentCleanUp","message":"Pull up assignment","startOffset":87,"endOffset":87}]}
+{"formatVersion":1,"issues":[{"file":"src/main/java/example/PriorityViolations.java","line":3,"column":1,"cleanup":"cleanup.remove_unused_imports","module":"UnnecessaryCodeCleanUp","message":"Remove unused import","startOffset":18,"endOffset":40},{"file":"src/main/java/example/PriorityViolations.java","line":7,"column":5,"cleanup":"cleanup.pull_up_assignment","module":"PullUpAssignmentCleanUp","message":"Pull up assignment","startOffset":87,"endOffset":87}]}
 JSON

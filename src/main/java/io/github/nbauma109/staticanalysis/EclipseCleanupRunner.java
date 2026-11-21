@@ -203,6 +203,9 @@ final class EclipseCleanupRunner {
 
     private static boolean overlapsUnusedImport(Diagnostic finding, List<Issue> sonarIssues,
             Path project) throws IOException {
+        if (!"cleanup.remove_unused_imports".equals(finding.cleanup())) {
+            return false;
+        }
         Path file = project.resolve(finding.file());
         List<String> lines = Files.readAllLines(file, StandardCharsets.UTF_8);
         if (finding.line() > lines.size()

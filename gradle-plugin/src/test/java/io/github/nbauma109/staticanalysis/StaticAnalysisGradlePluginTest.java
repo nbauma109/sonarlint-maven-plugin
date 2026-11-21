@@ -1,6 +1,5 @@
 package io.github.nbauma109.staticanalysis;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
