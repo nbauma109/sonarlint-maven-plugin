@@ -2,6 +2,7 @@
 <profiles version="2">
     <profile kind="CleanUpProfile" name="broad-complementary-candidates" version="2">
         <setting id="cleanup.system_property" value="true"/>
+        <setting id="cleanup.module_imports" value="true"/>
         <setting id="cleanup.pull_up_assignment" value="true"/>
         <setting id="cleanup.extract_increment" value="true"/>
         <setting id="cleanup.remove_unnecessary_suppress_warnings" value="true"/>

@@ -8,6 +8,8 @@ source_file="$fixture/src/main/java/example/BroadComplementaryCleanups.java"
 output="$PWD/target/real-eclipse-broad"
 mkdir -p "$output"
 original_sha="$(sha256sum "$source_file")"
+module_file="$fixture/src/main/java/module-info.java"
+module_sha="$(sha256sum "$module_file")"
 
 mvn -B -ntp -f "$fixture/pom.xml" process-classes \
     -DstaticAnalysis.profile=sonar-way \
@@ -72,4 +74,5 @@ print("Both build adapters produce identical option identifiers and positions")
 PY
 
 test "$(sha256sum "$source_file")" = "$original_sha"
+test "$(sha256sum "$module_file")" = "$module_sha"
 echo "Broad complementary candidate check completed without source modifications"
