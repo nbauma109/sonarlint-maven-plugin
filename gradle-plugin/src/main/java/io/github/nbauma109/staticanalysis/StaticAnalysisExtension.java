@@ -6,7 +6,7 @@ import java.util.Map;
 /**
  * Configuration shared by the Gradle analysis task and its build script.
  */
-public final class StaticAnalysisExtension {
+public class StaticAnalysisExtension {
 
     private String profile = "priority";
     private String enabledRules = "";
