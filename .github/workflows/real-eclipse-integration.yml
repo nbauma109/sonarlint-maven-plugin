@@ -1,0 +1,62 @@
+name: Real Eclipse and Sonar duplicate integration
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  real-eclipse-overlap:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Java 25
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+      - name: Build Maven analysis plugin
+        run: mvn -B -ntp install
+      - name: Checkout the compatible Eclipse cleanup CLI
+        uses: actions/checkout@v4
+        with:
+          repository: nbauma109/refactoring-cli
+          ref: 32bdb2e76b2930be6191402b3776ad82e8438e62
+          path: refactoring-cli-source
+      - name: Build Eclipse cleanup CLI
+        run: mvn -B -ntp -f refactoring-cli-source/pom.xml package
+      - name: Install Eclipse Java 2026-09 and a virtual display
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends xvfb
+          curl --fail --location --silent --show-error --retry 3 \
+            "https://www.eclipse.org/downloads/download.php?file=/technology/epp/downloads/release/2026-09/R/eclipse-java-2026-09-R-linux-gtk-x86_64.tar.gz&r=1" \
+            --output "$RUNNER_TEMP/eclipse.tar.gz"
+          tar -xzf "$RUNNER_TEMP/eclipse.tar.gz" -C "$RUNNER_TEMP"
+          plugin="$(find refactoring-cli-source/target -maxdepth 1 -type f \
+            -name 'io.github.nbauma109.refactoring.cli-*.jar' -print -quit)"
+          test -n "$plugin"
+          mkdir -p "$RUNNER_TEMP/eclipse/dropins"
+          cp "$plugin" "$RUNNER_TEMP/eclipse/dropins/"
+          cat > "$RUNNER_TEMP/eclipse-check.sh" <<'SH'
+          #!/usr/bin/env bash
+          set -euo pipefail
+          exec xvfb-run -a "$RUNNER_TEMP/eclipse/eclipse" "$@"
+          SH
+          chmod +x "$RUNNER_TEMP/eclipse-check.sh"
+      - name: Assert real engine warnings appear only once
+        run: bash scripts/real-eclipse-integration-test.sh
+      - name: Upload real integration logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: real-eclipse-integration
+          path: |
+            target/real-eclipse-integration/
+            src/it/real-eclipse/target/static-analysis/eclipse/
