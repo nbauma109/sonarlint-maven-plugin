@@ -17,7 +17,7 @@ public final class OverlapChecks extends ParentChecks {
         }
     }
 
-    static final class Resource implements AutoCloseable {
+    static final class Resource implements java.io.Closeable {
 
         void work() {
             System.out.println("resource");
