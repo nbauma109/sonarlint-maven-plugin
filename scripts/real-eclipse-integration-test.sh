@@ -59,7 +59,7 @@ import sys
 
 log = Path(sys.argv[1]).read_text(encoding="utf-8")
 for cleanup in ("cleanup.add_missing_override_annotations", "cleanup.try_with_resource"):
-    count = len(re.findall(r"(?m)^\\[WARNING\\].*\\[eclipse:" + re.escape(cleanup) + r"\\]", log))
+    count = len(re.findall(r"(?m)^\[WARNING\].*\[eclipse:" + re.escape(cleanup) + r"\]", log))
     assert count == 1, f"Expected one Eclipse fallback warning for {cleanup}, received {count}"
 PY
 test "$(sha256sum "$java_file")" = "$source_hash"
