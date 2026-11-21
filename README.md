@@ -1,6 +1,6 @@
 # Static Analysis Maven Plugin
 
-Local Java static analysis for Maven with Checkstyle-like warnings, using the standalone SonarJava engine. Complementary Eclipse cleanups are planned.
+Local Java static analysis for Maven with Checkstyle-like warnings, using the standalone SonarJava engine. Optional Eclipse cleanup analysis runs in a separate, report-only process.
 
 ## Status
 
@@ -47,7 +47,12 @@ mvn compile io.github.nbauma109:static-analysis-maven-plugin:0.1.0-SNAPSHOT:chec
 | `staticAnalysis.cognitiveComplexityThreshold` | `15` | Maximum allowed cognitive complexity |
 | `staticAnalysis.profile` | `priority` | priority, complexity, sonar-way or none |
 | `staticAnalysis.enabledRules` | empty | Comma-separated additional rule keys |
-| `staticAnalysis.disabledRules` | empty | Comma-separated exclusions, taking precedence |\n| `staticAnalysis.eclipseEnabled` | `false` | Enable a separate Eclipse cleanup process |\n| `staticAnalysis.eclipseExecutable` | empty | Eclipse executable or launcher wrapper |\n| `staticAnalysis.eclipseCleanupProfile` | empty | Exported Eclipse cleanup profile |\n| `staticAnalysis.eclipseDuplicatePolicy` | `prefer-sonar` | Suppress verified overlapping Sonar findings, or `none` |\n| `staticAnalysis.eclipseTimeoutSeconds` | `600` | Eclipse process timeout in seconds |
+| `staticAnalysis.disabledRules` | empty | Comma-separated exclusions, taking precedence |
+| `staticAnalysis.eclipseEnabled` | `false` | Enable a separate Eclipse cleanup process |
+| `staticAnalysis.eclipseExecutable` | empty | Eclipse executable or launcher wrapper |
+| `staticAnalysis.eclipseCleanupProfile` | empty | Exported Eclipse cleanup profile |
+| `staticAnalysis.eclipseDuplicatePolicy` | `prefer-sonar` | Suppress verified overlapping Sonar findings, or `none` |
+| `staticAnalysis.eclipseTimeoutSeconds` | `600` | Eclipse process timeout in seconds |
 
 The plugin analyzes production Java source roots and their resolved compile classpath. It has no server configuration, authentication token or report upload. Normal Maven dependency downloads may occur on the first build. Once dependencies are cached, use Maven offline mode (`-o`).
 
