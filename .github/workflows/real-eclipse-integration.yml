@@ -1,6 +1,9 @@
 name: Real Eclipse and Sonar duplicate integration
 
 on:
+  push:
+    branches:
+      - master
   pull_request:
   workflow_dispatch:
 
