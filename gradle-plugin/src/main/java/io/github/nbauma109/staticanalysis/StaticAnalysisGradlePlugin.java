@@ -1,0 +1,43 @@
+package io.github.nbauma109.staticanalysis;
+
+import org.gradle.api.Plugin;
+import org.gradle.api.Project;
+import org.gradle.api.artifacts.Configuration;
+import org.gradle.api.artifacts.ExternalModuleDependency;
+import org.gradle.api.tasks.SourceSet;
+import org.gradle.api.tasks.SourceSetContainer;
+import org.gradle.api.tasks.TaskProvider;
+
+/**
+ * Registers offline static analysis for Java projects.
+ */
+public final class StaticAnalysisGradlePlugin implements Plugin<Project> {
+
+    @Override
+    public void apply(Project project) {
+        StaticAnalysisExtension extension = project.getExtensions()
+                .create("staticAnalysis", StaticAnalysisExtension.class);
+        Configuration analyzer = project.getConfigurations().create("staticAnalysisAnalyzer", configuration -> {
+            configuration.setCanBeConsumed(false);
+            configuration.setCanBeResolved(true);
+            configuration.setVisible(false);
+        });
+        ExternalModuleDependency dependency = (ExternalModuleDependency) project.getDependencies()
+                .create("org.sonarsource.java:sonar-java-plugin:8.6.0.37351");
+        dependency.setTransitive(false);
+        analyzer.getDependencies().add(dependency);
+
+        project.getPluginManager().withPlugin("java", applied -> {
+            SourceSet sources = project.getExtensions().getByType(SourceSetContainer.class)
+                    .getByName(SourceSet.MAIN_SOURCE_SET_NAME);
+            TaskProvider<StaticAnalysisTask> analysis = project.getTasks()
+                    .register("staticAnalysis", StaticAnalysisTask.class, task -> {
+                        task.setAnalysisExtension(extension);
+                        task.setSourceSet(sources);
+                        task.setAnalyzerConfiguration(analyzer);
+                        task.dependsOn(project.getTasks().named("classes"));
+                    });
+            project.getTasks().named("check").configure(task -> task.dependsOn(analysis));
+        });
+    }
+}

@@ -61,10 +61,10 @@ mvn -B -ntp -o -f "$priority_fixture" process-classes \
     -DstaticAnalysis.eclipseEnabled=true \
     -DstaticAnalysis.eclipseExecutable="$eclipse_executable" \
     -DstaticAnalysis.eclipseCleanupProfile="$eclipse_profile" | tee "$logs/eclipse.log"
-grep -F '[eclipse:PullUpAssignmentCleanUp]' "$logs/eclipse.log"
+grep -F '[eclipse:cleanup.pull_up_assignment]' "$logs/eclipse.log"
 grep -F 'Eclipse cleanup analysis: 1 violation(s).' "$logs/eclipse.log"
 grep -F 'Duplicate Eclipse findings suppressed: 1.' "$logs/eclipse.log"
-if grep -F '[eclipse:UnnecessaryCodeCleanUp]' "$logs/eclipse.log"; then
+if grep -F '[eclipse:cleanup.remove_unused_imports]' "$logs/eclipse.log"; then
     echo "The duplicate unused import warning was not filtered." >&2
     exit 1
 fi
@@ -74,7 +74,7 @@ mvn -B -ntp -o -f "$priority_fixture" process-classes \
     -DstaticAnalysis.eclipseExecutable="$eclipse_executable" \
     -DstaticAnalysis.eclipseCleanupProfile="$eclipse_profile" \
     -DstaticAnalysis.eclipseDuplicatePolicy=none | tee "$logs/eclipse-without-deduplication.log"
-grep -F '[eclipse:UnnecessaryCodeCleanUp]' "$logs/eclipse-without-deduplication.log"
+grep -F '[eclipse:cleanup.remove_unused_imports]' "$logs/eclipse-without-deduplication.log"
 grep -F 'Duplicate Eclipse findings suppressed: 0.' "$logs/eclipse-without-deduplication.log"
 
 mvn -B -ntp -o -f "$priority_fixture" process-classes \
@@ -82,7 +82,7 @@ mvn -B -ntp -o -f "$priority_fixture" process-classes \
     -DstaticAnalysis.eclipseExecutable="$eclipse_executable" \
     -DstaticAnalysis.eclipseCleanupProfile="$eclipse_profile" \
     -DstaticAnalysis.disabledRules=java:S1128 | tee "$logs/eclipse-without-sonar-import.log"
-grep -F '[eclipse:UnnecessaryCodeCleanUp]' "$logs/eclipse-without-sonar-import.log"
+grep -F '[eclipse:cleanup.remove_unused_imports]' "$logs/eclipse-without-sonar-import.log"
 grep -F 'Eclipse cleanup analysis: 2 violation(s).' "$logs/eclipse-without-sonar-import.log"
 grep -F 'Duplicate Eclipse findings suppressed: 0.' "$logs/eclipse-without-sonar-import.log"
 

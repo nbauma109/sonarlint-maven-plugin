@@ -1,0 +1,75 @@
+plugins {
+    id 'java-gradle-plugin'
+    id 'maven-publish'
+}
+
+group = 'io.github.nbauma109'
+version = '0.1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+sourceSets {
+    main {
+        java {
+            srcDir '../src/main/java'
+            exclude '**/CheckMojo.java', '**/MavenLogOutput.java'
+        }
+    }
+}
+
+dependencies {
+    implementation 'com.google.code.gson:gson:2.11.0'
+    implementation 'org.sonarsource.sonarlint.core:sonarlint-analysis-engine:10.13.0.79996'
+
+    testImplementation gradleTestKit()
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.11.4'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+gradlePlugin {
+    plugins {
+        staticAnalysis {
+            id = 'io.github.nbauma109.static-analysis'
+            implementationClass = 'io.github.nbauma109.staticanalysis.StaticAnalysisGradlePlugin'
+            displayName = 'Static Analysis for Gradle'
+            description = 'Offline Java analysis with SonarJava and optional Eclipse cleanup warnings'
+        }
+    }
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+    testLogging {
+        events 'failed'
+        exceptionFormat 'full'
+        showStandardStreams = true
+    }
+    systemProperty 'staticAnalysis.fixtureDirectory', file('../src/it/cognitive-complexity/src/main/java').absolutePath
+}
+
+publishing {
+    publications.withType(MavenPublication).configureEach {
+        pom {
+            name = 'Static Analysis Gradle Plugin'
+            description = 'Offline Java static analysis for Gradle'
+            url = 'https://github.com/nbauma109/static-analysis-maven-plugin'
+            licenses {
+                license {
+                    name = 'GNU General Public License, Version 3'
+                    url = 'https://www.gnu.org/licenses/gpl-3.0.html'
+                }
+            }
+            scm {
+                url = 'https://github.com/nbauma109/static-analysis-maven-plugin'
+            }
+        }
+    }
+}
