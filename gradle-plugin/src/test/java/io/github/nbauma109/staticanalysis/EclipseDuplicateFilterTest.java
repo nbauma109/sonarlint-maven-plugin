@@ -161,6 +161,41 @@ class EclipseDuplicateFilterTest {
         assertFalse(EclipseDuplicateFilter.isDuplicate(unrelated, List.of(issue), project));
     }
 
+    @Test
+    void preservesComplementaryCleanupsEvenWhenSonarReportsTheSameText() throws IOException {
+        writeSource(SOURCE);
+        Issue sonar = sonarIssue("java:S1128", "java.util.List", SOURCE);
+        List<String> complementaryOptions = List.of(
+                "cleanup.pull_up_assignment",
+                "cleanup.extract_increment",
+                "cleanup.remove_unnecessary_suppress_warnings",
+                "cleanup.system_property_javaversion",
+                "cleanup.system_property_javaspecversion",
+                "cleanup.no_string_creation",
+                "cleanup.stringbuffer_to_stringbuilder",
+                "cleanup.use_string_is_blank",
+                "cleanup.remove_redundant_modifiers",
+                "cleanup.static_inner_class",
+                "cleanup.make_private_fields_final",
+                "cleanup.array_with_curly",
+                "cleanup.remove_unnecessary_array_creation",
+                "cleanup.add_all",
+                "cleanup.precompile_regex",
+                "cleanup.remove_redundant_type_arguments",
+                "cleanup.useless_return",
+                "cleanup.stringbuilder_for_local_vars",
+                "cleanup.pull_out_if_from_if_else",
+                "cleanup.reduce_indentation",
+                "cleanup.ternary_operator",
+                "cleanup.remove_unnecessary_nls_tags",
+                "cleanup.module_imports");
+        for (String option : complementaryOptions) {
+            assertFalse(EclipseDuplicateFilter.isDuplicate(
+                    finding(option, "java.util.List", SOURCE),
+                    List.of(sonar), project), option);
+        }
+    }
+
     private void writeSource(String source) throws IOException {
         Path file = project.resolve(RELATIVE_FILE);
         Files.createDirectories(file.getParent());
