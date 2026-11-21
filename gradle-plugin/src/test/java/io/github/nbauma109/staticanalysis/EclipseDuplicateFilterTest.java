@@ -48,6 +48,19 @@ class EclipseDuplicateFilterTest {
     }
 
     @Test
+    void suppressesAnImportEditThatIncludesThePrecedingBlankLine() throws IOException {
+        writeSource(SOURCE);
+        Issue issue = sonarIssue("java:S1128", "java.util.List", SOURCE);
+        int importStart = SOURCE.indexOf("import java.util.List;");
+        int editStart = importStart - 2;
+        int editEnd = importStart + "import java.util.List;".length();
+        EclipseCleanupRunner.Diagnostic finding = new EclipseCleanupRunner.Diagnostic(
+                RELATIVE_FILE, 1, 17, "cleanup.remove_unused_imports",
+                "Remove unused imports", editStart, editEnd);
+        assertTrue(EclipseDuplicateFilter.isDuplicate(finding, List.of(issue), project));
+    }
+
+    @Test
     void suppressesExactRedundantCastsButNotUnrelatedEditsOnTheSameLine() throws IOException {
         writeSource(SOURCE);
         Issue sonar = sonarIssue("java:S1905", "(String)", SOURCE);
