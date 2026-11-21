@@ -21,7 +21,9 @@ final class EclipseDuplicateFilter {
     private static final Map<String, String> EQUIVALENTS = Map.of(
             "cleanup.remove_unused_imports", "java:S1128",
             "cleanup.remove_unnecessary_casts", "java:S1905",
-            "cleanup.remove_unused_local_variables", "java:S1481");
+            "cleanup.remove_unused_local_variables", "java:S1481",
+            "cleanup.add_missing_override_annotations", "java:S1161",
+            "cleanup.try_with_resource", "java:S2093");
 
     private EclipseDuplicateFilter() {
     }
@@ -29,7 +31,7 @@ final class EclipseDuplicateFilter {
     static boolean isDuplicate(EclipseCleanupRunner.Diagnostic finding, List<Issue> sonarIssues,
             Path project) throws IOException {
         String ruleKey = EQUIVALENTS.get(finding.cleanup());
-        if (ruleKey == null || finding.endOffset() <= finding.startOffset()) {
+        if (ruleKey == null || finding.endOffset() < finding.startOffset()) {
             return false;
         }
         Path sourceFile = project.resolve(finding.file());
@@ -49,14 +51,14 @@ final class EclipseDuplicateFilter {
     }
 
     private static boolean isImportEdit(String source, EclipseCleanupRunner.Diagnostic finding) {
-        List<Integer> starts = lineStarts(source);
-        if (finding.line() > starts.size()) {
-            return false;
+        String editedSource = source.substring(finding.startOffset(), finding.endOffset());
+        for (String line : editedSource.split("\\R")) {
+            String statement = line.stripLeading();
+            if (statement.startsWith("import ") && !statement.startsWith("import module ")) {
+                return true;
+            }
         }
-        int start = starts.get(finding.line() - 1);
-        int end = finding.line() < starts.size() ? starts.get(finding.line()) : source.length();
-        String line = source.substring(start, end).strip();
-        return line.startsWith("import ") && !line.startsWith("import module ");
+        return false;
     }
 
     private static boolean matchesIssue(Issue issue, EclipseCleanupRunner.Diagnostic finding,
@@ -73,8 +75,52 @@ final class EclipseDuplicateFilter {
         List<Integer> starts = lineStarts(source);
         int start = absoluteOffset(starts, range.getStartLine(), range.getStartLineOffset(), source.length());
         int end = absoluteOffset(starts, range.getEndLine(), range.getEndLineOffset(), source.length());
-        return start >= 0 && end > start
+        if (start < 0 || end <= start) {
+            return false;
+        }
+        if ("java:S1161".equals(expectedRule)) {
+            return matchesOverrideInsertion(finding, source, start, end);
+        }
+        if ("java:S2093".equals(expectedRule)) {
+            return matchesTryRewrite(finding, source, start, end);
+        }
+        return finding.endOffset() > finding.startOffset()
                 && finding.startOffset() < end && finding.endOffset() > start;
+    }
+
+
+    private static boolean matchesOverrideInsertion(EclipseCleanupRunner.Diagnostic finding,
+            String source, int methodNameStart, int methodNameEnd) {
+        if (finding.startOffset() != finding.endOffset() || finding.startOffset() > methodNameStart
+                || methodNameStart - finding.startOffset() > 180) {
+            return false;
+        }
+        if (!source.substring(methodNameStart, methodNameEnd).matches("[a-zA-Z_$][a-zA-Z0-9_$]*")) {
+            return false;
+        }
+        String between = source.substring(finding.startOffset(), methodNameStart);
+        int lineBreaks = 0;
+        for (int index = 0; index < between.length(); index++) {
+            char character = between.charAt(index);
+            if (character == '\n') {
+                lineBreaks++;
+            }
+            if (";{}()".indexOf(character) >= 0) {
+                return false;
+            }
+        }
+        return lineBreaks <= 1;
+    }
+
+    private static boolean matchesTryRewrite(EclipseCleanupRunner.Diagnostic finding,
+            String source, int tryStart, int tryEnd) {
+        if (tryEnd - tryStart != 3 || !source.startsWith("try", tryStart)) {
+            return false;
+        }
+        if (finding.endOffset() > finding.startOffset()) {
+            return finding.startOffset() < tryEnd && finding.endOffset() > tryStart;
+        }
+        return finding.startOffset() >= tryStart && finding.startOffset() <= tryEnd;
     }
 
     private static int absoluteOffset(List<Integer> starts, int line, int column, int length) {

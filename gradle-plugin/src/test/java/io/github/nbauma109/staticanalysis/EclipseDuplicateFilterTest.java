@@ -48,6 +48,19 @@ class EclipseDuplicateFilterTest {
     }
 
     @Test
+    void suppressesAnImportEditThatIncludesThePrecedingBlankLine() throws IOException {
+        writeSource(SOURCE);
+        Issue issue = sonarIssue("java:S1128", "java.util.List", SOURCE);
+        int importStart = SOURCE.indexOf("import java.util.List;");
+        int editStart = importStart - 2;
+        int editEnd = importStart + "import java.util.List;".length();
+        EclipseCleanupRunner.Diagnostic finding = new EclipseCleanupRunner.Diagnostic(
+                RELATIVE_FILE, 1, 17, "cleanup.remove_unused_imports",
+                "Remove unused imports", editStart, editEnd);
+        assertTrue(EclipseDuplicateFilter.isDuplicate(finding, List.of(issue), project));
+    }
+
+    @Test
     void suppressesExactRedundantCastsButNotUnrelatedEditsOnTheSameLine() throws IOException {
         writeSource(SOURCE);
         Issue sonar = sonarIssue("java:S1905", "(String)", SOURCE);
@@ -87,6 +100,67 @@ class EclipseDuplicateFilterTest {
                 List.of(sonar), project));
     }
 
+
+    @Test
+    void suppressesOnlyOverrideInsertionsAtTheTargetMethod() throws IOException {
+        String code = """
+                package example;
+                class Parent {
+                    String label() { return "parent"; }
+                }
+                class Child extends Parent {
+                    String label() { return "child"; }
+                    String second() { return "other"; }
+                }
+                """;
+        writeSource(code);
+        Issue issue = sonarIssue("java:S1161", "label", code, true);
+        int method = code.indexOf("    String label()", code.indexOf("class Child"));
+        EclipseCleanupRunner.Diagnostic correct = new EclipseCleanupRunner.Diagnostic(
+                RELATIVE_FILE, 6, 1, "cleanup.add_missing_override_annotations",
+                "Add missing Override annotation", method, method);
+        assertTrue(EclipseDuplicateFilter.isDuplicate(correct, List.of(issue), project));
+        EclipseCleanupRunner.Diagnostic unrelated = new EclipseCleanupRunner.Diagnostic(
+                RELATIVE_FILE, 7, 1, "cleanup.add_missing_override_annotations",
+                "Unrelated annotation", code.indexOf("    String second()"),
+                code.indexOf("    String second()"));
+        assertFalse(EclipseDuplicateFilter.isDuplicate(unrelated, List.of(issue), project));
+        assertFalse(EclipseDuplicateFilter.isDuplicate(
+                new EclipseCleanupRunner.Diagnostic(RELATIVE_FILE, 6, 1,
+                        "SomeCleanupModule", "Unknown cleanup", method, method),
+                List.of(issue), project));
+    }
+
+    @Test
+    void suppressesOnlyRewritesOfTheReportedTryStatement() throws IOException {
+        String code = """
+                package example;
+                final class Sample {
+                    void action() {
+                        try {
+                            System.out.println("one");
+                        } finally {
+                            System.out.println("done");
+                        }
+                        try {
+                            System.out.println("two");
+                        } finally {
+                            System.out.println("done");
+                        }
+                    }
+                }
+                """;
+        writeSource(code);
+        Issue issue = sonarIssue("java:S2093", "try", code);
+        assertTrue(EclipseDuplicateFilter.isDuplicate(
+                finding("cleanup.try_with_resource", "try {", code), List.of(issue), project));
+        int secondTry = code.indexOf("try", code.indexOf("try") + 3);
+        EclipseCleanupRunner.Diagnostic unrelated = new EclipseCleanupRunner.Diagnostic(
+                RELATIVE_FILE, 9, 1, "cleanup.try_with_resource",
+                "Rewrite another try", secondTry, secondTry + 3);
+        assertFalse(EclipseDuplicateFilter.isDuplicate(unrelated, List.of(issue), project));
+    }
+
     private void writeSource(String source) throws IOException {
         Path file = project.resolve(RELATIVE_FILE);
         Files.createDirectories(file.getParent());
@@ -109,8 +183,17 @@ class EclipseDuplicateFilterTest {
                 cleanup, "Eclipse cleanup", start, start + token.length());
     }
 
+    private Issue sonarIssue(String rule, String token, String source, boolean overrideMethod) {
+        int start = overrideMethod ? source.indexOf("class Child") : 0;
+        return sonarIssue(rule, token, source, start);
+    }
+
     private Issue sonarIssue(String rule, String token, String source) {
-        int offset = source.indexOf(token);
+        return sonarIssue(rule, token, source, 0);
+    }
+
+    private Issue sonarIssue(String rule, String token, String source, int searchFrom) {
+        int offset = source.indexOf(token, searchFrom);
         int line = 1;
         int startOfLine = 0;
         for (int index = 0; index < offset; index++) {
