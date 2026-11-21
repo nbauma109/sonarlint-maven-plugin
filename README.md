@@ -1,24 +1,23 @@
 # SonarLint Maven Plugin
 
-An independent, open-source Maven plugin project aiming to provide local Java static analysis with the ergonomics of Maven Checkstyle.
+Local Java static analysis for Maven with Checkstyle-like warnings, using Sonar's standalone analysis engine.
 
 ## Status
 
-Early development. No working plugin or Maven Central release is available yet.
+Experimental, unreleased proof of concept. This initial implementation activates only the real SonarJava cognitive complexity rule (`java:S3776`). Compatibility and integration tests must pass before it is considered usable. The analyzer is pinned to its LGPL-era release; modern SonarCloud rule parity is not claimed.
 
-## Goals
+## Build and test
 
-- Report findings with a source file, line number, rule identifier and message directly in the Maven build.
-- Run analysis locally without an analysis server, authentication token or report upload.
-- Use real Sonar rules where licensing and analyzer compatibility permit.
-- Integrate with the standard Maven lifecycle after production compilation.
-- Report warnings by default and support optional build failure.
-- Resolve source roots and the compilation classpath from each Maven project.
-- Support offline analysis after normal Maven dependency resolution.
+Requires Maven 3.9.9 and Java 17 or later to run the plugin. The consuming project may target an older Java release.
 
-## Proposed usage
+```sh
+mvn clean install
+bash scripts/integration-test.sh
+```
 
-The following illustrates the intended configuration, not an available release:
+The script verifies a source-located warning, offline execution after dependency resolution, optional build failure, and a configurable threshold on a Java 8 fixture.
+
+## Usage from a locally installed snapshot
 
 ```xml
 <plugin>
@@ -35,9 +34,25 @@ The following illustrates the intended configuration, not an available release:
 </plugin>
 ```
 
-The proposed default phase is `process-classes`. The first milestone is a verified end-to-end Java analysis that emits a Maven warning for a known cognitive complexity violation, without contacting a Sonar server.
+Run `mvn process-classes`, `mvn test` or a later lifecycle phase. The goal runs after compilation. For a direct invocation:
 
-See [the initial design](docs/design.md) and [licensing considerations](docs/licensing.md).
+```sh
+mvn compile io.github.nbauma109:sonarlint-maven-plugin:0.1.0-SNAPSHOT:check
+```
+
+| Property | Default | Purpose |
+| --- | --- | --- |
+| `sonarlint.skip` | `false` | Skip analysis |
+| `sonarlint.failOnViolation` | `false` | Fail if any violation is reported |
+| `sonarlint.cognitiveComplexityThreshold` | `15` | Maximum allowed cognitive complexity |
+
+The plugin analyzes production Java source roots and their resolved compile classpath. It has no server configuration, authentication token or report upload. Normal Maven dependency downloads may occur on the first build. Once dependencies are cached, use Maven offline mode (`-o`).
+
+## Limitations
+
+Only production Java sources and rule S3776 are in the initial scope. Default profile discovery, additional rules, symbolic execution, test sources, exclusions, reactor tests, modern language compatibility, and XML reporting are not yet implemented. The older analyzer and engine require a security and compatibility review before publication.
+
+See [the design](docs/design.md) and [licensing considerations](docs/licensing.md).
 
 ## License
 

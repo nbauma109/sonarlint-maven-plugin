@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>io.github.nbauma109</groupId>
+    <artifactId>sonarlint-maven-plugin</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+    <packaging>maven-plugin</packaging>
+    <name>SonarLint Maven Plugin</name>
+    <description>Standalone Java static analysis for Maven</description>
+    <url>https://github.com/nbauma109/sonarlint-maven-plugin</url>
+
+    <licenses>
+        <license>
+            <name>MIT License</name>
+            <url>https://opensource.org/license/mit</url>
+        </license>
+    </licenses>
+    <scm>
+        <connection>scm:git:https://github.com/nbauma109/sonarlint-maven-plugin.git</connection>
+        <developerConnection>scm:git:ssh://git@github.com/nbauma109/sonarlint-maven-plugin.git</developerConnection>
+        <url>https://github.com/nbauma109/sonarlint-maven-plugin</url>
+    </scm>
+
+    <properties>
+        <maven.compiler.release>17</maven.compiler.release>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.version>3.9.9</maven.version>
+        <maven.plugin.tools.version>3.15.1</maven.plugin.tools.version>
+        <sonarlint.version>10.13.0.79996</sonarlint.version>
+        <sonarjava.version>8.6.0.37351</sonarjava.version>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.apache.maven</groupId>
+            <artifactId>maven-plugin-api</artifactId>
+            <version>${maven.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.maven</groupId>
+            <artifactId>maven-core</artifactId>
+            <version>${maven.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.maven.plugin-tools</groupId>
+            <artifactId>maven-plugin-annotations</artifactId>
+            <version>${maven.plugin.tools.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.sonarsource.sonarlint.core</groupId>
+            <artifactId>sonarlint-analysis-engine</artifactId>
+            <version>${sonarlint.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.sonarsource.java</groupId>
+            <artifactId>sonar-java-plugin</artifactId>
+            <version>${sonarjava.version}</version>
+            <scope>runtime</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.13.0</version>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-plugin-plugin</artifactId>
+                <version>${maven.plugin.tools.version}</version>
+                <configuration>
+                    <goalPrefix>sonarlint</goalPrefix>
+                    <requiredJavaVersion>17</requiredJavaVersion>
+                    <requiredMavenVersion>3.9.9</requiredMavenVersion>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>
