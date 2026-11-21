@@ -20,6 +20,10 @@ public final class PriorityViolations {
         throw new RuntimeException("generic exception");
     }
 
+    public String redundantCast() {
+        return (String) "cast";
+    }
+
     public boolean nestedConditions(boolean first, boolean second, boolean third,
             boolean fourth, boolean fifth, boolean sixth) {
         if (first) {
