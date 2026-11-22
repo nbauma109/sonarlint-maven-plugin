@@ -20,7 +20,7 @@ sourceSets {
     main {
         java {
             srcDir '../src/main/java'
-            exclude '**/CheckMojo.java', '**/CheckTestsMojo.java', '**/MavenLogOutput.java'
+            exclude '**/CheckMojo.java', '**/CheckTestsMojo.java', '**/MavenLogOutput.java', '**/EmbeddedJdtCleanupRunner.java'
         }
         resources {
             srcDir '../src/main/resources'
