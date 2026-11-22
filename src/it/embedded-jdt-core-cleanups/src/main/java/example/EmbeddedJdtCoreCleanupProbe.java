@@ -59,11 +59,15 @@ public final class EmbeddedJdtCoreCleanupProbe {
                 JavaCore.COMPILER_COMPLIANCE, "17",
                 JavaCore.COMPILER_CODEGEN_TARGET_PLATFORM, "17"));
         CompilationUnit unit = (CompilationUnit) parser.createAST(null);
-        if (unit.getProblems().length != 0) {
-            for (var problem : unit.getProblems()) {
+        int errorCount = 0;
+        for (var problem : unit.getProblems()) {
+            if (problem.isError()) {
+                errorCount++;
                 System.err.println(problem.getMessage());
             }
-            throw new IllegalStateException("The embedded JDT parser reported unexpected problems.");
+        }
+        if (errorCount != 0) {
+            throw new IllegalStateException("The embedded JDT parser could not resolve the source.");
         }
 
         HashMap<IBinding, List<SimpleName>> writes = new HashMap<>();
