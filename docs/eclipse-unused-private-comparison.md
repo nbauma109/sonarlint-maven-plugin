@@ -14,9 +14,10 @@ and SonarJava in both Maven and Gradle. The test verifies one source-located
 finding per unused declaration, excludes genuinely used members, confirms
 Maven–Gradle agreement, and leaves source files byte-for-byte unchanged.
 
-The refactoring CLI version used by the workflow comes from the matching
-[real-Eclipse screening branch](https://github.com/nbauma109/refactoring-cli/pull/7)
-until its source is merged and a stable commit is pinned.
+The workflow uses the merged and independently tested
+[refactoring-cli pull request #7](https://github.com/nbauma109/refactoring-cli/pull/7),
+pinned to commit `39b6a885`. Its source tree matches the successful standalone
+Eclipse test.
 
 Only after a green source-range comparison should the duplicate filter consider
 these exact option/rule pairs. A future negative control must prove that
