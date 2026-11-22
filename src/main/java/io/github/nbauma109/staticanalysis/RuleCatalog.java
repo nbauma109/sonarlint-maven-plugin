@@ -168,8 +168,7 @@ final class RuleCatalog {
 
     Set<String> supplementalRules(String profile, String enabledRules, String disabledRules) {
         Set<String> selected = new TreeSet<>();
-        if ("sonar-way".equals(profile) || "sonar-way-standard".equals(profile)
-                || "sonar-way-reliability".equals(profile)) {
+        if ("sonar-way".equals(profile) || "sonar-way-reliability".equals(profile)) {
             selected.addAll(SUPPLEMENTAL_ONLY);
             selected.add(RECORD_METHOD_PLACEMENT);
             selected.add("java:S2259");

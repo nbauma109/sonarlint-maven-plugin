@@ -109,8 +109,7 @@ public final class CheckTestsMojo extends AbstractMojo {
     }
 
     private boolean isFullProfile() {
-        return "sonar-way".equals(profile) || "sonar-way-standard".equals(profile)
-                || "sonar-way-reliability".equals(profile);
+        return "sonar-way".equals(profile) || "sonar-way-reliability".equals(profile);
     }
 
     private static Set<String> parseRuleKeys(String value) throws MojoExecutionException {
