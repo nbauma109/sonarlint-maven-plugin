@@ -14,9 +14,9 @@ was corrected: `cleanup.boolean_literal` converts `Boolean.TRUE` and
 
 | Classification | Options | Verification status |
 | --- | ---: | --- |
-| Potential Sonar overlap | 33 | Real combined-engine comparison still needed for most |
+| Potential Sonar overlap | 34 | Real combined-engine comparison still needed for most |
 | Eclipse candidate | 14 | Distinct on selected fixtures, not a universal exclusivity guarantee |
-| Review | 80 | Actual overlap, usefulness or transformation scope not settled |
+| Review | 79 | Actual overlap, usefulness or transformation scope not settled |
 | Aesthetics | 2 | Available only through the separate opt-in aesthetics profile |
 | Style policy | 18 | Preferences disabled unless selected explicitly |
 | **Total** | **147** | |
@@ -27,7 +27,7 @@ regression in both Maven and Gradle: `S1128` (unused imports), `S1905`
 `@Override`), `S2093` (try-with-resources), `S2129` (unnecessary
 `String` construction), `S2293` (redundant generic type arguments),
 `S3878` (unnecessary array creation), `S3626` (redundant returns), and
-`S2694` (unnecessary non-static inner classes, only when explicitly enabled).
+`S2694` (non-static nested classes, only when explicitly enabled).
 Each is suppressed only when a matching active Sonar finding overlaps the
 original source edit. Integration includes disabling deduplication and
 removing corresponding Sonar rules to verify the negative controls.
@@ -68,10 +68,10 @@ rules that resemble high-value Eclipse refactorings:
   Eclipse's cleanup considers repeated uses of a regular expression within
   one method. Require matching source ranges and positive/negative real-engine
   examples before filtering.
-- `cleanup.static_inner_class` may overlap Sonar `S2694`, which identifies
-  inner classes that need not retain an enclosing instance. Check framework,
-  reflective-instantiation, and serialization constraints before recommending
-  rewriting the class.
+- `cleanup.static_inner_class` is now mapped to `S2694` **only** when the
+  same class declaration is flagged by the explicitly enabled Sonar rule.
+  The Eclipse-only warning remains with pinned Sonar Way, which excludes
+  `S2694`. Review reflection, serialization and framework constraints.
 - `cleanup.remove_unnecessary_suppress_warnings` is distinct from `S1309`,
   which restricts use of `@SuppressWarnings` rather than proving an
   individual suppression unnecessary. Compiler diagnostics must establish
@@ -82,10 +82,19 @@ rules in the pinned analyzer but are not in its versioned Sonar Way snapshot.
 A finding is therefore complementary **relative to the selected profile**,
 not necessarily to the complete SonarJava rule inventory.
 
+## Prioritized validation queue
+
+All unresolved candidates have now been assigned a **review priority and test
+type**, without enabling or suppressing anything. The
+[104-option review queue](eclipse-pending-review-queue.csv) and
+[validation guide](eclipse-review-queue.md) are enforced by the integration
+suite. Priority is a screening decision, not a statement that a cleanup
+is safe or a Sonar duplicate.
+
 ## What remains
 
-**23 candidate overlap classifications** lack a fully verified
-combined-engine deduplication mapping. An additional **80 options**
+**24 candidate overlap classifications** lack a fully verified
+combined-engine deduplication mapping. An additional **79 options**
 remain under review. These are work items, not 108 confirmed duplicates.
 
 Our opt-in Eclipse profiles separately provide **3 maintainability**, **13 broad
