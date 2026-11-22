@@ -33,6 +33,13 @@ public final class ReliabilityIssues {
         return value.orElse("fallback");
     }
 
+    public String checkedOptional(Optional<String> value) {
+        if (value.isPresent()) {
+            return value.get();
+        }
+        return "fallback";
+    }
+
     public int closedStream() throws IOException {
         try (InputStream stream = new FileInputStream("input.txt")) {
             return stream.read();
