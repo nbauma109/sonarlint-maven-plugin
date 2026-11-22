@@ -426,7 +426,8 @@ final class SupplementalAnalyzer {
                 int size = Math.min(formals.size(), call.arguments().size());
                 for (int index = 0; index < size; index++) {
                     VariableElement argument = call.arguments().get(index);
-                    if (argument != null && nullable.contains(formals.get(index))) {
+                    if (argument != null && nullable.contains(formals.get(index))
+                            && acceptsNullWithoutDereference(call.target(), formals.get(index))) {
                         nullableAt.computeIfAbsent(call.caller(), ignored -> new HashMap<>())
                                 .merge(argument, call.offset(), Math::min);
                     }
@@ -445,6 +446,23 @@ final class SupplementalAnalyzer {
                 report(dereference.receiver(), "java:S2259",
                         "Fix this access that can throw a NullPointerException when executed.");
             }
+        }
+
+        private boolean acceptsNullWithoutDereference(ExecutableElement method,
+                VariableElement parameter) {
+            for (DereferenceSite dereference : dereferences) {
+                if (dereference.caller().equals(method)
+                        && dereference.parameter().equals(parameter)) {
+                    return false;
+                }
+            }
+            for (ValidationSite validation : validatedParameters) {
+                if (validation.caller().equals(method)
+                        && validation.parameter().equals(parameter)) {
+                    return false;
+                }
+            }
+            return true;
         }
 
         private boolean isValidated(DereferenceSite dereference) {
