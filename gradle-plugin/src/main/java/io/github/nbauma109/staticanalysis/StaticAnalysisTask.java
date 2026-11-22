@@ -35,6 +35,7 @@ public abstract class StaticAnalysisTask extends DefaultTask {
     private StaticAnalysisExtension extension;
     private SourceSet sourceSet;
     private Configuration analyzerConfiguration;
+    private Configuration symbolicAnalyzerConfiguration;
 
     @Internal
     public StaticAnalysisExtension getAnalysisExtension() {
@@ -61,6 +62,15 @@ public abstract class StaticAnalysisTask extends DefaultTask {
 
     public void setAnalyzerConfiguration(Configuration analyzerConfiguration) {
         this.analyzerConfiguration = analyzerConfiguration;
+    }
+
+    @Internal
+    public Configuration getSymbolicAnalyzerConfiguration() {
+        return symbolicAnalyzerConfiguration;
+    }
+
+    public void setSymbolicAnalyzerConfiguration(Configuration symbolicAnalyzerConfiguration) {
+        this.symbolicAnalyzerConfiguration = symbolicAnalyzerConfiguration;
     }
 
     @TaskAction
@@ -117,7 +127,16 @@ public abstract class StaticAnalysisTask extends DefaultTask {
 
     private List<Issue> runSonar(Path project, Path work, List<JavaSourceFile> files)
             throws IOException {
-        RuleCatalog catalog = RuleCatalog.load(analyzerConfiguration.getSingleFile().toPath());
+        Path analyzer = analyzerConfiguration.getSingleFile().toPath();
+        boolean useSymbolicAnalyzer = "reliability".equals(extension.getProfile());
+        Path symbolicAnalyzer = null;
+        RuleCatalog catalog;
+        if (useSymbolicAnalyzer) {
+            symbolicAnalyzer = symbolicAnalyzerConfiguration.getSingleFile().toPath();
+            catalog = RuleCatalog.load(analyzer, symbolicAnalyzer);
+        } else {
+            catalog = RuleCatalog.load(analyzer);
+        }
         List<RuleParameters> overrides = new ArrayList<>();
         for (Map.Entry<String, Map<String, String>> entry : extension.getRuleParameters().entrySet()) {
             RuleParameters parameter = new RuleParameters();
@@ -138,8 +157,12 @@ public abstract class StaticAnalysisTask extends DefaultTask {
                 .addActiveRules(active)
                 .build();
         getLogger().lifecycle("Activated " + active.size() + " local Java rule(s).");
-        return new StandaloneAnalyzer(analyzerConfiguration.getSingleFile().toPath(),
-                work.resolve("sonar"), new GradleLogOutput(getLogger())).analyze(configuration);
+        if (useSymbolicAnalyzer) {
+            return new StandaloneAnalyzer(analyzer, symbolicAnalyzer, work.resolve("sonar"),
+                    new GradleLogOutput(getLogger())).analyze(configuration);
+        }
+        return new StandaloneAnalyzer(analyzer, work.resolve("sonar"),
+                new GradleLogOutput(getLogger())).analyze(configuration);
     }
 
     private Map<String, String> analysisProperties() throws IOException {

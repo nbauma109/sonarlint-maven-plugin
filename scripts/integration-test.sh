@@ -134,3 +134,15 @@ fi
 grep -F 'The Eclipse cleanup profile does not exist' "$logs/eclipse-missing-profile.log"
 
 test "$(sha256sum "$source_file")" = "$source_checksum"
+
+reliability_fixture=src/it/reliability/pom.xml
+reliability_source=src/it/reliability/src/main/java/example/ReliabilityIssues.java
+reliability_checksum="$(sha256sum "$reliability_source")"
+
+mvn -B -ntp -o -f "$reliability_fixture" process-classes \
+    -DstaticAnalysis.profile=reliability | tee "$logs/reliability.log"
+grep -F 'Activated 3 local Java rule(s).' "$logs/reliability.log"
+for rule in S2095 S2259 S3655; do
+    grep -E "\\[WARNING\\].*ReliabilityIssues\\.java:[0-9]+.*\\[java:$rule\\]" "$logs/reliability.log"
+done
+test "$(sha256sum "$reliability_source")" = "$reliability_checksum"

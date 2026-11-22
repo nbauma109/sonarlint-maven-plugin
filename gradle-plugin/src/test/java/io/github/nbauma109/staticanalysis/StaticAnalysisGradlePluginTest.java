@@ -54,6 +54,24 @@ class StaticAnalysisGradlePluginTest {
     }
 
     @Test
+    void reportsThreeReviewedSymbolicReliabilityRules() throws IOException {
+        Path original = Path.of(System.getProperty("staticAnalysis.fixtureDirectory"))
+                .resolve("../../../../../../../src/it/reliability/src/main/java/example/ReliabilityIssues.java");
+        Path source = projectDirectory.resolve("src/main/java/example/ReliabilityIssues.java");
+        Files.createDirectories(source.getParent());
+        Files.copy(original.toAbsolutePath().normalize(), source);
+        Files.writeString(projectDirectory.resolve("settings.gradle"),
+                "rootProject.name = 'reliability-fixture'\n", StandardCharsets.UTF_8);
+        Files.writeString(projectDirectory.resolve("build.gradle"),
+                configuration("reliability", false, 15), StandardCharsets.UTF_8);
+        BuildResult result = run("staticAnalysis");
+        assertTrue(result.getOutput().contains("Activated 3 local Java rule(s)."), result.getOutput());
+        for (String key : new String[] {"java:S2095", "java:S2259", "java:S3655"}) {
+            assertTrue(result.getOutput().contains("[" + key + "]"), result.getOutput());
+        }
+    }
+
+    @Test
     void rejectsServerOnlyRules() throws IOException {
         prepare("none", false, 15);
         Files.writeString(projectDirectory.resolve("build.gradle"), configuration("none", false, 15)

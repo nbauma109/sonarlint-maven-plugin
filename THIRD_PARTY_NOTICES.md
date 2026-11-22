@@ -15,3 +15,10 @@ Before publishing a binary, generate and review an actual resolved dependency in
 - [SonarJava](https://github.com/SonarSource/sonar-java/tree/8.6.0.37351)
 - [Eclipse Public License, version 2.0](https://www.eclipse.org/legal/epl/epl-v20.html)
 - [GNU General Public License, version 3](https://www.gnu.org/licenses/gpl-3.0.html)
+
+## SonarJava symbolic execution plugin (optional reliability profile)
+
+- Artifact: `org.sonarsource.java:sonar-java-symbolic-execution-plugin:8.6.0.37351`
+- Upstream: [SonarJava symbolic execution](https://github.com/SonarSource/sonar-java/tree/8.6.0.37351/java-symbolic-execution)
+- License: GNU Lesser General Public License, version 3 or later, for this pinned source release
+- Usage: loaded together with the matching SonarJava analyzer only for the explicitly selected `reliability` profile
