@@ -112,7 +112,8 @@ public final class EmbeddedJdtCoreFieldParity {
                 if (!fixes.isEmpty()) {
                     String shortPath = root.relativize(file).toString().replace(File.separatorChar, '/');
                     int line = unit.getLineNumber(field.getStartPosition());
-                    String key = shortPath.substring(shortPath.indexOf("decompilers/")) + ":" + line;
+                    String prefix = "com/heliosdecompiler/transformerapi/";
+                    String key = shortPath.substring(prefix.length()) + ":" + line;
                     actual.add(key);
                 }
                 return false;
