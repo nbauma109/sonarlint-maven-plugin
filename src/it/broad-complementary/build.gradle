@@ -18,6 +18,7 @@ staticAnalysis {
     failOnViolation = false
     eclipseEnabled = true
     eclipseExecutable = file(System.getenv('RUNNER_TEMP') + '/eclipse-check.sh')
-    eclipseCleanupProfile = file('eclipse-cleanups.xml')
+    eclipseCleanupProfile = file(providers.gradleProperty('cleanupProfile')
+            .getOrElse('eclipse-cleanups.xml'))
     eclipseDuplicatePolicy = providers.gradleProperty('duplicatePolicy').getOrElse('prefer-sonar')
 }
