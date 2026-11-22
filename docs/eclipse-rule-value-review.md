@@ -3,13 +3,15 @@
 ## Decision
 
 The default Maven and Gradle profiles remain unchanged. Eclipse cleanup analysis
-remains opt-in and runs without modifying sources. For users who want fewer,
-more actionable suggestions, we recommend the
-[five-option maintainability and aesthetics profile](../src/it/broad-complementary/eclipse-cleanups-recommended.xml)
-rather than enabling all 15 broad cleanup options.
+remains opt-in and runs without modifying sources. The
+[three-option maintainability profile](../src/it/broad-complementary/eclipse-cleanups-recommended.xml)
+excludes stylistic preferences. The distinct
+[aesthetics profile](../src/it/broad-complementary/eclipse-cleanups-aesthetics.xml)
+is disabled by default: it must be selected explicitly and its additional optional
+preferences are initially marked `false`.
 
 This is a **maintainability** recommendation, not a new set of bug detectors.
-The five selected options produced distinct Eclipse findings in the real Java 25
+The three maintainability and two opt-in aesthetic options produced distinct Eclipse findings in the real Java 25
 integration fixtures against the pinned SonarJava configuration. Their usefulness
 and behavioral safety still depend on source context. We must not treat a shared
 source line or superficially similar rule title as proof of duplication.
@@ -26,15 +28,15 @@ source line or superficially similar rule title as proof of duplication.
 | `cleanup.use_string_is_blank` | **Convenience** in broad profile | An understandable Java 11 modernization; too small to warrant a core build warning. |
 | `cleanup.module_imports` | **Java 25 migration** in broad profile | Only useful in an explicit module/import modernization effort. |
 | `cleanup.system_property_* ` | **Compatibility review** in broad profile | Seven distinct options are available; replacing a property lookup can change the effect of runtime overrides. |
-| `cleanup.array_with_curly` | **Keep for aesthetics**, opt-in Eclipse | Shorter array-initializer syntax, explicitly requested as an aesthetic convention. |
+| `cleanup.array_with_curly` | **Aesthetics only**, separate opt-in profile | Shorter array-initializer syntax, explicitly requested as an aesthetic convention. |
 | `cleanup.remove_redundant_modifiers` | **Keep for aesthetics**, opt-in Eclipse | Removes redundant interface and other modifiers; useful for consistency. |
 | Sonar `S1124` (modifier ordering) | **Keep**, pinned Sonar Way | Checks Java Language Specification modifier ordering; no separate Eclipse member-sort rule is needed. |
 | Sonar `S1155` (`isEmpty()` instead of `size() == 0`) | **Keep**, pinned Sonar Way | Prefer an explicit collection emptiness check; uses Sonar's existing detector. |
 
-The 15-option
+The 13-option
 [broad profile](../src/it/broad-complementary/eclipse-cleanups.xml)
-is kept intact; the five selected recommendations include the two consciously
-retained aesthetic conventions. Modifier ordering and collection `isEmpty()` checks
+keeps Java modernization checks but excludes the two aesthetic conventions;
+they remain available in the explicitly selected aesthetics profile. Modifier ordering and collection `isEmpty()` checks
 come from the pinned Sonar Way profile rather than duplicate Eclipse diagnostics. A cleanup
 that reports correctly is not automatically worth enabling by default.
 
@@ -55,8 +57,9 @@ We do not add duplicate Eclipse cleanup options or change the default
 `priority` profile. Select `sonar-way`, or explicitly enable
 `java:S1124,java:S1155` when using a narrower rule profile.
 
-The five-option Eclipse profile and these two Sonar checks are preferences
-we consciously keep, without treating their findings as bugs.
+The three-option maintainability profile stays separate from the aesthetic choices.
+The two Sonar checks remain in pinned Sonar Way for version fidelity; they do not
+cause Eclipse aesthetic cleanups to run automatically.
 
 ## Next candidates to investigate (not enabled)
 
@@ -75,21 +78,21 @@ These are *screening priorities*, not endorsed automatic transformations. A new
 rule needs real Eclipse positive and negative fixtures, a selected Sonar Way
 comparison, a non-mutating report, and a reason the diagnostic merits attention.
 
-## Trivial or preference-only issues for review
+## Aesthetic preferences (available, off by default)
 
 | Candidate | Recommended policy | Reason |
 | --- | --- | --- |
 | `i++` versus `++i` | **Do not report** | Prefix and postfix have different values when used in expressions; blanket rewriting is not safe. |
 | `java:S818` / `cleanup.number_suffix` | **Style-only** | Lowercase `l` versus uppercase `L`; a clarity convention, outside our pinned Sonar Way. |
-| `cleanup.make_local_variable_final`, `cleanup.make_parameters_final`, `cleanup.make_variable_declarations_final` | **Explicitly exclude from both Eclipse profiles** | Do not require `final` on parameters or local variables. |
+| `cleanup.make_local_variable_final`, `cleanup.make_parameters_final`, `cleanup.make_variable_declarations_final` | **Aesthetics profile, initially disabled** | Do not require `final` on parameters or local variables. |
 | `cleanup.use_var`, `cleanup.insert_inferred_type_arguments` | **Explicitly exclude from both Eclipse profiles** | Do not enforce `var` instead of explicit types or the reverse. |
-| `cleanup.always_use_parentheses_in_expressions`, `cleanup.never_use_parentheses_in_expressions` | **Exclude** | Contradictory parenthesis conventions; leave to formatter/style policy. |
-| `cleanup.sort_members`, `cleanup.sort_members_all` | **Exclude** | Declaration ordering is a preference. |
-| `cleanup.correct_indentation`, `cleanup.remove_trailing_whitespaces`, `cleanup.format_source_code` | **Formatter only** | Not independent analysis warnings. |
+| `cleanup.always_use_parentheses_in_expressions`, `cleanup.never_use_parentheses_in_expressions` | **Aesthetics profile, individually disabled** | These are mutually exclusive conventions; select at most one. |
+| `cleanup.sort_members`, `cleanup.sort_members_all` | **Aesthetics profile, initially disabled** | Declaration ordering is a preference; sort carefully around initialization semantics. |
+| `cleanup.correct_indentation`, `cleanup.remove_trailing_whitespaces`, `cleanup.format_source_code` | **Aesthetics profile, initially disabled** | Formatting is a preference; prefer a formatter if enabled. |
 | `cleanup.use_anonymous_class_creation`, `cleanup.use_lambda` | **Do not recommend automatically** | Expression form preference; the latter overlaps active Sonar `S1604` on tested shapes. |
-| `cleanup.always_use_this_for_non_static_field_access` | **Exclude** | Repeated qualification adds noise without stronger semantics. |
+| `cleanup.always_use_this_for_non_static_field_access` | **Aesthetics candidate, not enabled** | Repeated qualification adds noise without stronger semantics. |
 | `cleanup.remove_unnecessary_nls_tags`, `cleanup.add_missing_nls_tags` | **Project-specific** | Localization tagging policy, not an unconditional maintainability improvement. |
-| `cleanup.array_with_curly`, `cleanup.remove_redundant_modifiers` | **Keep for aesthetics** | Explicitly included in the recommended profile, not mistaken for correctness bugs. |
+| `cleanup.array_with_curly`, `cleanup.remove_redundant_modifiers` | **Aesthetics only** | Enabled solely in the separate opt-in aesthetics profile, not mistaken for correctness bugs. |
 
 ## Guardrails
 
@@ -100,8 +103,8 @@ comparison, a non-mutating report, and a reason the diagnostic merits attention.
   on the tested fixture, not a universal guarantee.
 - Review semantic changes separately: system-property runtime overrides,
   source-version gating, mutation order, and framework compatibility.
-- Use formatter or Checkstyle configuration for whitespace, naming,
-  parentheses and other preferences instead of issuing duplicate diagnostics.
+- Expose style preferences only through the explicit aesthetics profile; use a
+  formatter or Checkstyle where it provides better control and no duplicate warnings.
 
 [Full overlap audit](eclipse-overlap-audit.md) ·
 [Rule catalog](eclipse-cleanup-catalog.csv) ·
