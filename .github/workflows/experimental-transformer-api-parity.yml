@@ -16,7 +16,9 @@ jobs:
       - uses: actions/setup-java@v6
         with:
           distribution: zulu
-          java-version: '25'
+          java-version: |
+            21
+            25
           cache: maven
       - name: Install the candidate analysis plugin locally
         run: mvn -B -ntp -DskipTests install
@@ -40,3 +42,14 @@ jobs:
           grep -E '\[WARNING\].*\[(java|javabugs):S[0-9]+\]' transformer-api-analysis.log \
             | sed -E 's/.*\[((java|javabugs):S[0-9]+)\].*/\1/' \
             | sort | uniq -c || true
+      - name: Compile transformer-api test sources
+        run: mvn -B -ntp -f transformer-api/pom.xml test-compile -DskipTests
+      - name: Analyze transformer-api test sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          mvn -B -ntp -f transformer-api/pom.xml \
+            io.github.nbauma109:static-analysis-maven-plugin:0.1.1-SNAPSHOT:check-tests \
+            -DstaticAnalysis.profile=sonar-way \
+            -DstaticAnalysis.failOnViolation=false \
+            | tee transformer-api-test-analysis.log
