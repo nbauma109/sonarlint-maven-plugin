@@ -67,9 +67,10 @@ plugin archive and fails if its membership or eligible rule count changes.
 Maven and Gradle use the same snapshot.
 
 The separate [21 symbolic Sonar Way rules](docs/sonar-way-symbolic-java-8.6.0.37351.rules)
-are **not active** in our standalone analyzer. We prioritize resource leaks,
-null dereferences and unsafe `Optional` access for a separately tested symbolic
-engine, rather than silently claiming those checks. We do not automatically
+are not included in the standard Sonar Way profile. The opt-in `reliability`
+profile loads a compatible symbolic analyzer and activates **three reviewed
+correctness rules** for resource leaks, null dereferences, and unsafe `Optional`
+access. The other 18 remain unimplemented locally. We do not automatically
 promote cosmetic rules such as uppercase literal suffixes or wholesale increment
 rewriting. See [the rule selection policy](docs/sonar-way-versioning-and-value.md).
 
@@ -77,7 +78,9 @@ rewriting. See [the rule selection policy](docs/sonar-way-versioning-and-value.m
 
 - `priority`: S100, S107, S112, S1128, S1192, S1066, S1481 and S3776.
 - `complexity`: S3776 only.
-- `sonar-way`: eligible ready standard production rules from the analyzer's embedded Sonar Way profile; experimental and not equivalent to a server profile.
+- `sonar-way`: eligible ready standard production rules from our versioned Sonar Way snapshot; experimental and not equivalent to a server profile.
+- `reliability`: opt-in symbolic execution checks for unclosed resources (`S2095`), null dereferences (`S2259`) and unsafe `Optional.get()` (`S3655`); requires the separately packaged matching symbolic analyzer.
+- `sonar-way-reliability`: the 392 pinned eligible Sonar Way Java checks **plus** the three reviewed symbolic reliability rules (395 total); opt-in only.
 - `none`: select rules explicitly.
 
 Example:

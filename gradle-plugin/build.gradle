@@ -56,6 +56,7 @@ tasks.named('test') {
         showStandardStreams = true
     }
     systemProperty 'staticAnalysis.fixtureDirectory', file('../src/it/cognitive-complexity/src/main/java').absolutePath
+    systemProperty 'staticAnalysis.reliabilityFixtureDirectory', file('../src/it/reliability/src/main/java').absolutePath
 }
 
 publishing {

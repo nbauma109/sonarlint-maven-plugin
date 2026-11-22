@@ -25,19 +25,26 @@ eligibility count, tests and rule-value policy together.
 ## Missing local coverage worth pursuing
 
 The pinned release also contains [21 symbolic Sonar Way rules](sonar-way-symbolic-java-8.6.0.37351.rules)
-from a **separate symbolic-execution analyzer**, all present in our catalog
-but not yet executed locally. We should first investigate:
+from a **separate symbolic-execution analyzer**. We now make three high-value checks
+available through the opt-in `reliability` profile (confirmed in compiled
+Maven and Gradle fixtures), while the remaining 18 require individual review.
+The selected rules are:
 
 | Rule | Reason to prioritize | Current status |
 | --- | --- | --- |
-| `java:S2095` | Resource leaks when closeable resources are not closed | Not enabled; requires symbolic-engine integration |
-| `java:S2259` | Potential null-pointer dereferences | Not enabled; requires symbolic-engine integration |
-| `java:S3655` | Accessing an empty `Optional` | Not enabled; requires symbolic-engine integration |
+| `java:S2095` | Resource leaks when closeable resources are not closed | Opt-in `reliability` profile; genuine source-located finding tested |
+| `java:S2259` | Potential null-pointer dereferences | Opt-in `reliability` profile; genuine source-located finding tested |
+| `java:S3655` | Accessing an empty `Optional` | Opt-in `reliability` profile; genuine source-located finding tested |
 
 These are correctness and reliability checks, not cosmetic refactorings.
-Adding their names to `enabledRules` cannot make them work: support requires
-a compatible licensed symbolic analyzer, explicit registration, and real
-positive/negative fixture tests under both Maven and Gradle.
+The `reliability` profile loads the compatible pinned symbolic analyzer
+alongside SonarJava and activates exactly these three rules. The
+`sonar-way-reliability` profile combines the same three rules with the 392
+pinned standard rules for **395 local checks**. Both profiles check an
+unclosed resource, null dereference, and unsafe `Optional.get()`. Safe controls
+and disabled-rule precedence are part of the integration fixtures. The other
+18 symbolic entries remain catalogued but unavailable; their identifiers are
+not sufficient to claim execution coverage.
 
 There are **no missing standard Sonar Way rule identifiers** in the existing
 catalog. Its 491 entries match the upstream membership exactly. The 99

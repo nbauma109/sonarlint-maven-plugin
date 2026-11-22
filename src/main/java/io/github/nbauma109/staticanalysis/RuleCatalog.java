@@ -23,10 +23,13 @@ import org.sonarsource.sonarlint.core.analysis.api.ActiveRule;
 final class RuleCatalog {
 
     private static final String RESOURCE_PATH = "org/sonar/l10n/java/rules/java/";
+    private static final String SYMBOLIC_RESOURCE_PATH = "org/sonar/l10n/java/rules/javase/";
     private static final String PREFIX = "java:";
     private static final String SONAR_WAY_SNAPSHOT = "/io/github/nbauma109/staticanalysis/sonar-way-java-8.6.0.37351.rules";
     private static final int EFFECTIVE_SONAR_WAY_RULE_COUNT = 392;
     private static final String COMPLEXITY = "java:S3776";
+    private static final Set<String> REVIEWED_SYMBOLIC = Set.of("java:S2095",
+            "java:S2259", "java:S3655");
     private static final Set<String> PRIORITY = Set.of(COMPLEXITY, "java:S100", "java:S107",
             "java:S1192", "java:S1066", "java:S1128", "java:S1481", "java:S112");
     private static final Set<String> TEMPLATES = Set.of("java:S124", "java:S2253",
@@ -77,6 +80,26 @@ final class RuleCatalog {
             }
             return new RuleCatalog(definitions, snapshot);
         }
+    }
+
+    static RuleCatalog load(Path analyzer, Path symbolicAnalyzer) throws IOException {
+        RuleCatalog standard = load(analyzer);
+        Map<String, RuleMetadata> selected = new TreeMap<>(standard.metadata);
+        try (ZipFile archive = new ZipFile(symbolicAnalyzer.toFile())) {
+            for (String key : REVIEWED_SYMBOLIC) {
+                ZipEntry definition = archive.getEntry(SYMBOLIC_RESOURCE_PATH
+                        + key.substring(PREFIX.length()) + ".json");
+                if (definition == null) {
+                    throw new IOException("Missing symbolic analyzer metadata for " + key);
+                }
+                JsonObject metadata = readJson(archive, definition);
+                selected.put(key, new RuleMetadata(
+                        metadata.get("scope").getAsString(),
+                        metadata.get("status").getAsString(),
+                        metadata.get("type").getAsString()));
+            }
+        }
+        return new RuleCatalog(selected, standard.sonarWay);
     }
 
     private static Set<String> readSonarWaySnapshot() throws IOException {
@@ -145,8 +168,16 @@ final class RuleCatalog {
             case "complexity" -> Set.of(COMPLEXITY);
             case "none" -> Set.of();
             case "sonar-way" -> standardSonarWay();
+            case "reliability" -> REVIEWED_SYMBOLIC;
+            case "sonar-way-reliability" -> sonarWayWithReliability();
             default -> throw new IllegalArgumentException("Unknown rule profile: " + profile);
         };
+    }
+
+    private Set<String> sonarWayWithReliability() {
+        Set<String> rules = new TreeSet<>(standardSonarWay());
+        rules.addAll(REVIEWED_SYMBOLIC);
+        return rules;
     }
 
     private Set<String> standardSonarWay() {
