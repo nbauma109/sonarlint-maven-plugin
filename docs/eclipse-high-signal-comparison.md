@@ -49,3 +49,14 @@ The regex cleanup is deliberately **not mapped** to `S4248`: its observed
 source edits are associated with creating a reusable pattern and importing
 support, whereas Sonar flags repeated literal `String.matches` calls at
 another source location. These distinct findings must remain visible.
+
+## Tested complementary use with pinned Sonar Way
+
+For projects using our opt-in `sonar-way` profile, the separate
+[high-signal Eclipse profile](../src/it/high-signal-eclipse/eclipse-cleanups-high-signal.xml)
+provides `cleanup.static_inner_class`. It is absent from pinned Sonar Way
+unless `S2694` is selected explicitly. The real combined-engine test now
+requires this Eclipse warning to survive with all 395 selected Sonar Way checks
+and verifies it in Maven and Gradle. Changing an inner class to `static`
+can affect framework and serialized representations; the plugin reports a
+warning and never changes source code.

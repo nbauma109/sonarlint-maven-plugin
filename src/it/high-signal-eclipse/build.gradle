@@ -13,7 +13,7 @@ java {
 }
 
 staticAnalysis {
-    profile = 'none'
+    profile = providers.gradleProperty('profile').getOrElse('none')
     enabledRules = providers.gradleProperty('enabledRules').getOrElse('java:S4248,java:S2694')
     failOnViolation = false
     eclipseEnabled = true

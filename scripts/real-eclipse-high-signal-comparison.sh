@@ -126,4 +126,33 @@ PY
 
     test "$(sha256sum "$source_file")" = "$original_checksum"
 done
+high_signal_profile="$fixture/eclipse-cleanups-high-signal.xml"
+
+mvn -B -ntp -f "$fixture/pom.xml" process-classes \
+    -DstaticAnalysis.profile=sonar-way \
+    -DstaticAnalysis.eclipseEnabled=true \
+    "-DstaticAnalysis.eclipseExecutable=$RUNNER_TEMP/eclipse-check.sh" \
+    "-DstaticAnalysis.eclipseCleanupProfile=$high_signal_profile" \
+    | tee "$output/maven-sonar-way.log"
+
+gradle --no-daemon -p "$fixture" staticAnalysis \
+    -Pprofile=sonar-way -PenabledRules= \
+    -PcleanupProfile=eclipse-cleanups-high-signal.xml \
+    | tee "$output/gradle-sonar-way.log"
+
+python3 - "$output/maven-sonar-way.log" "$output/gradle-sonar-way.log" <<'PY'
+from pathlib import Path
+import sys
+
+for system, path in (("Maven", Path(sys.argv[1])),
+                     ("Gradle", Path(sys.argv[2]))):
+    log = path.read_text(encoding="utf-8")
+    assert "Activated 395 local Java rule(s)." in log, (system, log)
+    assert "[java:S2694]" not in log, (system, log)
+    assert log.count("[eclipse:cleanup.static_inner_class]") == 1, (system, log)
+    assert "Duplicate Eclipse findings suppressed: 0." in log, (system, log)
+    print(f"{system}: high-signal Eclipse inner class warning complements Sonar Way")
+PY
+
+test "$(sha256sum "$source_file")" = "$original_checksum"
 echo "High-signal Sonar and Eclipse comparison completed without source changes"
