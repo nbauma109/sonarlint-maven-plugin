@@ -1,5 +1,7 @@
 # Static Analysis Maven Plugin
 
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.nbauma109/static-analysis-maven-plugin.svg)](https://central.sonatype.com/artifact/io.github.nbauma109/static-analysis-maven-plugin)
+
 Local Java static analysis for Maven with Checkstyle-like warnings, using the standalone SonarJava engine. Optional Eclipse cleanup analysis runs in a separate, report-only process.
 
 ## Status
@@ -20,8 +22,8 @@ The script verifies source-located findings on Java 8 fixtures, offline executio
 ## Use in a Maven build
 
 Add this plugin inside `<build><plugins>` of the consuming project's
-`pom.xml`. **One profile setting enables the broadest verified built-in rule
-selection** without enumerating hundreds of rule identifiers:
+`pom.xml`. **Enable the broadest verified built-in rule selection and fail the
+build on violations** without enumerating hundreds of rule identifiers:
 
 ```xml
 <plugin>
@@ -30,6 +32,7 @@ selection** without enumerating hundreds of rule identifiers:
     <version>0.1.0</version>
     <configuration>
         <profile>sonar-way</profile>
+        <failOnViolation>true</failOnViolation>
     </configuration>
     <executions>
         <execution>
@@ -44,7 +47,7 @@ selection** without enumerating hundreds of rule identifiers:
 Run a normal Maven build:
 
 ```sh
-mvn verify
+mvn package
 ```
 
 The `check` goal is **automatically bound to `process-classes`**, after
@@ -61,12 +64,13 @@ the broadest built-in profile, **not** every SonarJava rule and not a live
 SonarCloud quality profile. Omitting `<configuration>` uses the lighter
 eight-rule `priority` default.
 
-Violations appear as source-located **Maven warnings**. Builds remain
-successful when findings are reported, unless failure is explicitly requested:
-
-```sh
-mvn verify -DstaticAnalysis.failOnViolation=true
-```
+Violations appear as source-located **Maven warnings**. The recommended
+`<failOnViolation>true</failOnViolation>` setting **fails the build as soon
+as the `check` goal finds violations at `process-classes`**, before later
+lifecycle phases run. This gives developers and automated coding agents a
+clear failure to investigate and fix, rather than allowing the build to
+succeed with unresolved findings. The plugin's underlying default remains
+`false` when this setting is omitted.
 
 No rule list, report server, credentials or external Eclipse installation is
 needed for the local SonarJava analysis. Only production Java sources are
