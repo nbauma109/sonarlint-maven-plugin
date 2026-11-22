@@ -11,7 +11,7 @@ public final class LoggerCategories {
     public static final class WrongCategory {
         private static final Logger LOGGER = LoggerFactory.getLogger(LoggerCategories.class);
 
-        public void record(String message) {
+        public void logMessage(String message) {
             LOGGER.info(message);
         }
     }
@@ -19,7 +19,7 @@ public final class LoggerCategories {
     public static final class CorrectCategory {
         private static final Logger LOGGER = LoggerFactory.getLogger(CorrectCategory.class);
 
-        public void record(String message) {
+        public void logMessage(String message) {
             LOGGER.info(message);
         }
     }
