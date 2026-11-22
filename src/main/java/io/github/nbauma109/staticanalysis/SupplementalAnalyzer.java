@@ -274,8 +274,7 @@ final class SupplementalAnalyzer {
                 return;
             }
             String method = select.getIdentifier().toString();
-            if (!"replaceAll".equals(method) && !"replaceFirst".equals(method)
-                    && !"matches".equals(method)) {
+            if (!"replaceAll".equals(method) && !"replaceFirst".equals(method)) {
                 return;
             }
             Element element = trees.getElement(getCurrentPath());
