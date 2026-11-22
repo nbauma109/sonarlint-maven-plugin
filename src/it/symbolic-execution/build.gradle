@@ -1,0 +1,20 @@
+plugins {
+    id 'java'
+    id 'io.github.nbauma109.static-analysis'
+}
+
+repositories {
+    mavenCentral()
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+}
+
+staticAnalysis {
+    profile = providers.gradleProperty('analysisProfile').getOrElse('none')
+    enabledRules = 'java:S2259,java:S2095,java:S3655'
+    symbolicEnabled = providers.gradleProperty('symbolicEnabled')
+            .map(String::toBoolean).getOrElse(true)
+}

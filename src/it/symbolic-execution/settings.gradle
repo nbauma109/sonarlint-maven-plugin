@@ -1,0 +1,10 @@
+pluginManagement {
+    includeBuild('../../../gradle-plugin')
+
+    repositories {
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+
+rootProject.name = 'symbolic-execution-fixture'
