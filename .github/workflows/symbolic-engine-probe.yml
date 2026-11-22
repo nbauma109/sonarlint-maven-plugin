@@ -1,0 +1,27 @@
+name: Verify compatible symbolic execution artifact
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  symbolic-probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+      - name: Verify matching Java symbolic execution analyzer
+        run: bash scripts/symbolic-engine-probe.sh
+      - name: Upload analyzer manifest and rule inventory
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: symbolic-analyzer-inventory
+          path: target/symbolic-engine-probe/
