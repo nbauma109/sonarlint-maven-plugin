@@ -12,7 +12,8 @@ SonarJava rules under Java 25:
 Neither `S4248` nor `S2694` belongs to the pinned Sonar Way snapshot,
 but teams can select them individually. A corresponding Sonar warning is
 therefore **profile-dependent**, not always available. The test deliberately
-enables both Sonar rules, while retaining Eclipse findings because no
+enables both Sonar rules and requires real positive findings, while retaining
+Eclipse findings because no
 verified duplicate-suppression mapping exists.
 
 The [real-engine script](../scripts/real-eclipse-high-signal-comparison.sh)
@@ -28,3 +29,8 @@ previously observed two `precompile_regex` reported edits and one
 the two build adapters preserve that information consistently.
 
 No recommended, broad or aesthetics profile is changed by this test.
+
+The fixture includes literal-pattern and dynamically supplied-pattern calls:
+the former is eligible for the pinned `S4248` detector, while the latter
+must not be treated as an equivalent static-constant opportunity. This
+helps expose different detection scopes before considering deduplication.

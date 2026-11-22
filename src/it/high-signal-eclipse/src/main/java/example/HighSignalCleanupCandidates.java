@@ -12,6 +12,14 @@ public final class HighSignalCleanupCandidates {
         return first.matches(expression) && second.matches(expression);
     }
 
+    public boolean repeatedLiteralRegularExpression(String first, String second) {
+        return first.matches("[a-z]+") && second.matches("[a-z]+");
+    }
+
+    public boolean dynamicRegularExpression(String value, String expression) {
+        return value.matches(expression);
+    }
+
     private class StatelessInner {
         int doubleValue(int value) {
             return value * 2;
