@@ -1,7 +1,6 @@
 package io.github.nbauma109.staticanalysis;
 
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -147,7 +146,7 @@ public final class CheckTestsMojo extends AbstractMojo {
     }
 
     private String sourceLevel() {
-        for (String candidate : List.of(testRelease, release, testSource, source)) {
+        for (String candidate : new String[] {testRelease, release, testSource, source}) {
             if (candidate != null && !candidate.isBlank()
                     && !candidate.startsWith("${")) {
                 return candidate;
