@@ -169,8 +169,15 @@ final class RuleCatalog {
             case "none" -> Set.of();
             case "sonar-way" -> standardSonarWay();
             case "reliability" -> REVIEWED_SYMBOLIC;
+            case "sonar-way-reliability" -> sonarWayWithReliability();
             default -> throw new IllegalArgumentException("Unknown rule profile: " + profile);
         };
+    }
+
+    private Set<String> sonarWayWithReliability() {
+        Set<String> rules = new TreeSet<>(standardSonarWay());
+        rules.addAll(REVIEWED_SYMBOLIC);
+        return rules;
     }
 
     private Set<String> standardSonarWay() {

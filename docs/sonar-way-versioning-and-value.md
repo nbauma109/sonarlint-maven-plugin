@@ -38,7 +38,9 @@ The selected rules are:
 
 These are correctness and reliability checks, not cosmetic refactorings.
 The `reliability` profile loads the compatible pinned symbolic analyzer
-alongside SonarJava, activates exactly these three rules, and checks an
+alongside SonarJava and activates exactly these three rules. The
+`sonar-way-reliability` profile combines the same three rules with the 392
+pinned standard rules for **395 local checks**. Both profiles check an
 unclosed resource, null dereference, and unsafe `Optional.get()`. Safe controls
 and disabled-rule precedence are part of the integration fixtures. The other
 18 symbolic entries remain catalogued but unavailable; their identifiers are

@@ -128,7 +128,8 @@ public abstract class StaticAnalysisTask extends DefaultTask {
     private List<Issue> runSonar(Path project, Path work, List<JavaSourceFile> files)
             throws IOException {
         Path analyzer = analyzerConfiguration.getSingleFile().toPath();
-        boolean useSymbolicAnalyzer = "reliability".equals(extension.getProfile());
+        boolean useSymbolicAnalyzer = "reliability".equals(extension.getProfile())
+                || "sonar-way-reliability".equals(extension.getProfile());
         Path symbolicAnalyzer = null;
         RuleCatalog catalog;
         if (useSymbolicAnalyzer) {
