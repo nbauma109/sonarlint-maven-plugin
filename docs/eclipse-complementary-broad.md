@@ -42,10 +42,11 @@ when runtime system properties are overridden.
 The real-engine workflow compiles the Java 25 fixture with a module declaration, runs
 the pinned Sonar analyzer and Eclipse cleanup importer in both build systems, and
 requires exact Eclipse rule identifiers. For the fixture it verifies eight new
-cleanup identifiers, confirms redundant modifiers produce one warning, checks that
-there are no suppressed diagnostics, compares Maven and Gradle results and ensures
+cleanup identifiers, checks that there are no suppressed diagnostics, compares Maven and Gradle results and ensures
 the original source files remain unchanged. Existing coverage verifies the five
-previous system-property options separately.
+previous system-property options separately. A second opt-in test verifies the two
+aesthetic cleanups and one diagnostic per modifier change, without enabling them
+in either maintainability profile.
 
 [Candidate profile](../src/it/broad-complementary/eclipse-cleanups-candidates.xml)
 contains additional cleanup options being screened. It is not intended as the

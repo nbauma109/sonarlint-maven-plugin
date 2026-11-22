@@ -29,7 +29,7 @@ source line or superficially similar rule title as proof of duplication.
 | `cleanup.module_imports` | **Java 25 migration** in broad profile | Only useful in an explicit module/import modernization effort. |
 | `cleanup.system_property_* ` | **Compatibility review** in broad profile | Seven distinct options are available; replacing a property lookup can change the effect of runtime overrides. |
 | `cleanup.array_with_curly` | **Aesthetics only**, separate opt-in profile | Shorter array-initializer syntax, explicitly requested as an aesthetic convention. |
-| `cleanup.remove_redundant_modifiers` | **Keep for aesthetics**, opt-in Eclipse | Removes redundant interface and other modifiers; useful for consistency. |
+| `cleanup.remove_redundant_modifiers` | **Aesthetics only**, separate opt-in profile | Removes redundant interface and other modifiers; useful for consistency. |
 | Sonar `S1124` (modifier ordering) | **Keep**, pinned Sonar Way | Checks Java Language Specification modifier ordering; no separate Eclipse member-sort rule is needed. |
 | Sonar `S1155` (`isEmpty()` instead of `size() == 0`) | **Keep**, pinned Sonar Way | Prefer an explicit collection emptiness check; uses Sonar's existing detector. |
 
@@ -78,20 +78,20 @@ These are *screening priorities*, not endorsed automatic transformations. A new
 rule needs real Eclipse positive and negative fixtures, a selected Sonar Way
 comparison, a non-mutating report, and a reason the diagnostic merits attention.
 
-## Aesthetic preferences (available, off by default)
+## Aesthetic preferences (profile off by default)
 
 | Candidate | Recommended policy | Reason |
 | --- | --- | --- |
 | `i++` versus `++i` | **Do not report** | Prefix and postfix have different values when used in expressions; blanket rewriting is not safe. |
 | `java:S818` / `cleanup.number_suffix` | **Style-only** | Lowercase `l` versus uppercase `L`; a clarity convention, outside our pinned Sonar Way. |
 | `cleanup.make_local_variable_final`, `cleanup.make_parameters_final`, `cleanup.make_variable_declarations_final` | **Aesthetics profile, initially disabled** | Do not require `final` on parameters or local variables. |
-| `cleanup.use_var`, `cleanup.insert_inferred_type_arguments` | **Explicitly exclude from both Eclipse profiles** | Do not enforce `var` instead of explicit types or the reverse. |
+| `cleanup.use_var`, `cleanup.insert_inferred_type_arguments` | **Aesthetics profile, initially disabled** | Do not enforce `var` instead of explicit types or the reverse. |
 | `cleanup.always_use_parentheses_in_expressions`, `cleanup.never_use_parentheses_in_expressions` | **Aesthetics profile, individually disabled** | These are mutually exclusive conventions; select at most one. |
 | `cleanup.sort_members`, `cleanup.sort_members_all` | **Aesthetics profile, initially disabled** | Declaration ordering is a preference; sort carefully around initialization semantics. |
 | `cleanup.correct_indentation`, `cleanup.remove_trailing_whitespaces`, `cleanup.format_source_code` | **Aesthetics profile, initially disabled** | Formatting is a preference; prefer a formatter if enabled. |
 | `cleanup.use_anonymous_class_creation`, `cleanup.use_lambda` | **Do not recommend automatically** | Expression form preference; the latter overlaps active Sonar `S1604` on tested shapes. |
 | `cleanup.always_use_this_for_non_static_field_access` | **Aesthetics candidate, not enabled** | Repeated qualification adds noise without stronger semantics. |
-| `cleanup.remove_unnecessary_nls_tags`, `cleanup.add_missing_nls_tags` | **Project-specific** | Localization tagging policy, not an unconditional maintainability improvement. |
+| `cleanup.remove_unnecessary_nls_tags`, `cleanup.add_missing_nls_tags` | **Project-specific, optional** | Localization tagging policy, not an unconditional maintainability improvement. |
 | `cleanup.array_with_curly`, `cleanup.remove_redundant_modifiers` | **Aesthetics only** | Enabled solely in the separate opt-in aesthetics profile, not mistaken for correctness bugs. |
 
 ## Guardrails
