@@ -20,8 +20,8 @@ jobs:
           distribution: temurin
           java-version: '25'
           cache: maven
-      - name: Compile JDT core manipulation probe
-        run: mvn -B -ntp -DskipTests test-compile
+      - name: Compile embedded JDT core manipulation probe
+        run: mvn -B -ntp -f src/it/embedded-jdt-core/pom.xml compile
       - name: Checkout pinned transformer-api
         uses: actions/checkout@v4
         with:
@@ -39,7 +39,7 @@ jobs:
         run: |
           set -euo pipefail
           export PROBE_CLASSPATH="$(cat transformer-api/target/embedded-jdt-classpath.txt)"
-          mvn -B -ntp org.codehaus.mojo:exec-maven-plugin:3.5.1:java \
+          mvn -B -ntp -f src/it/embedded-jdt-core/pom.xml \
+            org.codehaus.mojo:exec-maven-plugin:3.5.1:java \
             -Dexec.mainClass=io.github.nbauma109.staticanalysis.EmbeddedJdtCleanupProbe \
-            -Dexec.classpathScope=test \
-            -Dexec.args=transformer-api
+            "-Dexec.args=$GITHUB_WORKSPACE/transformer-api"
