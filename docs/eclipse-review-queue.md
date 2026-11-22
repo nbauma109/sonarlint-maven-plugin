@@ -1,21 +1,21 @@
 # Eclipse review queue — pending validation, not automatic enablement
 
 The [machine-checkable queue](eclipse-pending-review-queue.csv) tracks all
-**103 unresolved Eclipse options**, without implying that they have been tested
+**101 unresolved Eclipse options**, without implying that they have been tested
 or are safe to enable. It is generated from our pinned 147-option catalog and
-the ten real-engine-verified duplicate mappings.
+the twelve real-engine-verified duplicate mappings.
 
 | Backlog | Count | Current policy |
 | --- | ---: | --- |
-| Potential overlaps without exact-once verification | 24 | Do not add a duplicate mapping yet |
+| Potential overlaps without exact-once verification | 22 | Do not add a duplicate mapping yet |
 | Unclassified Eclipse options | 79 | Do not enable as recommended warnings yet |
-| **Total needing evidence** | **103** | Preserve current profiles |
+| **Total needing evidence** | **101** | Preserve current profiles |
 
 ## Review sequencing
 
 | Priority | Count | Meaning |
 | --- | ---: | --- |
-| P1 | 16 | Highest-value correctness, lifecycle or substantive replacement candidates |
+| P1 | 14 | Highest-value correctness, lifecycle or substantive replacement candidates |
 | P2 | 34 | Useful modernization, performance or maintainability candidates |
 | P3 | 25 | Needs scope research or is lower impact |
 | P4 | 28 | Aesthetics, parent toggles and convention-sensitive overlaps |
@@ -38,15 +38,15 @@ observations do not establish equivalence to Sonar rules,
 or validates that a warning is safe for the recommended profile.
 
 The pinned Sonar Way snapshot lists candidate rules for
-**18** of the unresolved entries
+**16** of the unresolved entries
 (all are potential overlaps), but being listed does **not** guarantee a rule
 is executable or active in the selected local profile. 8
 unresolved options have candidate rule identifiers absent from the pinned
 snapshot. Actual activation must be verified at runtime.
 
 The next high-value combined-engine tests should examine `cleanup.precompile_regex`
-against explicitly enabled `S4248`, an unused-parameter/field family against the corresponding active
-Sonar rules. Negative controls must verify both disabling duplicate filtering
+against explicitly enabled `S4248` and the remaining unused-parameter checks against
+active Sonar rules. Unused private fields and methods now have exact-once integration evidence. Negative controls must verify both disabling duplicate filtering
 and disabling each candidate Sonar rule. For supplementary changes on the
 same line, compare precise text ranges rather than discarding all warnings.
 
