@@ -30,6 +30,28 @@ grep -F 'Sonar found 1 violation(s).' "$logs/failure.log"
 mvn -B -ntp -o -f "$fixture" process-classes -DstaticAnalysis.profile=complexity -DstaticAnalysis.cognitiveComplexityThreshold=100 | tee "$logs/clean.log"
 grep -F 'Sonar analysis: 0 violation(s).' "$logs/clean.log"
 
+logger_fixture=src/it/logger-categories/pom.xml
+if mvn -B -ntp -f "$logger_fixture" package > "$logs/logger-category-strict.log" 2>&1; then
+    cat "$logs/logger-category-strict.log"
+    echo "Expected the normal Maven build to fail at process-classes for an incorrect logger category." >&2
+    exit 1
+fi
+grep -F 'Activated 395 local Java rule(s).' "$logs/logger-category-strict.log"
+grep -E '\[WARNING\].*LoggerCategories\.java:[0-9]+ \[java:S3416\] Update this logger to use "WrongCategory.class".' \
+    "$logs/logger-category-strict.log"
+logger_issues="$(grep -Ec '\[WARNING\].*\[java:S3416\]' "$logs/logger-category-strict.log" || true)"
+if [ "$logger_issues" -ne 1 ]; then
+    cat "$logs/logger-category-strict.log"
+    echo "Expected one S3416 finding for the wrong logger and none for the matching logger." >&2
+    exit 1
+fi
+grep -F 'Sonar found 1 violation(s).' "$logs/logger-category-strict.log"
+
+mvn -B -ntp -o -f "$logger_fixture" process-classes \
+    -DstaticAnalysis.disabledRules=java:S3416 | tee "$logs/logger-category-disabled.log"
+grep -F 'Activated 394 local Java rule(s).' "$logs/logger-category-disabled.log"
+grep -F 'Sonar analysis: 0 violation(s).' "$logs/logger-category-disabled.log"
+
 priority_fixture=src/it/priority-rules/pom.xml
 mvn -B -ntp -o -f "$priority_fixture" process-classes | tee "$logs/priority.log"
 for rule in S100 S107 S112 S1128 S1192 S1066 S1481 S3776; do

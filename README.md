@@ -50,6 +50,12 @@ Run a normal Maven build:
 mvn package
 ```
 
+For the fastest local check **before committing or pushing**, run
+`mvn process-classes`. This compiles production Java sources and runs the
+strict static analysis goal immediately, without waiting for tests or
+packaging. Fix any reported violations and rerun the command before
+sending changes to GitHub.
+
 The `check` goal is **automatically bound to `process-classes`**, after
 `compile` and before tests and packaging. Its Maven goal descriptor already
 declares that phase, so there is no need to repeat a `<phase>` element in the

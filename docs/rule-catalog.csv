@@ -388,7 +388,7 @@ java:S3398,standard,YES,LOCAL_STANDARD_CANDIDATE,,,,UNKNOWN,UNVERIFIED,org/sonar
 java:S3400,standard,YES,LOCAL_STANDARD_CANDIDATE,,,,UNKNOWN,UNVERIFIED,org/sonar/l10n/java/rules/java/S3400.json
 java:S3414,standard,NO,LOCAL_STANDARD_CANDIDATE,,,,UNKNOWN,UNVERIFIED,org/sonar/l10n/java/rules/java/S3414.json
 java:S3415,standard,YES,LOCAL_STANDARD_CANDIDATE,,,,UNKNOWN,UNVERIFIED,org/sonar/l10n/java/rules/java/S3415.json
-java:S3416,standard,YES,LOCAL_STANDARD_CANDIDATE,,,,UNKNOWN,UNVERIFIED,org/sonar/l10n/java/rules/java/S3416.json
+java:S3416,standard,YES,LOCAL_SEMANTIC_CANDIDATE,,,,UNKNOWN,OFFLINE_POSITIVE_VERIFIED,org/sonar/l10n/java/rules/java/S3416.json
 java:S3436,standard,YES,LOCAL_STANDARD_CANDIDATE,,,,UNKNOWN,UNVERIFIED,org/sonar/l10n/java/rules/java/S3436.json
 java:S3437,standard,NO,LOCAL_STANDARD_CANDIDATE,,,,UNKNOWN,UNVERIFIED,org/sonar/l10n/java/rules/java/S3437.json
 java:S3457,standard,YES,LOCAL_STANDARD_CANDIDATE,,,,UNKNOWN,UNVERIFIED,org/sonar/l10n/java/rules/java/S3457.json

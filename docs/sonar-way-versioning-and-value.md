@@ -23,6 +23,54 @@ symbolic snapshot membership with [the catalog](rule-catalog.csv).
 A deliberate analyzer upgrade must review and update the versioned resources,
 eligibility count, tests and rule-value policy together.
 
+## Evidence for logger-category rule `S3416`
+
+The pinned Sonar Way profile contains `java:S3416`, and our
+`sonar-way` selection activates it. The investigation of
+[`transformer-api` pull request #244](https://github.com/nbauma109/transformer-api/pull/244)
+confirmed that this was **not** a missing local rule:
+
+1. The first build detected `S106` for `System.out` and `S1452` for
+   generic wildcard return types. The mismatched logger declarations did
+   not exist in that version of the code.
+2. The logging replacement introduced two logger declarations whose
+   categories referred to different classes. The [next Maven analysis
+   run](https://github.com/nbauma109/transformer-api/actions/runs/45068291586)
+   reported **two `S3416` violations and failed at `process-classes`**.
+3. After correcting both categories, the [following Maven run](https://github.com/nbauma109/transformer-api/actions/runs/45068364110)
+   reported **395 active rules, zero violations, and 80 passing tests**.
+
+The integration fixture at `src/it/logger-categories` now tests this
+behavior from a normal Maven build: a mismatched SLF4J logger category
+must fail with exactly one `S3416` finding, whereas the matching
+category is not reported. Disabling that rule must make the same
+fixture pass. This guards against future profile-selection and
+analysis-execution regressions, including local builds.
+
+**This is not a guarantee of SonarCloud parity.** The local profile is
+pinned to SonarJava `8.6.0.37351`, whereas SonarCloud uses its own
+evolving analyzer and project-specific quality profile. Known
+capability gaps include:
+
+- **99 standard entries** from the pinned 491-rule Sonar Way snapshot
+  excluded by the local eligibility and reporting policy; this count
+  is not proof that all 99 could emit valid local findings.
+- **18 symbolic rules** from the pinned 21-rule symbolic snapshot
+  that have not been reviewed or enabled locally.
+- **Test-source rules**, because the current Maven goal analyzes
+  production sources only.
+- **Server-dependent security analysis**, and newly added or changed
+  rules in SonarCloud that are not implemented by the pinned analyzer.
+
+To investigate a *real* missed finding, preserve its SonarCloud rule
+identifier, file, source range, code version and effective quality
+profile. First check whether the identifier is supported and selected,
+then reproduce the same source with a compiled dependency classpath
+under `process-classes`, checking both a positive case and a
+non-triggering control. Do not treat a count of activated rule keys
+as evidence that every rule will produce identical findings across
+engines or analyzer versions.
+
 ## Missing local coverage worth pursuing
 
 The pinned release also contains [21 symbolic Sonar Way rules](sonar-way-symbolic-java-8.6.0.37351.rules)
