@@ -21,7 +21,7 @@ was corrected: `cleanup.boolean_literal` converts `Boolean.TRUE` and
 | Style policy | 18 | Preferences disabled unless selected explicitly |
 | **Total** | **147** | |
 
-**Nine exact mappings** have passed full real Sonar plus Eclipse deduplication
+**9 exact mappings** have passed full real Sonar plus Eclipse deduplication
 regression in both Maven and Gradle: `S1128` (unused imports), `S1905`
 (redundant casts), `S1481` (unused local variables), `S1161` (missing
 `@Override`), `S2093` (try-with-resources), `S2129` (unnecessary
@@ -60,7 +60,7 @@ explicitly **not** the boolean-comparison cleanup.
 ## What remains
 
 **24 candidate overlap classifications** lack a fully verified
-combined-engine deduplication mapping. An additional 80 options
+combined-engine deduplication mapping. An additional **80 options**
 remain under review. These are work items, not 108 confirmed duplicates.
 
 Our opt-in Eclipse profiles separately provide **3 maintainability**, **13 broad

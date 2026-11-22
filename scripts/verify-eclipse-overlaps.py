@@ -50,7 +50,7 @@ def main() -> None:
         raise ValueError(f"Verified overlap mappings changed: {mappings}")
     for cleanup, rule in mappings.items():
         row = by_id[cleanup]
-        if row["triage"] != "SONAR_OVERLAP" or row["sonar_rule"] != rule:
+        if row["triage"] != "SONAR_OVERLAP" or row["sonar_candidates"] != rule:
             raise ValueError(f"Incorrect overlap classification: {cleanup}, {rule}")
 
     audit = AUDIT.read_text(encoding="utf-8")
