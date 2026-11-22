@@ -82,6 +82,8 @@ jobs:
         run: bash scripts/real-eclipse-complementary-test.sh
       - name: Probe broad complementary Eclipse diagnostics in Maven and Gradle
         run: bash scripts/real-eclipse-broad-test.sh
+      - name: Verify four further real Sonar and Eclipse overlap mappings
+        run: bash scripts/real-eclipse-more-overlaps-test.sh
       - name: Upload real integration logs
         if: always()
         uses: actions/upload-artifact@v4
@@ -89,6 +91,7 @@ jobs:
           name: real-eclipse-integration
           path: |
             target/real-eclipse-integration/
+            target/verified-overlaps/
             target/real-eclipse-complementary/
             target/real-eclipse-broad/
             src/it/real-eclipse/target/static-analysis/eclipse/

@@ -162,6 +162,46 @@ class EclipseDuplicateFilterTest {
     }
 
     @Test
+    void suppressesOnlyTheFourNewExactSourceOverlaps() throws IOException {
+        String code = """
+                package example;
+                final class NewOverlaps {
+                    String value() { return new String("literal"); }
+                    void action(String... words) {
+                        accept(new String[] {"one", "two"});
+                        return;
+                    }
+                    void accept(String... words) { }
+                    java.util.List<String> items() {
+                        java.util.List<String> result = new java.util.ArrayList<String>();
+                        return result;
+                    }
+                }
+                """;
+        writeSource(code);
+        String[][] cases = {
+            {"cleanup.no_string_creation", "java:S2129", "new String(\"literal\")"},
+            {"cleanup.remove_redundant_type_arguments", "java:S2293", "<String>();"},
+            {"cleanup.remove_unnecessary_array_creation", "java:S3878", "new String[]"},
+            {"cleanup.useless_return", "java:S3626", "return;"}
+        };
+        for (String[] item : cases) {
+            EclipseCleanupRunner.Diagnostic edit = finding(item[0], item[2], code);
+            Issue sameIssue = sonarIssue(item[1], item[2], code);
+            Issue differentIssue = sonarIssue("java:S1128", item[2], code);
+            assertTrue(EclipseDuplicateFilter.isDuplicate(edit, List.of(sameIssue), project),
+                    item[0]);
+            assertFalse(EclipseDuplicateFilter.isDuplicate(edit, List.of(differentIssue), project),
+                    item[0]);
+            assertFalse(EclipseDuplicateFilter.isDuplicate(edit, List.of(), project),
+                    item[0]);
+            assertFalse(EclipseDuplicateFilter.isDuplicate(
+                    finding("cleanup.add_all", item[2], code),
+                    List.of(sameIssue), project), item[0]);
+        }
+    }
+
+    @Test
     void preservesComplementaryCleanupsEvenWhenSonarReportsTheSameText() throws IOException {
         writeSource(SOURCE);
         Issue sonar = sonarIssue("java:S1128", "java.util.List", SOURCE);
