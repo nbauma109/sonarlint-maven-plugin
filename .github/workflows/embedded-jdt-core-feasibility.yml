@@ -21,6 +21,17 @@ jobs:
         with:
           distribution: temurin
           java-version: ${{ matrix.java }}
+      - name: Audit embedded JDT library dependency graph
+        if: matrix.java == '17'
+        run: |
+          mvn -B -ntp -f src/it/embedded-jdt-core-cleanups/pom.xml \
+            dependency:tree -DoutputFile="$PWD/embedded-jdt-dependencies.txt"
+          cat embedded-jdt-dependencies.txt
+          if grep -E 'org[.]eclipse[.]swt:|org[.]eclipse[.]jdt:org[.]eclipse[.]jdt[.]ui:|org[.]eclipse[.]equinox:org[.]eclipse[.]equinox[.]app:' \
+              embedded-jdt-dependencies.txt; then
+            echo "An Eclipse user interface/application artifact entered the core-only classpath." >&2
+            exit 1
+          fi
       - name: Compile and exercise embedded JDT core cleanup logic
         run: |
           mvn -B -ntp -f src/it/embedded-jdt-core-cleanups/pom.xml \
