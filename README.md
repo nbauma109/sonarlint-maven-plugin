@@ -4,7 +4,7 @@ Local Java static analysis for Maven with Checkstyle-like warnings, using the st
 
 ## Status
 
-Experimental, unreleased proof of concept. The priority profile activates eight standard Java rules. Rule metadata and Sonar Way membership are discovered from the locally resolved analyzer archive. The expanded integration suite must pass before release. The analyzer is pinned to its LGPL-era release; modern SonarCloud rule parity is not claimed.
+The initial release is [0.1.0](https://github.com/nbauma109/static-analysis-maven-plugin/releases/tag/0.1.0). The plugin reports Java diagnostics locally during Maven builds. Its default `priority` profile selects eight rules; the broader `sonar-way` profile below selects 395 eligible, locally supported rules, including three symbolic reliability checks. The analyzer is pinned to an older SonarJava release, so parity with current SonarCloud analysis is not claimed. Eclipse cleanup analysis remains experimental and opt-in.
 
 ## Build and test
 
@@ -17,22 +17,20 @@ bash scripts/integration-test.sh
 
 The script verifies source-located findings on Java 8 fixtures, offline execution, optional build failure, configurable complexity threshold, the priority and Sonar Way profiles, rule selection and unsupported-rule rejection.
 
-## Maven Central release preparation
+## Use in a Maven build
 
-The Maven artifact is prepared for a signed release through the Maven Release
-Plugin and Sonatype's Central Publishing Portal. See the
-[release procedure](docs/maven-central-release.md) for validation, credentials,
-signing, unprefixed version tags, GitHub Releases and Maven Central publishing. Until the first release is visible on
-Maven Central, use the locally installed snapshot below. The separate Gradle
-adapter is not published by this Maven release procedure.
-
-## Usage from a locally installed snapshot
+Add this plugin inside `<build><plugins>` of the consuming project's
+`pom.xml`. **One profile setting enables the broadest verified built-in rule
+selection** without enumerating hundreds of rule identifiers:
 
 ```xml
 <plugin>
     <groupId>io.github.nbauma109</groupId>
     <artifactId>static-analysis-maven-plugin</artifactId>
-    <version>0.1.0-SNAPSHOT</version>
+    <version>0.1.0</version>
+    <configuration>
+        <profile>sonar-way</profile>
+    </configuration>
     <executions>
         <execution>
             <goals>
@@ -43,18 +41,60 @@ adapter is not published by this Maven release procedure.
 </plugin>
 ```
 
-Run `mvn process-classes`, `mvn test` or a later lifecycle phase. The goal runs after compilation. For a direct invocation:
+Run a normal Maven build:
 
 ```sh
-mvn compile io.github.nbauma109:static-analysis-maven-plugin:0.1.0-SNAPSHOT:check
+mvn verify
 ```
+
+The `check` goal is **automatically bound to `process-classes`**, after
+`compile` and before tests and packaging. Its Maven goal descriptor already
+declares that phase, so there is no need to repeat a `<phase>` element in the
+plugin configuration. This binding runs analysis during `mvn test`,
+`mvn package`, `mvn verify` and `mvn install`; `mvn compile` alone stops
+before the analysis phase.
+
+The `sonar-way` profile selects **395 local Java rules**: 392 supported rules
+from the pinned Sonar Way snapshot plus three reviewed symbolic checks for
+resource leaks, null dereferences and unsafe `Optional.get()` calls. It is
+the broadest built-in profile, **not** every SonarJava rule and not a live
+SonarCloud quality profile. Omitting `<configuration>` uses the lighter
+eight-rule `priority` default.
+
+Violations appear as source-located **Maven warnings**. Builds remain
+successful when findings are reported, unless failure is explicitly requested:
+
+```sh
+mvn verify -DstaticAnalysis.failOnViolation=true
+```
+
+No rule list, report server, credentials or external Eclipse installation is
+needed for the local SonarJava analysis. Only production Java sources are
+analyzed, using the compiled classes and resolved compile classpath. The
+plugin requires Maven 3.9.9 and Java 17 or later to run, although projects
+may target earlier Java versions.
+
+For a one-off invocation outside the lifecycle binding, compile first:
+
+```sh
+mvn compile io.github.nbauma109:static-analysis-maven-plugin:0.1.0:check -DstaticAnalysis.profile=sonar-way
+```
+
+If the initial release has not yet appeared in the configured Maven plugin
+repositories, use the [0.1.0 GitHub Release](https://github.com/nbauma109/static-analysis-maven-plugin/releases/tag/0.1.0)
+or install the plugin locally; Maven Central indexing may lag behind the
+release workflow. The [release procedure](docs/maven-central-release.md)
+documents publishing. The separate Gradle adapter is not published by this
+Maven release.
+
+### Optional configuration
 
 | Property | Default | Purpose |
 | --- | --- | --- |
 | `staticAnalysis.skip` | `false` | Skip analysis |
 | `staticAnalysis.failOnViolation` | `false` | Fail if any violation is reported |
 | `staticAnalysis.cognitiveComplexityThreshold` | `15` | Maximum allowed cognitive complexity |
-| `staticAnalysis.profile` | `priority` | priority, complexity, sonar-way, sonar-way-standard, reliability, sonar-way-reliability or none |
+| `staticAnalysis.profile` | `priority` | `priority`, `complexity`, `sonar-way`, `sonar-way-standard`, `reliability`, `sonar-way-reliability` or `none` |
 | `staticAnalysis.enabledRules` | empty | Comma-separated additional rule keys |
 | `staticAnalysis.disabledRules` | empty | Comma-separated exclusions, taking precedence |
 | `staticAnalysis.eclipseEnabled` | `false` | Enable a separate Eclipse cleanup process |
@@ -63,7 +103,8 @@ mvn compile io.github.nbauma109:static-analysis-maven-plugin:0.1.0-SNAPSHOT:chec
 | `staticAnalysis.eclipseDuplicatePolicy` | `prefer-sonar` | Suppress verified overlapping Sonar findings, or `none` |
 | `staticAnalysis.eclipseTimeoutSeconds` | `600` | Eclipse process timeout in seconds |
 
-The plugin analyzes production Java source roots and their resolved compile classpath. It has no server configuration, authentication token or report upload. Normal Maven dependency downloads may occur on the first build. Once dependencies are cached, use Maven offline mode (`-o`).
+Normal Maven dependency downloads may occur on the first build. Once
+dependencies are cached, Maven offline mode (`-o`) is supported.
 
 ## Pinned Sonar Way membership
 
@@ -125,7 +166,7 @@ Property names are case-sensitive. Explicit property overrides take precedence o
 
 ## Limitations
 
-Only production Java sources are analyzed. Three reviewed symbolic execution rules are available through `sonar-way`, `reliability` and the compatibility alias `sonar-way-reliability`. Test-source analysis, security review reporting, complete rule parameter validation, reactor tests, modern language compatibility, and XML reporting are not yet implemented. The older analyzer and engine require a security and compatibility review before publication.
+Only production Java sources are analyzed. Three reviewed symbolic execution rules are available through `sonar-way`, `reliability` and the compatibility alias `sonar-way-reliability`. Test-source analysis, security review reporting, complete rule parameter validation, reactor tests, modern language compatibility, and XML reporting are not yet implemented. The older analyzer and engine still warrant a security and compatibility review before being treated as substitutes for current Sonar analysis.
 
 See [the design](docs/design.md) and [licensing considerations](docs/licensing.md).
 
