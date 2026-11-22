@@ -45,6 +45,15 @@ class StaticAnalysisGradlePluginTest {
     }
 
     @Test
+    void loadsVersionedSonarWayRulesFromGradlePluginResources() throws IOException {
+        prepare("sonar-way", false, 15);
+        BuildResult result = run("staticAnalysis");
+        assertTrue(result.getOutput().contains("Activated 392 local Java rule(s)."),
+                result.getOutput());
+        assertTrue(result.getOutput().contains("[java:S3776]"), result.getOutput());
+    }
+
+    @Test
     void rejectsServerOnlyRules() throws IOException {
         prepare("none", false, 15);
         Files.writeString(projectDirectory.resolve("build.gradle"), configuration("none", false, 15)

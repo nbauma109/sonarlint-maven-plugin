@@ -56,6 +56,23 @@ mvn compile io.github.nbauma109:static-analysis-maven-plugin:0.1.0-SNAPSHOT:chec
 
 The plugin analyzes production Java source roots and their resolved compile classpath. It has no server configuration, authentication token or report upload. Normal Maven dependency downloads may occur on the first build. Once dependencies are cached, use Maven offline mode (`-o`).
 
+## Pinned Sonar Way membership
+
+The Java Sonar Way selection is versioned in
+[`sonar-way-java-8.6.0.37351.rules`](src/main/resources/io/github/nbauma109/staticanalysis/sonar-way-java-8.6.0.37351.rules).
+It contains 491 upstream Java rule identifiers; 392 qualify for our local
+standalone production analyzer after scope, status, security, and template
+restrictions. The analyzer checks the resource against the actual pinned Java
+plugin archive and fails if its membership or eligible rule count changes.
+Maven and Gradle use the same snapshot.
+
+The separate [21 symbolic Sonar Way rules](docs/sonar-way-symbolic-java-8.6.0.37351.rules)
+are **not active** in our standalone analyzer. We prioritize resource leaks,
+null dereferences and unsafe `Optional` access for a separately tested symbolic
+engine, rather than silently claiming those checks. We do not automatically
+promote cosmetic rules such as uppercase literal suffixes or wholesale increment
+rewriting. See [the rule selection policy](docs/sonar-way-versioning-and-value.md).
+
 ## Rule profiles
 
 - `priority`: S100, S107, S112, S1128, S1192, S1066, S1481 and S3776.

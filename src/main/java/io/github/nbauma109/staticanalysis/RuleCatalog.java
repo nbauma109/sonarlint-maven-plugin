@@ -2,7 +2,9 @@ package io.github.nbauma109.staticanalysis;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
@@ -22,6 +24,8 @@ final class RuleCatalog {
 
     private static final String RESOURCE_PATH = "org/sonar/l10n/java/rules/java/";
     private static final String PREFIX = "java:";
+    private static final String SONAR_WAY_SNAPSHOT = "/io/github/nbauma109/staticanalysis/sonar-way-java-8.6.0.37351.rules";
+    private static final int EFFECTIVE_SONAR_WAY_RULE_COUNT = 392;
     private static final String COMPLEXITY = "java:S3776";
     private static final Set<String> PRIORITY = Set.of(COMPLEXITY, "java:S100", "java:S107",
             "java:S1192", "java:S1066", "java:S1128", "java:S1481", "java:S112");
@@ -57,12 +61,43 @@ final class RuleCatalog {
             if (profile == null || definitions.isEmpty()) {
                 throw new IOException("The analyzer does not contain Java rule metadata and Sonar Way profile.");
             }
-            Set<String> defaults = new TreeSet<>();
+            Set<String> embedded = new TreeSet<>();
             for (var key : readJson(archive, profile).getAsJsonArray("ruleKeys")) {
-                defaults.add(PREFIX + key.getAsString());
+                embedded.add(PREFIX + key.getAsString());
             }
-            return new RuleCatalog(definitions, defaults);
+            Set<String> snapshot = readSonarWaySnapshot();
+            if (!embedded.equals(snapshot)) {
+                Set<String> missingFromAnalyzer = new TreeSet<>(snapshot);
+                missingFromAnalyzer.removeAll(embedded);
+                Set<String> missingFromSnapshot = new TreeSet<>(embedded);
+                missingFromSnapshot.removeAll(snapshot);
+                throw new IOException("Pinned Sonar Way rules differ from the analyzer archive. "
+                        + "Missing from analyzer: " + missingFromAnalyzer
+                        + "; missing from snapshot: " + missingFromSnapshot);
+            }
+            return new RuleCatalog(definitions, snapshot);
         }
+    }
+
+    private static Set<String> readSonarWaySnapshot() throws IOException {
+        InputStream stream = RuleCatalog.class.getResourceAsStream(SONAR_WAY_SNAPSHOT);
+        if (stream == null) {
+            throw new IOException("The pinned Sonar Way snapshot is missing: " + SONAR_WAY_SNAPSHOT);
+        }
+        Set<String> keys = new TreeSet<>();
+        try (BufferedReader reader = new BufferedReader(
+                new InputStreamReader(stream, StandardCharsets.UTF_8))) {
+            String key;
+            while ((key = reader.readLine()) != null) {
+                if (!key.matches("java:S[0-9]+") || !keys.add(key)) {
+                    throw new IOException("Invalid or duplicate Sonar Way rule: " + key);
+                }
+            }
+        }
+        if (keys.isEmpty()) {
+            throw new IOException("The pinned Sonar Way snapshot contains no rules.");
+        }
+        return keys;
     }
 
     private static boolean isRuleEntry(String name) {
@@ -122,6 +157,11 @@ final class RuleCatalog {
                     && !"VULNERABILITY".equals(rule.type())) {
                 selected.add(key);
             }
+        }
+        if (selected.size() != EFFECTIVE_SONAR_WAY_RULE_COUNT) {
+            throw new IllegalStateException("The effective pinned Sonar Way rule set changed: "
+                    + selected.size() + " instead of " + EFFECTIVE_SONAR_WAY_RULE_COUNT
+                    + ". Review analyzer metadata and update the versioned profile deliberately.");
         }
         return selected;
     }
