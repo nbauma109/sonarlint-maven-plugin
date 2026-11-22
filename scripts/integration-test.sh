@@ -54,6 +54,27 @@ mvn -B -ntp -o -f "$priority_fixture" process-classes \
     -DstaticAnalysis.profile=sonar-way | tee "$logs/sonar-way.log"
 grep -F 'Activated 395 local Java rule(s).' "$logs/sonar-way.log"
 grep -F '[java:S3776]' "$logs/sonar-way.log"
+for rule in S1124 S1155; do
+    grep -E "\\[WARNING\\].*AestheticPreferences\\.java:[0-9]+.*\\[java:$rule\\]" \
+        "$logs/sonar-way.log"
+done
+
+aesthetic_source=src/it/priority-rules/src/main/java/example/AestheticPreferences.java
+aesthetic_checksum="$(sha256sum "$aesthetic_source")"
+mvn -B -ntp -o -f "$priority_fixture" process-classes \
+    -DstaticAnalysis.profile=none \
+    -DstaticAnalysis.enabledRules=java:S1124,java:S1155 \
+    | tee "$logs/aesthetic-conventions.log"
+grep -F 'Sonar analysis: 2 violation(s).' "$logs/aesthetic-conventions.log"
+for rule in S1124 S1155; do
+    count="$(grep -Ec "\\[WARNING\\].*AestheticPreferences\\.java:[0-9]+.*\\[java:$rule\\]" "$logs/aesthetic-conventions.log" || true)"
+    if [ "$count" -ne 1 ]; then
+        echo "Expected exactly one source-located aesthetic warning for $rule, got $count." >&2
+        exit 1
+    fi
+done
+test "$(sha256sum "$aesthetic_source")" = "$aesthetic_checksum"
+
 
 eclipse_executable="$(pwd)/scripts/mock-eclipse.sh"
 eclipse_profile="$(pwd)/src/it/priority-rules/eclipse-cleanup-profile.xml"
