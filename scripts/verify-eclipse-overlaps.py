@@ -9,6 +9,7 @@ ROOT = Path(__file__).resolve().parent.parent
 CATALOG = ROOT / "docs/eclipse-cleanup-catalog.csv"
 FILTER = ROOT / "src/main/java/io/github/nbauma109/staticanalysis/EclipseDuplicateFilter.java"
 AUDIT = ROOT / "docs/eclipse-overlap-audit.md"
+SUPPLEMENTAL = ROOT / "src/main/java/io/github/nbauma109/staticanalysis/CheckMojo.java"
 
 EXPECTED = {
     "cleanup.remove_unused_imports": "S1128",
@@ -25,10 +26,10 @@ EXPECTED = {
     "cleanup.remove_unused_private_methods": "S1144",
 }
 EXPECTED_CATEGORIES = {
-    "SONAR_OVERLAP": 34,
+    "SONAR_OVERLAP": 35,
     "ECLIPSE_CANDIDATE": 14,
     "ECLIPSE_AESTHETIC": 2,
-    "REVIEW": 79,
+    "REVIEW": 78,
     "STYLE_POLICY": 18,
 }
 
@@ -56,8 +57,14 @@ def main() -> None:
         if row["triage"] != "SONAR_OVERLAP" or row["sonar_candidates"] != rule:
             raise ValueError(f"Incorrect overlap classification: {cleanup}, {rule}")
 
+    supplemental = SUPPLEMENTAL.read_text(encoding="utf-8")
+    if ('"cleanup.make_private_fields_final"' not in supplemental
+            or '"VariableDeclarationCleanUpCore"' not in supplemental
+            or '"java:S9438"' not in supplemental):
+        raise ValueError("Verified Eclipse private-field fallback is missing")
+
     audit = AUDIT.read_text(encoding="utf-8")
-    pending = counts["SONAR_OVERLAP"] - len(mappings)
+    pending = counts["SONAR_OVERLAP"] - len(mappings) - 1
     for marker in (f"**{len(mappings)}", f"**{pending} candidate overlap",
                    f"**{counts['REVIEW']} options"):
         if marker not in audit:

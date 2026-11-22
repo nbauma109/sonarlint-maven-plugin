@@ -103,7 +103,7 @@ not necessarily to the complete SonarJava rule inventory.
 
 All unresolved candidates have now been assigned a **review priority and test
 type**, without enabling or suppressing anything. The
-[104-option review queue](eclipse-pending-review-queue.csv) and
+[100-option review queue](eclipse-pending-review-queue.csv) and
 [validation guide](eclipse-review-queue.md) are enforced by the integration
 suite. Priority is a screening decision, not a statement that a cleanup
 is safe or a Sonar duplicate.
@@ -111,7 +111,7 @@ is safe or a Sonar duplicate.
 ## What remains
 
 **22 candidate overlap classifications** lack a fully verified
-combined-engine deduplication mapping. An additional **79 options**
+combined-engine deduplication mapping. An additional **78 options**
 remain under review. These are review work items, not confirmed duplicates.
 
 Our opt-in Eclipse profiles separately provide **3 maintainability**, **13 broad
