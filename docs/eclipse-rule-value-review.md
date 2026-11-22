@@ -81,8 +81,8 @@ comparison, a non-mutating report, and a reason the diagnostic merits attention.
 | --- | --- | --- |
 | `i++` versus `++i` | **Do not report** | Prefix and postfix have different values when used in expressions; blanket rewriting is not safe. |
 | `java:S818` / `cleanup.number_suffix` | **Style-only** | Lowercase `l` versus uppercase `L`; a clarity convention, outside our pinned Sonar Way. |
-| `cleanup.make_local_variable_final`, `cleanup.make_parameters_final`, `cleanup.make_variable_declarations_final` | **Exclude** | Repetitive optional `final` annotations. |
-| `cleanup.use_var`, `cleanup.insert_inferred_type_arguments` | **Exclude** | Inference preferences can reduce or improve clarity depending on context. |
+| `cleanup.make_local_variable_final`, `cleanup.make_parameters_final`, `cleanup.make_variable_declarations_final` | **Explicitly exclude from both Eclipse profiles** | Do not require `final` on parameters or local variables. |
+| `cleanup.use_var`, `cleanup.insert_inferred_type_arguments` | **Explicitly exclude from both Eclipse profiles** | Do not enforce `var` instead of explicit types or the reverse. |
 | `cleanup.always_use_parentheses_in_expressions`, `cleanup.never_use_parentheses_in_expressions` | **Exclude** | Contradictory parenthesis conventions; leave to formatter/style policy. |
 | `cleanup.sort_members`, `cleanup.sort_members_all` | **Exclude** | Declaration ordering is a preference. |
 | `cleanup.correct_indentation`, `cleanup.remove_trailing_whitespaces`, `cleanup.format_source_code` | **Formatter only** | Not independent analysis warnings. |

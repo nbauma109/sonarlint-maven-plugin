@@ -16,6 +16,13 @@ SELECTED = {
     "cleanup.array_with_curly",
     "cleanup.remove_redundant_modifiers",
 }
+EXCLUDED = {
+    "cleanup.make_local_variable_final",
+    "cleanup.make_parameters_final",
+    "cleanup.make_variable_declarations_final",
+    "cleanup.use_var",
+    "cleanup.insert_inferred_type_arguments",
+}
 
 
 def profile_options(path: Path) -> set[str]:
@@ -32,6 +39,13 @@ def main() -> None:
     broad = profile_options(BROAD)
     if recommended != SELECTED:
         raise ValueError(f"Unexpected recommended cleanup options: {sorted(recommended)}")
+    for name, selected in (("recommended", recommended), ("broad", broad)):
+        forbidden = selected.intersection(EXCLUDED)
+        if forbidden:
+            raise ValueError(
+                f"{name} profile enables excluded style preferences: {sorted(forbidden)}"
+            )
+
     if not recommended.issubset(broad):
         raise ValueError(f"Recommended cleanups missing from the broad profile: {sorted(recommended - broad)}")
 
