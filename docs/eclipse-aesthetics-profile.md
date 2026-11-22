@@ -16,7 +16,10 @@ enables only two cleanups already verified with the real Eclipse engine:
 The same file documents other personal preferences with `value="false"`.
 They can be activated individually after reviewing language-level and semantic
 constraints: explicit `final`, type inference, parentheses choices, member ordering,
-literal suffixes, and formatting. None is hard-forbidden by our verifier. In particular,
+literal suffixes, and formatting. Where Eclipse exposes a parent switch, that switch
+must also be enabled (for example, `cleanup.make_variable_declarations_final` with
+`cleanup.make_local_variable_final`, or `cleanup.use_parentheses_in_expressions` with
+one of the two alternative parentheses preferences). None is hard-forbidden by our verifier. In particular,
 `cleanup.number_suffix` overlaps Sonar `S818` if that rule is active; duplicate
 suppression must remain rule- and source-range-specific. Choosing opposite
 parentheses preferences together is not meaningful.
@@ -43,7 +46,9 @@ profile containing the desired settings; neither category is enabled implicitly.
 ## Testing
 
 The real Java 25 integration runs Maven and Gradle with the broad, recommended,
-and aesthetics profiles separately. It verifies exact source-located warnings,
+and aesthetics profiles separately. The repository's regression fixtures check the
+currently shipped two-rule aesthetic baseline; copied profiles may deliberately enable
+other listed preferences without changing the analysis plugin. It verifies exact source-located warnings,
 that aesthetic findings appear only under the aesthetic profile, and that no
 source files are modified. A lightweight validation script checks enabled settings
 and that disabled style options remain opt-in.

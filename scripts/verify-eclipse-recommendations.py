@@ -56,11 +56,19 @@ def main() -> None:
 
     if recommended != RECOMMENDED:
         raise ValueError(f"Unexpected recommended rules: {sorted(recommended)}")
-    if aesthetics != AESTHETICS:
-        raise ValueError(f"Unexpected active aesthetic rules: {sorted(aesthetics)}")
-    if not OPTIONAL_AESTHETICS.issubset(disabled):
-        raise ValueError(f"Aesthetic choices not explicitly available but disabled: "
-                         f"{sorted(OPTIONAL_AESTHETICS - disabled)}")
+    if not AESTHETICS.issubset(aesthetics):
+        raise ValueError(f"Baseline aesthetic rules are missing: "
+                         f"{sorted(AESTHETICS - aesthetics)}")
+    available_options = aesthetics | disabled
+    if not OPTIONAL_AESTHETICS.issubset(available_options):
+        raise ValueError(f"Optional aesthetic rules are unavailable: "
+                         f"{sorted(OPTIONAL_AESTHETICS - available_options)}")
+    if aesthetics - AESTHETICS - OPTIONAL_AESTHETICS:
+        raise ValueError(f"Unreviewed aesthetic rules were added: "
+                         f"{sorted(aesthetics - AESTHETICS - OPTIONAL_AESTHETICS)}")
+    if {"cleanup.always_use_parentheses_in_expressions",
+            "cleanup.never_use_parentheses_in_expressions"}.issubset(aesthetics):
+        raise ValueError("Opposing parentheses preferences cannot both be enabled")
     if not recommended.issubset(broad):
         raise ValueError(f"Recommended rules absent from broad profile: "
                          f"{sorted(recommended - broad)}")
