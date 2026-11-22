@@ -117,6 +117,11 @@ final class SupplementalAnalyzer {
         private final Map<ExecutableElement, ExecutableElement> constructorDelegations = new HashMap<>();
         private final Map<ExecutableElement, MethodTree> methods = new HashMap<>();
         private final Map<ExecutableElement, MethodUsage> usages = new HashMap<>();
+        private final Map<ExecutableElement, Set<VariableElement>> nullTolerantParameters =
+                new HashMap<>();
+        private final List<CallSite> methodCalls = new ArrayList<>();
+        private final List<DereferenceSite> dereferences = new ArrayList<>();
+        private final List<ValidationSite> validatedParameters = new ArrayList<>();
 
         Scanner(Trees trees, CompilationUnitTree unit, Path baseDirectory,
                 Set<String> enabledRules, String sourceVersion) {
@@ -262,7 +267,130 @@ final class SupplementalAnalyzer {
             if (enabledRules.contains("java:S8786")) {
                 checkRegularExpression(tree);
             }
+            if (enabledRules.contains("java:S2259")) {
+                inspectNullSafety(tree);
+            }
             return super.visitMethodInvocation(tree, unused);
+        }
+
+        private void inspectNullSafety(MethodInvocationTree tree) {
+            ExecutableElement caller = enclosingExecutable();
+            Element target = trees.getElement(getCurrentPath());
+            if (caller == null || !(target instanceof ExecutableElement callee)
+                    || !(callee.getEnclosingElement() instanceof TypeElement owner)) {
+                return;
+            }
+            String methodName = callee.getSimpleName().toString();
+            String ownerName = owner.getQualifiedName().toString();
+            if (tree.getArguments().size() == 1
+                    && tree.getArguments().get(0) instanceof IdentifierTree argument) {
+                Element variable = trees.getElement(new TreePath(getCurrentPath(), argument));
+                if (variable instanceof VariableElement parameter
+                        && variable.getKind() == ElementKind.PARAMETER) {
+                    if (isNullTolerantMethod(ownerName, methodName)) {
+                        nullTolerantParameters.computeIfAbsent(caller,
+                                ignored -> new HashSet<>()).add(parameter);
+                    }
+                    if ("java.util.Objects".equals(ownerName)
+                            && "requireNonNull".equals(methodName)) {
+                        validatedParameters.add(new ValidationSite(caller, parameter,
+                                sourceOffset(tree)));
+                    }
+                }
+            }
+            List<VariableElement> actualArguments = new ArrayList<>();
+            for (ExpressionTree argument : tree.getArguments()) {
+                VariableElement parameter = null;
+                if (argument instanceof IdentifierTree identifier) {
+                    Element actual = trees.getElement(new TreePath(getCurrentPath(), argument));
+                    if (actual instanceof VariableElement variable
+                            && actual.getKind() == ElementKind.PARAMETER) {
+                        parameter = variable;
+                    }
+                }
+                actualArguments.add(parameter);
+            }
+            methodCalls.add(new CallSite(caller, callee, actualArguments, sourceOffset(tree)));
+            if (tree.getMethodSelect() instanceof MemberSelectTree select
+                    && select.getExpression() instanceof IdentifierTree) {
+                TreePath selected = new TreePath(getCurrentPath(), select);
+                Element receiver = trees.getElement(new TreePath(selected, select.getExpression()));
+                if (receiver instanceof VariableElement parameter
+                        && receiver.getKind() == ElementKind.PARAMETER) {
+                    dereferences.add(new DereferenceSite(caller, parameter,
+                            select.getExpression(), sourceOffset(tree)));
+                }
+            }
+        }
+
+        private static boolean isNullTolerantMethod(String owner, String method) {
+            if ("java.util.Objects".equals(owner)) {
+                return "isNull".equals(method) || "nonNull".equals(method);
+            }
+            return "org.apache.commons.lang3.StringUtils".equals(owner)
+                    && ("isEmpty".equals(method) || "isNotEmpty".equals(method)
+                    || "isBlank".equals(method) || "isNotBlank".equals(method));
+        }
+
+        private ExecutableElement enclosingExecutable() {
+            TreePath path = getCurrentPath();
+            while (path != null) {
+                if (path.getLeaf() instanceof MethodTree) {
+                    Element element = trees.getElement(path);
+                    if (element instanceof ExecutableElement executable) {
+                        return executable;
+                    }
+                }
+                path = path.getParentPath();
+            }
+            return null;
+        }
+
+        private long sourceOffset(Tree tree) {
+            return trees.getSourcePositions().getStartPosition(unit, tree);
+        }
+
+        private void checkPotentialNullDereferences() {
+            Map<ExecutableElement, Map<VariableElement, Long>> nullableAt = new HashMap<>();
+            for (CallSite call : methodCalls) {
+                Set<VariableElement> nullable = nullTolerantParameters.get(call.target());
+                if (nullable == null) {
+                    continue;
+                }
+                List<? extends VariableElement> formals = call.target().getParameters();
+                int size = Math.min(formals.size(), call.arguments().size());
+                for (int index = 0; index < size; index++) {
+                    VariableElement argument = call.arguments().get(index);
+                    if (argument != null && nullable.contains(formals.get(index))) {
+                        nullableAt.computeIfAbsent(call.caller(), ignored -> new HashMap<>())
+                                .merge(argument, call.offset(), Math::min);
+                    }
+                }
+            }
+            Set<Long> reportedOffsets = new HashSet<>();
+            for (DereferenceSite dereference : dereferences) {
+                long firstNullable = nullableAt.getOrDefault(
+                        dereference.caller(), Map.of()).getOrDefault(
+                                dereference.parameter(), Long.MAX_VALUE);
+                if (firstNullable > dereference.offset()
+                        || isValidated(dereference)
+                        || !reportedOffsets.add(dereference.offset())) {
+                    continue;
+                }
+                report(dereference.receiver(), "java:S2259",
+                        "Fix this access that can throw a NullPointerException when executed.");
+            }
+        }
+
+        private boolean isValidated(DereferenceSite dereference) {
+            for (ValidationSite validation : validatedParameters) {
+                if (validation.caller().equals(dereference.caller())
+                        && validation.parameter().equals(dereference.parameter())
+                        && validation.offset() < dereference.offset()) {
+                    return true;
+                }
+            }
+            return false;
         }
 
         private void checkRegularExpression(MethodInvocationTree tree) {
@@ -370,6 +498,9 @@ final class SupplementalAnalyzer {
             if (enabledRules.contains("java:S3398")) {
                 checkRecordMethods();
             }
+            if (enabledRules.contains("java:S2259")) {
+                checkPotentialNullDereferences();
+            }
             return List.copyOf(findings);
         }
 
@@ -452,6 +583,17 @@ final class SupplementalAnalyzer {
             long line = unit.getLineMap().getLineNumber(offset);
             findings.add(new Finding(file, line, rule, message));
         }
+    }
+
+    private record CallSite(ExecutableElement caller, ExecutableElement target,
+            List<VariableElement> arguments, long offset) {
+    }
+
+    private record DereferenceSite(ExecutableElement caller, VariableElement parameter,
+            Tree receiver, long offset) {
+    }
+
+    private record ValidationSite(ExecutableElement caller, VariableElement parameter, long offset) {
     }
 
     private static final class MethodUsage {
