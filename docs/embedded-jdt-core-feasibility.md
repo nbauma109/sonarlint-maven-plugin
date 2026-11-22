@@ -15,8 +15,8 @@ uses the **actual Eclipse visitors**, rather than duplicating their finality
 logic. Those classes are internal APIs, so future version changes require
 a pinned integration regression.
 
-The Java 17 baseline uses
-`org.eclipse.jdt:org.eclipse.jdt.core:3.40.0` and
+The Java 17 runtime baseline uses
+`org.eclipse.jdt:org.eclipse.jdt.core:3.45.0` and
 `org.eclipse.jdt:org.eclipse.jdt.core.manipulation:1.21.300`, both
 published to Maven Central. Core Manipulation is not two independent
 Java archives: its OSGi metadata also lists core runtime/resources,
@@ -47,10 +47,12 @@ mutable field. The expected output is
 - **Source ranges:** The probe checks the Eclipse visitor's selected
   declarations. Production diagnostics need stable field ranges and must
   remain strictly report-only.
-- **Runtime compatibility:** Core Manipulation 1.21.300 targets Java 17;
-  the 2026-09 Core Manipulation bundle requires Java 25. A supported
-  approach for Java 25 source must be chosen without raising the Maven
-  plugin's Java 17 minimum.
+- **Runtime compatibility:** Core Manipulation 1.21.300 targets Java 17; the 2026-09 Core
+  Manipulation bundle requires Java 25. Core 3.45.0 accepts Java 25 syntax
+  while keeping a Java 17 runtime requirement, but combining these
+  artifacts from different Eclipse releases is not a supported release
+  pairing until end-to-end validation passes. Protect the Java 17 plugin
+  minimum and the Java 25 consuming-source scope independently.
 - **Licensing:** Bundling Eclipse EPL-2.0 libraries alongside the GPLv3
   Maven plugin requires an explicit license and distribution review,
   including secondary-license notices where applicable.
