@@ -5,6 +5,7 @@ cd "$(dirname "$0")/.."
 mkdir -p target/integration-tests
 fixture=src/it/cognitive-complexity/pom.xml
 logs=target/integration-tests
+python3 scripts/verify-sonar-way-snapshot.py
 mvn -B -ntp clean install
 mkdir -p "$logs"
 
@@ -50,6 +51,7 @@ grep -F 'Rule javasecurity:S3649 is not an eligible standard production Java rul
 
 mvn -B -ntp -o -f "$priority_fixture" process-classes \
     -DstaticAnalysis.profile=sonar-way | tee "$logs/sonar-way.log"
+grep -F 'Activated 392 local Java rule(s).' "$logs/sonar-way.log"
 grep -F '[java:S3776]' "$logs/sonar-way.log"
 
 eclipse_executable="$(pwd)/scripts/mock-eclipse.sh"

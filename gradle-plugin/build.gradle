@@ -22,6 +22,9 @@ sourceSets {
             srcDir '../src/main/java'
             exclude '**/CheckMojo.java', '**/MavenLogOutput.java'
         }
+        resources {
+            srcDir '../src/main/resources'
+        }
     }
 }
 
