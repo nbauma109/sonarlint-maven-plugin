@@ -1,0 +1,33 @@
+name: Probe pinned symbolic execution analyzer
+
+on:
+  push:
+    branches:
+      - feature/opt-in-symbolic-reliability
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  symbolic:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+      - name: Resolve the matching LGPL-era symbolic analyzer
+        shell: bash
+        run: |
+          set -euo pipefail
+          mvn -B -ntp dependency:get \
+            -Dartifact=org.sonarsource.java:sonar-java-symbolic-execution-plugin:8.6.0.37351 \
+            -Dtransitive=false
+          plugin="$HOME/.m2/repository/org/sonarsource/java/sonar-java-symbolic-execution-plugin/8.6.0.37351/sonar-java-symbolic-execution-plugin-8.6.0.37351.jar"
+          test -f "$plugin"
+          jar tf "$plugin" | grep -F 'org/sonar/java/se/plugin/JavaSEPlugin.class'
+          unzip -p "$plugin" META-INF/MANIFEST.MF | head -45
