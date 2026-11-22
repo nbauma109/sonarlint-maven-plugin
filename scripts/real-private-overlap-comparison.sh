@@ -59,7 +59,7 @@ for system, log_path, report_path in (
     assert 0 <= issue["startOffset"] < issue["endOffset"] <= len(source), issue
     changed = source[issue["startOffset"]:issue["endOffset"]]
     assert target_name in changed, (system, option, changed)
-    assert "usedDescription" not in changed and "activeCounter" not in changed, issue
+    assert not re.search(r"\b(activeCounter|usedDescription)\b", changed), issue
     assert log.count("[" + expected_sonar + "]") == 1, (system, expected_sonar, log)
     assert log.count("[eclipse:" + key + "]") == 1, (system, key, log)
     assert "Duplicate Eclipse findings suppressed: 0." in log, (system, log)
