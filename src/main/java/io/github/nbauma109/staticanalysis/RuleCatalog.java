@@ -34,7 +34,7 @@ final class RuleCatalog {
     private static final Set<String> PRIORITY = Set.of(COMPLEXITY, "java:S100", "java:S107",
             "java:S1192", "java:S1066", "java:S1128", "java:S1481", "java:S112");
     private static final Set<String> TEMPLATES = Set.of("java:S124", "java:S2253",
-            "java:S3688", "java:S4011");
+            "java:S3546", "java:S3688", "java:S4011");
     private static final Gson GSON = new Gson();
 
     private final Map<String, RuleMetadata> metadata;
