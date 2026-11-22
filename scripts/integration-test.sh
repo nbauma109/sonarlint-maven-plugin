@@ -52,6 +52,53 @@ mvn -B -ntp -o -f "$logger_fixture" process-classes \
 grep -F 'Activated 394 local Java rule(s).' "$logs/logger-category-disabled.log"
 grep -F 'Sonar analysis: 0 violation(s).' "$logs/logger-category-disabled.log"
 
+production_fixture=src/it/modern-production-rules/pom.xml
+if mvn -B -ntp -o -f "$production_fixture" process-classes \
+    > "$logs/modern-production-strict.log" 2>&1; then
+    cat "$logs/modern-production-strict.log"
+    echo "Expected supplemental production checks to fail the build." >&2
+    exit 1
+fi
+for rule in S3398 S9398 S9438; do
+    grep -E "\\[WARNING\\].*ModernProductionIssues\\.java:[0-9]+ \\[java:$rule\\]" \
+        "$logs/modern-production-strict.log"
+done
+grep -F 'Sonar found 4 violation(s).' "$logs/modern-production-strict.log"
+test "$(grep -Ec '\\[WARNING\\].*\\[java:S9438\\]' "$logs/modern-production-strict.log")" -eq 2
+mvn -B -ntp -o -f "$production_fixture" process-classes \
+    -DstaticAnalysis.disabledRules=java:S3398,java:S9398,java:S9438 \
+    | tee "$logs/modern-production-disabled.log"
+
+test_fixture=src/it/modern-test-rules/pom.xml
+compiler_release=17
+expected_test_issues=2
+java_major="$(java -XshowSettings:properties -version 2>&1 \
+    | sed -n 's/^ *java.specification.version = \\([0-9]*\\).*$/\\1/p' | head -1)"
+if [ "$java_major" -ge 21 ]; then
+    compiler_release=21
+    expected_test_issues=3
+fi
+if mvn -B -ntp -o -f "$test_fixture" test -Dmaven.compiler.release="$compiler_release" \
+    > "$logs/modern-test-strict.log" 2>&1; then
+    cat "$logs/modern-test-strict.log"
+    echo "Expected supplemental test checks to fail the build." >&2
+    exit 1
+fi
+grep -F "Test-source analysis found $expected_test_issues violation(s)." \
+    "$logs/modern-test-strict.log"
+test "$(grep -Ec '\\[WARNING\\].*\\[java:S8786\\]' "$logs/modern-test-strict.log")" -eq 2
+if [ "$java_major" -ge 21 ]; then
+    grep -E '\\[WARNING\\].*ModernTestIssues\\.java:[0-9]+ \\[java:S7467\\]' \
+        "$logs/modern-test-strict.log"
+else
+    if grep -F '[java:S7467]' "$logs/modern-test-strict.log"; then
+        exit 1
+    fi
+fi
+mvn -B -ntp -o -f "$test_fixture" test -Dmaven.compiler.release="$compiler_release" \
+    -DstaticAnalysis.disabledRules=java:S8786,java:S7467 \
+    | tee "$logs/modern-test-disabled.log"
+
 priority_fixture=src/it/priority-rules/pom.xml
 mvn -B -ntp -o -f "$priority_fixture" process-classes | tee "$logs/priority.log"
 for rule in S100 S107 S112 S1128 S1192 S1066 S1481 S3776; do
