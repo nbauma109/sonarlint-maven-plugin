@@ -55,7 +55,8 @@ jobs:
           set -euo pipefail
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends xvfb
-          curl --fail --location --silent --show-error --retry 3 \
+          curl --fail --location --silent --show-error --retry 5 \
+            --retry-all-errors --retry-delay 4 \
             "https://www.eclipse.org/downloads/download.php?file=/technology/epp/downloads/release/2026-09/R/eclipse-java-2026-09-R-linux-gtk-x86_64.tar.gz&r=1" \
             --output "$RUNNER_TEMP/eclipse.tar.gz"
           tar -xzf "$RUNNER_TEMP/eclipse.tar.gz" -C "$RUNNER_TEMP"
