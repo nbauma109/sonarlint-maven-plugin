@@ -35,6 +35,7 @@ public abstract class StaticAnalysisTask extends DefaultTask {
     private StaticAnalysisExtension extension;
     private SourceSet sourceSet;
     private Configuration analyzerConfiguration;
+    private Configuration symbolicAnalyzerConfiguration;
 
     @Internal
     public StaticAnalysisExtension getAnalysisExtension() {
@@ -61,6 +62,15 @@ public abstract class StaticAnalysisTask extends DefaultTask {
 
     public void setAnalyzerConfiguration(Configuration analyzerConfiguration) {
         this.analyzerConfiguration = analyzerConfiguration;
+    }
+
+    @Internal
+    public Configuration getSymbolicAnalyzerConfiguration() {
+        return symbolicAnalyzerConfiguration;
+    }
+
+    public void setSymbolicAnalyzerConfiguration(Configuration symbolicAnalyzerConfiguration) {
+        this.symbolicAnalyzerConfiguration = symbolicAnalyzerConfiguration;
     }
 
     @TaskAction
@@ -117,7 +127,11 @@ public abstract class StaticAnalysisTask extends DefaultTask {
 
     private List<Issue> runSonar(Path project, Path work, List<JavaSourceFile> files)
             throws IOException {
-        RuleCatalog catalog = RuleCatalog.load(analyzerConfiguration.getSingleFile().toPath());
+        Optional<Path> symbolic = Optional.empty();
+        if (extension.isSymbolicEnabled()) {
+            symbolic = Optional.of(symbolicAnalyzerConfiguration.getSingleFile().toPath());
+        }
+        RuleCatalog catalog = RuleCatalog.load(analyzerConfiguration.getSingleFile().toPath(), symbolic);
         List<RuleParameters> overrides = new ArrayList<>();
         for (Map.Entry<String, Map<String, String>> entry : extension.getRuleParameters().entrySet()) {
             RuleParameters parameter = new RuleParameters();
@@ -138,7 +152,7 @@ public abstract class StaticAnalysisTask extends DefaultTask {
                 .addActiveRules(active)
                 .build();
         getLogger().lifecycle("Activated " + active.size() + " local Java rule(s).");
-        return new StandaloneAnalyzer(analyzerConfiguration.getSingleFile().toPath(),
+        return new StandaloneAnalyzer(analyzerConfiguration.getSingleFile().toPath(), symbolic,
                 work.resolve("sonar"), new GradleLogOutput(getLogger())).analyze(configuration);
     }
 

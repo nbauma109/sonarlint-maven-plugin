@@ -26,6 +26,9 @@ final class RuleCatalog {
     private static final String PREFIX = "java:";
     private static final String SONAR_WAY_SNAPSHOT = "/io/github/nbauma109/staticanalysis/sonar-way-java-8.6.0.37351.rules";
     private static final int EFFECTIVE_SONAR_WAY_RULE_COUNT = 392;
+    private static final String SYMBOLIC_RESOURCE_PATH = "org/sonar/l10n/java/rules/javase/";
+    private static final String SYMBOLIC_WAY_SNAPSHOT =
+            "/io/github/nbauma109/staticanalysis/sonar-way-symbolic-java-8.6.0.37351.rules";
     private static final String COMPLEXITY = "java:S3776";
     private static final Set<String> PRIORITY = Set.of(COMPLEXITY, "java:S100", "java:S107",
             "java:S1192", "java:S1066", "java:S1128", "java:S1481", "java:S112");
@@ -35,13 +38,20 @@ final class RuleCatalog {
 
     private final Map<String, RuleMetadata> metadata;
     private final Set<String> sonarWay;
+    private final Set<String> symbolicWay;
 
-    private RuleCatalog(Map<String, RuleMetadata> metadata, Set<String> sonarWay) {
+    private RuleCatalog(Map<String, RuleMetadata> metadata, Set<String> sonarWay,
+            Set<String> symbolicWay) {
         this.metadata = Map.copyOf(metadata);
         this.sonarWay = Set.copyOf(sonarWay);
+        this.symbolicWay = Set.copyOf(symbolicWay);
     }
 
     static RuleCatalog load(Path analyzer) throws IOException {
+        return load(analyzer, java.util.Optional.empty());
+    }
+
+    static RuleCatalog load(Path analyzer, java.util.Optional<Path> symbolicAnalyzer) throws IOException {
         try (ZipFile archive = new ZipFile(analyzer.toFile())) {
             Map<String, RuleMetadata> definitions = new TreeMap<>();
             var entries = archive.entries();
@@ -75,14 +85,53 @@ final class RuleCatalog {
                         + "Missing from analyzer: " + missingFromAnalyzer
                         + "; missing from snapshot: " + missingFromSnapshot);
             }
-            return new RuleCatalog(definitions, snapshot);
+            Set<String> symbolic = new TreeSet<>();
+            if (symbolicAnalyzer.isPresent()) {
+                try (ZipFile symbolicArchive = new ZipFile(symbolicAnalyzer.get().toFile())) {
+                    var symbolicEntries = symbolicArchive.entries();
+                    while (symbolicEntries.hasMoreElements()) {
+                        ZipEntry entry = symbolicEntries.nextElement();
+                        if (isRuleEntry(entry.getName(), SYMBOLIC_RESOURCE_PATH)) {
+                            String key = PREFIX + entry.getName().substring(
+                                    SYMBOLIC_RESOURCE_PATH.length(), entry.getName().length() - 5);
+                            JsonObject definition = readJson(symbolicArchive, entry);
+                            definitions.put(key, new RuleMetadata(
+                                    definition.get("scope").getAsString(),
+                                    definition.get("status").getAsString(),
+                                    definition.get("type").getAsString()));
+                        }
+                    }
+                    ZipEntry symbolicProfile = symbolicArchive.getEntry(
+                            SYMBOLIC_RESOURCE_PATH + "Sonar_way_profile.json");
+                    if (symbolicProfile == null) {
+                        throw new IOException("The symbolic analyzer lacks its Sonar Way profile.");
+                    }
+                    for (var key : readJson(symbolicArchive, symbolicProfile).getAsJsonArray("ruleKeys")) {
+                        symbolic.add(PREFIX + key.getAsString());
+                    }
+                    Set<String> symbolicSnapshot = readSnapshot(SYMBOLIC_WAY_SNAPSHOT);
+                    if (!symbolic.equals(symbolicSnapshot)) {
+                        throw new IOException("The pinned symbolic Sonar Way snapshot differs from the analyzer.");
+                    }
+                    for (String key : symbolicSnapshot) {
+                        if (!definitions.containsKey(key)) {
+                            throw new IOException("The symbolic Sonar Way rule has no metadata: " + key);
+                        }
+                    }
+                }
+            }
+            return new RuleCatalog(definitions, snapshot, symbolic);
         }
     }
 
     private static Set<String> readSonarWaySnapshot() throws IOException {
-        InputStream stream = RuleCatalog.class.getResourceAsStream(SONAR_WAY_SNAPSHOT);
+        return readSnapshot(SONAR_WAY_SNAPSHOT);
+    }
+
+    private static Set<String> readSnapshot(String resourcePath) throws IOException {
+        InputStream stream = RuleCatalog.class.getResourceAsStream(resourcePath);
         if (stream == null) {
-            throw new IOException("The pinned Sonar Way snapshot is missing: " + SONAR_WAY_SNAPSHOT);
+            throw new IOException("The pinned Sonar Way snapshot is missing: " + resourcePath);
         }
         Set<String> keys = new TreeSet<>();
         try (BufferedReader reader = new BufferedReader(
@@ -101,10 +150,14 @@ final class RuleCatalog {
     }
 
     private static boolean isRuleEntry(String name) {
-        if (!name.startsWith(RESOURCE_PATH)) {
+        return isRuleEntry(name, RESOURCE_PATH);
+    }
+
+    private static boolean isRuleEntry(String name, String resourcePath) {
+        if (!name.startsWith(resourcePath)) {
             return false;
         }
-        return name.substring(RESOURCE_PATH.length()).matches("(S[0-9]+|NoSonar)\\.json");
+        return name.substring(resourcePath.length()).matches("(S[0-9]+|NoSonar)\\.json");
     }
 
     private static JsonObject readJson(ZipFile archive, ZipEntry entry) throws IOException {
@@ -144,9 +197,22 @@ final class RuleCatalog {
             case "priority" -> PRIORITY;
             case "complexity" -> Set.of(COMPLEXITY);
             case "none" -> Set.of();
-            case "sonar-way" -> standardSonarWay();
+            case "sonar-way" -> fullSonarWay();
             default -> throw new IllegalArgumentException("Unknown rule profile: " + profile);
         };
+    }
+
+    private Set<String> fullSonarWay() {
+        Set<String> selected = new TreeSet<>(standardSonarWay());
+        for (String key : symbolicWay) {
+            RuleMetadata rule = metadata.get(key);
+            if (eligible(key, rule)
+                    && !"SECURITY_HOTSPOT".equals(rule.type())
+                    && !"VULNERABILITY".equals(rule.type())) {
+                selected.add(key);
+            }
+        }
+        return selected;
     }
 
     private Set<String> standardSonarWay() {

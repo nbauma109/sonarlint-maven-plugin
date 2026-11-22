@@ -70,6 +70,10 @@ public final class CheckMojo extends AbstractMojo {
     @Parameter
     private List<RuleParameters> ruleParameters;
 
+    /** Include the matching offline Java symbolic execution analyzer. */
+    @Parameter(property = "staticAnalysis.symbolicEnabled", defaultValue = "false")
+    private boolean symbolicEnabled;
+
     /** Enable the separately installed Eclipse cleanup analyzer. */
     @Parameter(property = "staticAnalysis.eclipseEnabled", defaultValue = "false")
     private boolean eclipseEnabled;
@@ -179,8 +183,12 @@ public final class CheckMojo extends AbstractMojo {
                 throw new MojoExecutionException("Compiled classes are missing. Run Maven compile first.");
             }
             Path workDirectory = Path.of(project.getBuild().getDirectory(), "static-analysis").toAbsolutePath();
-            Path analyzer = findAnalyzer();
-            RuleCatalog catalog = RuleCatalog.load(analyzer);
+            Path analyzer = findAnalyzer("sonar-java-plugin");
+            Optional<Path> symbolicAnalyzer = Optional.empty();
+            if (symbolicEnabled) {
+                symbolicAnalyzer = Optional.of(findAnalyzer("sonar-java-symbolic-execution-plugin"));
+            }
+            RuleCatalog catalog = RuleCatalog.load(analyzer, symbolicAnalyzer);
             var activeRules = catalog.select(profile, enabledRules, disabledRules,
                     cognitiveComplexityThreshold, Optional.ofNullable(ruleParameters).orElse(List.of()));
             if (activeRules.isEmpty()) {
@@ -195,7 +203,8 @@ public final class CheckMojo extends AbstractMojo {
                     .addActiveRules(activeRules)
                     .build();
             getLog().info("Analyzing " + files.size() + " Java source file(s) locally.");
-            return new StandaloneAnalyzer(analyzer, workDirectory, new MavenLogOutput(getLog())).analyze(configuration);
+            return new StandaloneAnalyzer(analyzer, symbolicAnalyzer, workDirectory,
+                    new MavenLogOutput(getLog())).analyze(configuration);
         } catch (IOException | DependencyResolutionRequiredException | RuntimeException exception) {
             throw new MojoExecutionException("Local Sonar analysis could not complete: " + exception.getMessage(), exception);
         }
@@ -242,15 +251,15 @@ public final class CheckMojo extends AbstractMojo {
         return properties;
     }
 
-    private Path findAnalyzer() throws MojoExecutionException {
+    private Path findAnalyzer(String artifactId) throws MojoExecutionException {
         for (Artifact artifact : pluginArtifacts) {
             if ("org.sonarsource.java".equals(artifact.getGroupId())
-                    && "sonar-java-plugin".equals(artifact.getArtifactId())
+                    && artifactId.equals(artifact.getArtifactId())
                     && artifact.getFile() != null && artifact.getFile().isFile()) {
                 return artifact.getFile().toPath();
             }
         }
-        throw new MojoExecutionException("The SonarJava analyzer dependency was not resolved.");
+        throw new MojoExecutionException("The required analyzer dependency was not resolved: " + artifactId);
     }
 
     private void reportIssues(List<Issue> issues) {

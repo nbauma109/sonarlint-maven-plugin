@@ -25,11 +25,18 @@ import org.sonarsource.sonarlint.core.plugin.commons.PluginsLoader;
 final class StandaloneAnalyzer {
 
     private final Path analyzerJar;
+    private final Optional<Path> symbolicAnalyzerJar;
     private final Path workDirectory;
     private final LogOutput logger;
 
     StandaloneAnalyzer(Path analyzerJar, Path workDirectory, LogOutput logger) {
+        this(analyzerJar, Optional.empty(), workDirectory, logger);
+    }
+
+    StandaloneAnalyzer(Path analyzerJar, Optional<Path> symbolicAnalyzerJar,
+            Path workDirectory, LogOutput logger) {
         this.analyzerJar = analyzerJar;
+        this.symbolicAnalyzerJar = symbolicAnalyzerJar;
         this.workDirectory = workDirectory;
         this.logger = logger;
     }
@@ -46,12 +53,21 @@ final class StandaloneAnalyzer {
 
     private List<Issue> analyzeLocally(AnalysisConfiguration configuration) throws IOException {
         Files.createDirectories(workDirectory);
+        Set<Path> analyzers = new java.util.HashSet<>();
+        analyzers.add(analyzerJar);
+        symbolicAnalyzerJar.ifPresent(analyzers::add);
         PluginsLoader.Configuration pluginConfiguration = new PluginsLoader.Configuration(
-                Set.of(analyzerJar), Set.of(SonarLanguage.JAVA), false, Optional.empty());
+                Set.copyOf(analyzers), Set.of(SonarLanguage.JAVA), false, Optional.empty());
         PluginsLoadResult plugins = new PluginsLoader().load(pluginConfiguration, Set.of());
         if (!plugins.getLoadedPlugins().getAnalysisPluginInstancesByKeys().containsKey("java")) {
             plugins.close();
             throw new IOException("SonarJava was not loaded. Check the analyzer version and Java runtime.");
+        }
+        if (symbolicAnalyzerJar.isPresent()
+                && !plugins.getLoadedPlugins().getAnalysisPluginInstancesByKeys()
+                        .containsKey("javasymbolicexecution")) {
+            plugins.close();
+            throw new IOException("The Java symbolic execution plugin was not loaded.");
         }
 
         AnalysisEngineConfiguration engineConfiguration = AnalysisEngineConfiguration.builder()

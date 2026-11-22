@@ -27,6 +27,18 @@ public final class StaticAnalysisGradlePlugin implements Plugin<Project> {
         dependency.setTransitive(false);
         analyzer.getDependencies().add(dependency);
 
+        Configuration symbolicAnalyzer = project.getConfigurations()
+                .create("staticAnalysisSymbolicAnalyzer", configuration -> {
+                    configuration.setCanBeConsumed(false);
+                    configuration.setCanBeResolved(true);
+                    configuration.setVisible(false);
+                });
+        ExternalModuleDependency symbolicDependency = (ExternalModuleDependency)
+                project.getDependencies().create(
+                        "org.sonarsource.java:sonar-java-symbolic-execution-plugin:8.6.0.37351");
+        symbolicDependency.setTransitive(false);
+        symbolicAnalyzer.getDependencies().add(symbolicDependency);
+
         project.getPluginManager().withPlugin("java", applied -> {
             SourceSet sources = project.getExtensions().getByType(SourceSetContainer.class)
                     .getByName(SourceSet.MAIN_SOURCE_SET_NAME);
@@ -35,6 +47,7 @@ public final class StaticAnalysisGradlePlugin implements Plugin<Project> {
                         task.setAnalysisExtension(extension);
                         task.setSourceSet(sources);
                         task.setAnalyzerConfiguration(analyzer);
+                        task.setSymbolicAnalyzerConfiguration(symbolicAnalyzer);
                         task.dependsOn(project.getTasks().named("classes"));
                     });
             project.getTasks().named("check").configure(task -> task.dependsOn(analysis));

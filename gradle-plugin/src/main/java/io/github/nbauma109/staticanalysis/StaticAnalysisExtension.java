@@ -14,6 +14,7 @@ public class StaticAnalysisExtension {
     private int cognitiveComplexityThreshold = 15;
     private boolean failOnViolation;
     private boolean skip;
+    private boolean symbolicEnabled;
     private boolean eclipseEnabled;
     private File eclipseExecutable;
     private File eclipseCleanupProfile;
@@ -67,6 +68,14 @@ public class StaticAnalysisExtension {
 
     public void setSkip(boolean skip) {
         this.skip = skip;
+    }
+
+    public boolean isSymbolicEnabled() {
+        return symbolicEnabled;
+    }
+
+    public void setSymbolicEnabled(boolean symbolicEnabled) {
+        this.symbolicEnabled = symbolicEnabled;
     }
 
     public boolean isEclipseEnabled() {
