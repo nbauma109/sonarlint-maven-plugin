@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<profiles version="2">
+    <profile kind="CleanUpProfile" name="private-fields-final-sonar-parity" version="2">
+        <setting id="cleanup.make_variable_declarations_final" value="true"/>
+        <setting id="cleanup.make_private_fields_final" value="true"/>
+    </profile>
+</profiles>
