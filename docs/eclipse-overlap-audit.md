@@ -81,6 +81,15 @@ rules in the pinned analyzer but are not in its versioned Sonar Way snapshot.
 A finding is therefore complementary **relative to the selected profile**,
 not necessarily to the complete SonarJava rule inventory.
 
+## Prioritized validation queue
+
+All unresolved candidates have now been assigned a **review priority and test
+type**, without enabling or suppressing anything. The
+[104-option review queue](eclipse-pending-review-queue.csv) and
+[validation guide](eclipse-review-queue.md) are enforced by the integration
+suite. Priority is a screening decision, not a statement that a cleanup
+is safe or a Sonar duplicate.
+
 ## What remains
 
 **24 candidate overlap classifications** lack a fully verified
