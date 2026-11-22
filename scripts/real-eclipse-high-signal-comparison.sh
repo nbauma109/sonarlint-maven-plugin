@@ -51,7 +51,7 @@ for build, log_path, report_path in (
     assert all(issue["file"] == "src/main/java/example/HighSignalCleanupCandidates.java"
                for issue in issues), (build, issues)
     assert "Duplicate Eclipse findings suppressed: 0." in log, (build, log)
-    matches = re.findall(r"\\[" + re.escape(expected_sonar) + r"\\]", log)
+    matches = re.findall(r"\[" + re.escape(expected_sonar) + r"\]", log)
     findings = sorted(
         (issue["line"], issue["startOffset"], issue["endOffset"])
         for issue in issues
