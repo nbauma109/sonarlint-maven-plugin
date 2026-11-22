@@ -282,12 +282,13 @@ final class SupplementalAnalyzer {
             }
             String methodName = callee.getSimpleName().toString();
             String ownerName = owner.getQualifiedName().toString();
-            if (tree.getArguments().size() == 1
+            if (!tree.getArguments().isEmpty()
                     && tree.getArguments().get(0) instanceof IdentifierTree argument) {
                 Element variable = trees.getElement(new TreePath(getCurrentPath(), argument));
                 if (variable instanceof VariableElement parameter
                         && variable.getKind() == ElementKind.PARAMETER) {
-                    if (isNullTolerantMethod(ownerName, methodName)) {
+                    if (tree.getArguments().size() == 1
+                            && isNullTolerantMethod(ownerName, methodName)) {
                         nullTolerantParameters.computeIfAbsent(caller,
                                 ignored -> new HashSet<>()).add(parameter);
                     }
