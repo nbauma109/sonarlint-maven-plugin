@@ -55,7 +55,8 @@ jobs:
           set -euo pipefail
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends xvfb
-          curl --fail --location --silent --show-error --retry 3 \
+          curl --fail --location --silent --show-error --retry 5 \
+            --retry-all-errors --retry-delay 4 \
             "https://www.eclipse.org/downloads/download.php?file=/technology/epp/downloads/release/2026-09/R/eclipse-java-2026-09-R-linux-gtk-x86_64.tar.gz&r=1" \
             --output "$RUNNER_TEMP/eclipse.tar.gz"
           tar -xzf "$RUNNER_TEMP/eclipse.tar.gz" -C "$RUNNER_TEMP"
@@ -84,6 +85,8 @@ jobs:
         run: bash scripts/real-eclipse-broad-test.sh
       - name: Verify four further real Sonar and Eclipse overlap mappings
         run: bash scripts/real-eclipse-more-overlaps-test.sh
+      - name: Compare two profile-dependent Eclipse and Sonar findings
+        run: bash scripts/real-eclipse-high-signal-comparison.sh
       - name: Upload real integration logs
         if: always()
         uses: actions/upload-artifact@v4
@@ -94,6 +97,7 @@ jobs:
             target/verified-overlaps/
             target/real-eclipse-complementary/
             target/real-eclipse-broad/
+            target/high-signal-comparison/
             src/it/real-eclipse/target/static-analysis/eclipse/
             src/it/real-eclipse/build/static-analysis/eclipse/
             src/it/complementary-eclipse/target/static-analysis/eclipse/

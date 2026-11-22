@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<profiles version="2">
+    <profile kind="CleanUpProfile" name="static_inner_class" version="2">
+        <setting id="cleanup.static_inner_class" value="true"/>
+    </profile>
+</profiles>

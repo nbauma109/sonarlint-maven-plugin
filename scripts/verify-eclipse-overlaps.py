@@ -20,12 +20,13 @@ EXPECTED = {
     "cleanup.remove_redundant_type_arguments": "S2293",
     "cleanup.remove_unnecessary_array_creation": "S3878",
     "cleanup.useless_return": "S3626",
+    "cleanup.static_inner_class": "S2694",
 }
 EXPECTED_CATEGORIES = {
-    "SONAR_OVERLAP": 33,
+    "SONAR_OVERLAP": 34,
     "ECLIPSE_CANDIDATE": 14,
     "ECLIPSE_AESTHETIC": 2,
-    "REVIEW": 80,
+    "REVIEW": 79,
     "STYLE_POLICY": 18,
 }
 
