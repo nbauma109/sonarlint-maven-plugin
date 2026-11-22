@@ -57,7 +57,7 @@ rules = [
 ]
 
 def count(log, key):
-    return len(re.findall(r"(?m)^.*\\[" + re.escape(key) + r"\\]", log))
+    return len(re.findall(r"(?m)^.*\[" + re.escape(key) + r"\]", log))
 
 for system in ("maven", "gradle"):
     combined = (output / f"{system}-combined.log").read_text(encoding="utf-8")
