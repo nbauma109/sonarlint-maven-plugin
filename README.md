@@ -179,3 +179,13 @@ confirmation. We prioritize correctness and maintainability over cosmetic rewrit
 A change between `i++` and `++i` by itself is not a useful build warning.
 The `reliability` and `sonar-way-reliability` profiles use real symbolic execution,
 and [CI records a representative runtime comparison](docs/symbolic-performance.md).
+
+## Signal-first Eclipse recommendation
+
+For a low-noise opt-in cleanup profile, use
+[`eclipse-cleanups-recommended.xml`](src/it/broad-complementary/eclipse-cleanups-recommended.xml):
+it enables only assignment extraction, reduction of needless nesting and collection
+`addAll` conversion. The 15-option broad profile remains available separately.
+Our [rule-value review](docs/eclipse-rule-value-review.md) ranks the current picks,
+the next eight substantive candidates and the trivial/style-only options we would
+usually omit. Neither profile changes source code automatically.

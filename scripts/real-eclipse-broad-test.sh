@@ -97,6 +97,51 @@ assert findings["Maven"] == findings["Gradle"], findings
 print("Both build adapters report the same ten complementary cleanup options")
 PY
 
+recommended="$fixture/eclipse-cleanups-recommended.xml"
+
+mvn -B -ntp -f "$fixture/pom.xml" process-classes \
+    -DstaticAnalysis.profile=sonar-way \
+    -DstaticAnalysis.eclipseEnabled=true \
+    "-DstaticAnalysis.eclipseExecutable=$RUNNER_TEMP/eclipse-check.sh" \
+    "-DstaticAnalysis.eclipseCleanupProfile=$recommended" \
+    | tee "$output/maven-recommended.log"
+cp "$fixture/target/static-analysis/eclipse/diagnostics.json" \
+    "$output/maven-recommended.json"
+
+gradle --no-daemon -p "$fixture" staticAnalysis \
+    -PcleanupProfile=eclipse-cleanups-recommended.xml \
+    | tee "$output/gradle-recommended.log"
+cp "$fixture/build/static-analysis/eclipse/diagnostics.json" \
+    "$output/gradle-recommended.json"
+
+python3 - "$output/maven-recommended.log" "$output/maven-recommended.json" \
+    "$output/gradle-recommended.log" "$output/gradle-recommended.json" <<'PY'
+import json
+from pathlib import Path
+import sys
+
+expected = {
+    "cleanup.pull_up_assignment",
+    "cleanup.reduce_indentation",
+    "cleanup.add_all",
+}
+for system, log_path, report_path in (
+    ("Maven", Path(sys.argv[1]), Path(sys.argv[2])),
+    ("Gradle", Path(sys.argv[3]), Path(sys.argv[4])),
+):
+    log = log_path.read_text(encoding="utf-8")
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    assert report["formatVersion"] == 1, (system, report)
+    issues = report["issues"]
+    actual = [issue["cleanup"] for issue in issues]
+    assert len(actual) == 3 and set(actual) == expected, (system, issues)
+    assert "Duplicate Eclipse findings suppressed: 0." in log, (system, log)
+    assert "Eclipse cleanup analysis: 3 violation(s)." in log, (system, log)
+    for option in expected:
+        assert log.count("[eclipse:" + option + "]") == 1, (system, option)
+    print(f"{system}: three distinct signal-first Eclipse findings, no duplicates")
+PY
+
 test "$(sha256sum "$source_file")" = "$original_sha"
 test "$(sha256sum "$module_file")" = "$module_sha"
 echo "Broad complementary candidate check completed without source modifications"
