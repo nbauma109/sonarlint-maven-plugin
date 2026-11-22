@@ -111,11 +111,13 @@ public final class CheckMojo extends AbstractMojo {
         if (cognitiveComplexityThreshold < 0) {
             throw new MojoExecutionException("Cognitive complexity threshold must not be negative.");
         }
-        List<Issue> issues = analyzeProject();
-        EclipseCleanupRunner.Result eclipse = analyzeEclipse(issues);
-        reportIssues(issues);
+        ProjectAnalysis analysis = analyzeProject();
+        EclipseCleanupRunner.Result eclipse = analyzeEclipse(analysis.sonarIssues());
+        reportIssues(analysis.sonarIssues());
+        reportSupplementalIssues(analysis.additionalIssues());
         reportEclipseIssues(eclipse);
-        int total = issues.size() + eclipse.findings().size();
+        int total = analysis.sonarIssues().size() + analysis.additionalIssues().size()
+                + eclipse.findings().size();
         if (failOnViolation && total > 0) {
             if (eclipseEnabled) {
                 throw new MojoFailureException("Static analysis found " + total + " violation(s).");
@@ -155,6 +157,20 @@ public final class CheckMojo extends AbstractMojo {
         }
     }
 
+    private void reportSupplementalIssues(List<SupplementalAnalyzer.Finding> issues) {
+        List<SupplementalAnalyzer.Finding> sorted = new ArrayList<>(issues);
+        sorted.sort(Comparator.comparing(SupplementalAnalyzer.Finding::file)
+                .thenComparingLong(SupplementalAnalyzer.Finding::line)
+                .thenComparing(SupplementalAnalyzer.Finding::rule));
+        for (SupplementalAnalyzer.Finding issue : sorted) {
+            getLog().warn(issue.file() + ":" + issue.line()
+                    + " [" + issue.rule() + "] " + issue.message());
+        }
+        if (!issues.isEmpty()) {
+            getLog().info("Supplemental Java analysis: " + issues.size() + " violation(s).");
+        }
+    }
+
     private void reportEclipseIssues(EclipseCleanupRunner.Result result) {
         for (EclipseCleanupRunner.Diagnostic finding : result.findings()) {
             getLog().warn(finding.file() + ":" + finding.line() + ":" + finding.column()
@@ -166,13 +182,13 @@ public final class CheckMojo extends AbstractMojo {
         }
     }
 
-    private List<Issue> analyzeProject() throws MojoExecutionException {
+    private ProjectAnalysis analyzeProject() throws MojoExecutionException {
         try {
             Path baseDirectory = project.getBasedir().toPath().toAbsolutePath().normalize();
             List<JavaSourceFile> files = collectSources(baseDirectory);
             if (files.isEmpty()) {
                 getLog().info("No Java sources to analyze.");
-                return List.of();
+                return new ProjectAnalysis(List.of(), List.of());
             }
             Path binaries = Path.of(project.getBuild().getOutputDirectory()).toAbsolutePath().normalize();
             if (!Files.isDirectory(binaries)) {
@@ -193,24 +209,42 @@ public final class CheckMojo extends AbstractMojo {
             }
             var activeRules = catalog.select(profile, enabledRules, disabledRules,
                     cognitiveComplexityThreshold, Optional.ofNullable(ruleParameters).orElse(List.of()));
-            if (activeRules.isEmpty()) {
-                getLog().info("No local Sonar rules selected.");
-                return List.of();
+            Set<String> supplementalRules = catalog.supplementalRules(profile, enabledRules, disabledRules);
+            if (activeRules.isEmpty() && supplementalRules.isEmpty()) {
+                getLog().info("No local Java rules selected.");
+                return new ProjectAnalysis(List.of(), List.of());
             }
-            getLog().info("Activated " + activeRules.size() + " local Java rule(s).");
-            AnalysisConfiguration configuration = AnalysisConfiguration.builder()
-                    .setBaseDir(baseDirectory)
-                    .addInputFiles(files)
-                    .putAllExtraProperties(analysisProperties(binaries))
-                    .addActiveRules(activeRules)
-                    .build();
-            getLog().info("Analyzing " + files.size() + " Java source file(s) locally.");
-            if (useSymbolicAnalyzer) {
-                return new StandaloneAnalyzer(analyzer, symbolicAnalyzer, workDirectory,
-                        new MavenLogOutput(getLog())).analyze(configuration);
+            List<Issue> sonarIssues = List.of();
+            if (!activeRules.isEmpty()) {
+                getLog().info("Activated " + activeRules.size() + " local Java rule(s).");
+                AnalysisConfiguration configuration = AnalysisConfiguration.builder()
+                        .setBaseDir(baseDirectory)
+                        .addInputFiles(files)
+                        .putAllExtraProperties(analysisProperties(binaries))
+                        .addActiveRules(activeRules)
+                        .build();
+                getLog().info("Analyzing " + files.size() + " Java source file(s) locally.");
+                if (useSymbolicAnalyzer) {
+                    sonarIssues = new StandaloneAnalyzer(analyzer, symbolicAnalyzer, workDirectory,
+                            new MavenLogOutput(getLog())).analyze(configuration);
+                } else {
+                    sonarIssues = new StandaloneAnalyzer(analyzer, workDirectory,
+                            new MavenLogOutput(getLog())).analyze(configuration);
+                }
             }
-            return new StandaloneAnalyzer(analyzer, workDirectory,
-                    new MavenLogOutput(getLog())).analyze(configuration);
+            List<SupplementalAnalyzer.Finding> additionalIssues = List.of();
+            if (!supplementalRules.isEmpty()) {
+                List<Path> sourcePaths = new ArrayList<>();
+                for (JavaSourceFile file : files) {
+                    sourcePaths.add(Path.of(file.getPath()));
+                }
+                String sourceVersion = Optional.ofNullable(release).filter(value -> !value.isBlank())
+                        .or(() -> Optional.ofNullable(source).filter(value -> !value.isBlank()))
+                        .orElse("");
+                additionalIssues = SupplementalAnalyzer.analyze(baseDirectory, sourcePaths,
+                        project.getCompileClasspathElements(), sourceVersion, supplementalRules);
+            }
+            return new ProjectAnalysis(sonarIssues, additionalIssues);
         } catch (IOException | DependencyResolutionRequiredException | RuntimeException exception) {
             throw new MojoExecutionException("Local Sonar analysis could not complete: " + exception.getMessage(), exception);
         }
@@ -281,6 +315,10 @@ public final class CheckMojo extends AbstractMojo {
             getLog().warn(location(issue) + " [" + issue.getRuleKey() + "] " + issue.getMessage());
         }
         getLog().info("Sonar analysis: " + issues.size() + " violation(s).");
+    }
+
+    private record ProjectAnalysis(List<Issue> sonarIssues,
+            List<SupplementalAnalyzer.Finding> additionalIssues) {
     }
 
     private static String location(Issue issue) {
