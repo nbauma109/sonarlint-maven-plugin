@@ -69,6 +69,20 @@ mvn -B -ntp -o -f "$production_fixture" process-classes \
     -DstaticAnalysis.disabledRules=java:S3398,java:S9398,java:S9438 \
     | tee "$logs/modern-production-disabled.log"
 
+null_fixture=src/it/null-safety/pom.xml
+if mvn -B -ntp -o -f "$null_fixture" process-classes > "$logs/null-safety-strict.log" 2>&1; then
+    cat "$logs/null-safety-strict.log"
+    echo "Expected unguarded null dereference to fail the build." >&2
+    exit 1
+fi
+grep -E '\[WARNING\].*NullSafetyIssues\.java:[0-9]+ \[java:S2259\]' \
+    "$logs/null-safety-strict.log"
+test "$(grep -Ec '\[WARNING\].*\[java:S2259\]' "$logs/null-safety-strict.log")" -eq 1
+grep -F 'Sonar found 1 violation(s).' "$logs/null-safety-strict.log"
+mvn -B -ntp -o -f "$null_fixture" process-classes -DstaticAnalysis.disabledRules=java:S2259 \
+    | tee "$logs/null-safety-disabled.log"
+grep -F 'Sonar analysis: 0 violation(s).' "$logs/null-safety-disabled.log"
+
 test_fixture=src/it/modern-test-rules/pom.xml
 compiler_release=17
 expected_test_issues=2
