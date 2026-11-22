@@ -9,6 +9,7 @@
     <properties>
         <maven.compiler.release>17</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <exec.mainClass>example.EmbeddedJdtCoreCleanupProbe</exec.mainClass>
     </properties>
     <dependencies>
         <dependency>
@@ -34,7 +35,7 @@
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>3.6.0</version>
                 <configuration>
-                    <mainClass>example.EmbeddedJdtCoreCleanupProbe</mainClass>
+                    <mainClass>${exec.mainClass}</mainClass>
                 </configuration>
             </plugin>
         </plugins>

@@ -26,3 +26,24 @@ jobs:
           mvn -B -ntp -f src/it/embedded-jdt-core-cleanups/pom.xml \
             compile exec:java | tee embedded-jdt-core.log
           grep -F 'EMBEDDED_JDT_CORE_SUCCESS' embedded-jdt-core.log
+      - name: Checkout pinned transformer-api revision
+        if: matrix.java == '25'
+        uses: actions/checkout@v4
+        with:
+          repository: nbauma109/transformer-api
+          ref: fdc55663e6c9d5836db57e6369fd08d6bc4651cd
+          path: transformer-api-pinned
+      - name: Verify eight original SonarCloud private-field findings with embedded JDT
+        if: matrix.java == '25'
+        shell: bash
+        run: |
+          set -euo pipefail
+          mvn -B -ntp -f transformer-api-pinned/pom.xml compile
+          mvn -B -ntp -f transformer-api-pinned/pom.xml \
+            dependency:build-classpath "-Dmdep.outputFile=$PWD/transformer-api-classpath.txt"
+          mvn -B -ntp -f src/it/embedded-jdt-core-cleanups/pom.xml \
+            compile exec:java \
+            -Dexec.mainClass=example.EmbeddedJdtCoreFieldParity \
+            "-Dexec.args=$PWD/transformer-api-pinned $PWD/transformer-api-classpath.txt" \
+            | tee embedded-jdt-field-parity.log
+          grep -F 'EMBEDDED_JDT_EIGHT_FIELD_PARITY_SUCCESS' embedded-jdt-field-parity.log
