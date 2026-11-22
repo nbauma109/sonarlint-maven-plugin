@@ -211,7 +211,7 @@ class EclipseDuplicateFilterTest {
                 }
                 """;
         writeSource(source);
-        int innerDeclaration = source.indexOf("class Inner");
+        int innerDeclaration = source.indexOf(" class Inner");
         EclipseCleanupRunner.Diagnostic insertedStatic = new EclipseCleanupRunner.Diagnostic(
                 RELATIVE_FILE, 3, 13, "cleanup.static_inner_class",
                 "Make inner class static", innerDeclaration, innerDeclaration);

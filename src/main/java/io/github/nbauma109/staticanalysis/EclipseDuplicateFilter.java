@@ -103,10 +103,16 @@ final class EclipseDuplicateFilter {
             return false;
         }
         int insertion = finding.startOffset();
-        if (!source.startsWith("class ", insertion)) {
+        int keyword = insertion;
+        while (keyword < source.length()
+                && keyword - insertion <= 8
+                && (source.charAt(keyword) == ' ' || source.charAt(keyword) == '\t')) {
+            keyword++;
+        }
+        if (keyword - insertion > 8 || !source.startsWith("class ", keyword)) {
             return false;
         }
-        int nameStart = insertion + "class ".length();
+        int nameStart = keyword + "class ".length();
         int nameEnd = nameStart;
         while (nameEnd < source.length()
                 && Character.isJavaIdentifierPart(source.charAt(nameEnd))) {
@@ -115,7 +121,7 @@ final class EclipseDuplicateFilter {
         if (nameEnd == nameStart) {
             return false;
         }
-        return sonarStart < nameEnd && sonarEnd > insertion;
+        return sonarStart < nameEnd && sonarEnd > keyword;
     }
 
     private static boolean matchesOverrideInsertion(EclipseCleanupRunner.Diagnostic finding,
