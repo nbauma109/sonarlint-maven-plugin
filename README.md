@@ -66,6 +66,10 @@ restrictions. The analyzer checks the resource against the actual pinned Java
 plugin archive and fails if its membership or eligible rule count changes.
 Maven and Gradle use the same snapshot.
 
+**Profile migration:** previously, `sonar-way` selected 392 standard rules. It now selects
+395 including the three verified symbolic checks. To retain the exact previous rule
+selection, use `sonar-way-standard`. The default `priority` profile is unchanged.
+
 The separate [21 symbolic Sonar Way rules](docs/sonar-way-symbolic-java-8.6.0.37351.rules)
 are recorded independently. The opt-in `sonar-way` profile includes the 392 eligible
 standard rules **plus three reviewed symbolic correctness checks** for resource leaks,

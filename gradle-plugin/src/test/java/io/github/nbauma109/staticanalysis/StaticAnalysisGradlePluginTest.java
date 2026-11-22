@@ -84,6 +84,27 @@ class StaticAnalysisGradlePluginTest {
     }
 
     @Test
+    void curatedSonarWayReportsRealSymbolicReliabilityFindings() throws IOException {
+        Path original = Path.of(System.getProperty("staticAnalysis.reliabilityFixtureDirectory"),
+                "example", "ReliabilityIssues.java");
+        Path source = projectDirectory.resolve("src/main/java/example/ReliabilityIssues.java");
+        Files.createDirectories(source.getParent());
+        Files.copy(original.toAbsolutePath().normalize(), source);
+        Files.writeString(projectDirectory.resolve("settings.gradle"),
+                "rootProject.name = 'curated-sonar-way-fixture'\n", StandardCharsets.UTF_8);
+        Files.writeString(projectDirectory.resolve("build.gradle"),
+                configuration("sonar-way", false, 15), StandardCharsets.UTF_8);
+        String before = Files.readString(source, StandardCharsets.UTF_8);
+        BuildResult result = run("staticAnalysis");
+        assertTrue(result.getOutput().contains("Activated 395 local Java rule(s)."),
+                result.getOutput());
+        for (String key : new String[] {"java:S2095", "java:S2259", "java:S3655"}) {
+            assertTrue(result.getOutput().contains("[" + key + "]"), result.getOutput());
+        }
+        assertTrue(before.equals(Files.readString(source, StandardCharsets.UTF_8)));
+    }
+
+    @Test
     void combinesPinnedSonarWayWithReviewedSymbolicReliabilityChecks() throws IOException {
         prepare("sonar-way-reliability", false, 15);
         BuildResult result = run("staticAnalysis");
