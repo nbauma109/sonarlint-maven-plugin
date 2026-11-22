@@ -113,10 +113,12 @@ public final class CheckMojo extends AbstractMojo {
         }
         ProjectAnalysis analysis = analyzeProject();
         EclipseCleanupRunner.Result eclipse = analyzeEclipse(analysis.sonarIssues());
+        List<SupplementalAnalyzer.Finding> supplementalIssues = preferEclipseFieldFinality(
+                analysis.additionalIssues(), eclipse.findings());
         reportIssues(analysis.sonarIssues());
-        reportSupplementalIssues(analysis.additionalIssues());
+        reportSupplementalIssues(supplementalIssues);
         reportEclipseIssues(eclipse);
-        int total = analysis.sonarIssues().size() + analysis.additionalIssues().size()
+        int total = analysis.sonarIssues().size() + supplementalIssues.size()
                 + eclipse.findings().size();
         if (failOnViolation && total > 0) {
             if (eclipseEnabled) {
@@ -126,6 +128,40 @@ public final class CheckMojo extends AbstractMojo {
         }
     }
 
+
+    private List<SupplementalAnalyzer.Finding> preferEclipseFieldFinality(
+            List<SupplementalAnalyzer.Finding> supplemental,
+            List<EclipseCleanupRunner.Diagnostic> eclipse) {
+        if (supplemental.isEmpty() || eclipse.isEmpty()) {
+            return supplemental;
+        }
+        Set<String> eclipseFields = new LinkedHashSet<>();
+        for (EclipseCleanupRunner.Diagnostic finding : eclipse) {
+            if (isPrivateFieldFinality(finding)) {
+                eclipseFields.add(finding.file() + ":" + finding.line());
+            }
+        }
+        List<SupplementalAnalyzer.Finding> retained = new ArrayList<>();
+        for (SupplementalAnalyzer.Finding finding : supplemental) {
+            if ("java:S9438".equals(finding.rule())
+                    && eclipseFields.contains(finding.file() + ":" + finding.line())) {
+                continue;
+            }
+            retained.add(finding);
+        }
+        int replaced = supplemental.size() - retained.size();
+        if (replaced > 0) {
+            getLog().info("Equivalent private-field findings provided by Eclipse: "
+                    + replaced + ".");
+        }
+        return List.copyOf(retained);
+    }
+
+    private static boolean isPrivateFieldFinality(EclipseCleanupRunner.Diagnostic finding) {
+        return finding.startOffset() == finding.endOffset()
+                && ("VariableDeclarationCleanUpCore".equals(finding.cleanup())
+                || "cleanup.make_private_fields_final".equals(finding.cleanup()));
+    }
 
     private EclipseCleanupRunner.Result analyzeEclipse(List<Issue> sonarIssues)
             throws MojoExecutionException {
