@@ -43,6 +43,8 @@ jobs:
             -DstaticAnalysis.profile=sonar-way \
             -DstaticAnalysis.failOnViolation=false \
             | tee transformer-api-analysis.log
+      - name: Assert embedded JDT field-finality rules run without an Eclipse installation
+        run: grep -F 'Embedded Eclipse JDT core cleanups found 8 private-field finality issue(s).' transformer-api-analysis.log
       - name: Compile pinned test sources
         run: mvn -B -ntp -f transformer-api/pom.xml test-compile -DskipTests
       - name: Collect test-source findings
