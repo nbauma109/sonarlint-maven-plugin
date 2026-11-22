@@ -1,0 +1,38 @@
+name: Validate Maven Central release artifacts
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  release-artifacts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+      - name: Build source and Javadoc archives without publishing
+        run: mvn -B -ntp -Pcentral-release -Dgpg.skip=true clean verify
+      - name: Inspect Maven release outputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          main_jar="$(find target -maxdepth 1 -type f -name 'static-analysis-maven-plugin-*.jar' ! -name '*-sources.jar' ! -name '*-javadoc.jar' -print -quit)"
+          sources_jar="$(find target -maxdepth 1 -type f -name 'static-analysis-maven-plugin-*-sources.jar' -print -quit)"
+          javadoc_jar="$(find target -maxdepth 1 -type f -name 'static-analysis-maven-plugin-*-javadoc.jar' -print -quit)"
+          test -n "$main_jar" && test -n "$sources_jar" && test -n "$javadoc_jar"
+          jar tf "$main_jar" | grep -qx 'META-INF/maven/plugin.xml'
+          jar tf "$main_jar" | grep -qx 'META-INF/LICENSE'
+          jar tf "$main_jar" | grep -qx 'META-INF/COPYRIGHT.md'
+          jar tf "$main_jar" | grep -qx 'META-INF/THIRD_PARTY_NOTICES.md'
+          jar tf "$sources_jar" | grep -q 'CheckMojo.java'
+          jar tf "$javadoc_jar" | grep -q 'index.html'

@@ -21,6 +21,9 @@ jobs:
           distribution: temurin
           java-version: ${{ matrix.java }}
           cache: maven
+      - name: Verify Maven Central packaging without signing or upload
+        if: matrix.java == '17'
+        run: mvn -B -ntp -Pcentral-release -Dgpg.skip=true clean verify
       - name: Verify standalone analysis
         run: bash scripts/integration-test.sh
       - name: Upload integration logs
