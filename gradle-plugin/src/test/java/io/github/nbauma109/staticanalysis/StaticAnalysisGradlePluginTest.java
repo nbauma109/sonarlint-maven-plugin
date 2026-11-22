@@ -45,8 +45,17 @@ class StaticAnalysisGradlePluginTest {
     }
 
     @Test
-    void loadsVersionedSonarWayRulesFromGradlePluginResources() throws IOException {
+    void loadsCuratedSonarWayRulesFromGradlePluginResources() throws IOException {
         prepare("sonar-way", false, 15);
+        BuildResult result = run("staticAnalysis");
+        assertTrue(result.getOutput().contains("Activated 395 local Java rule(s)."),
+                result.getOutput());
+        assertTrue(result.getOutput().contains("[java:S3776]"), result.getOutput());
+    }
+
+    @Test
+    void keepsTheStandardSonarWayBaselineAvailable() throws IOException {
+        prepare("sonar-way-standard", false, 15);
         BuildResult result = run("staticAnalysis");
         assertTrue(result.getOutput().contains("Activated 392 local Java rule(s)."),
                 result.getOutput());
@@ -68,6 +77,27 @@ class StaticAnalysisGradlePluginTest {
         BuildResult result = run("staticAnalysis");
         assertTrue(result.getOutput().contains("Activated 3 local Java rule(s)."), result.getOutput());
         assertTrue(result.getOutput().contains("Sonar analysis: 3 violation(s)."), result.getOutput());
+        for (String key : new String[] {"java:S2095", "java:S2259", "java:S3655"}) {
+            assertTrue(result.getOutput().contains("[" + key + "]"), result.getOutput());
+        }
+        assertTrue(before.equals(Files.readString(source, StandardCharsets.UTF_8)));
+    }
+
+    @Test
+    void curatedSonarWayReportsRealSymbolicReliabilityFindings() throws IOException {
+        Path original = Path.of(System.getProperty("staticAnalysis.reliabilityFixtureDirectory"),
+                "example", "ReliabilityIssues.java");
+        Path source = projectDirectory.resolve("src/main/java/example/ReliabilityIssues.java");
+        Files.createDirectories(source.getParent());
+        Files.copy(original.toAbsolutePath().normalize(), source);
+        Files.writeString(projectDirectory.resolve("settings.gradle"),
+                "rootProject.name = 'curated-sonar-way-fixture'\n", StandardCharsets.UTF_8);
+        Files.writeString(projectDirectory.resolve("build.gradle"),
+                configuration("sonar-way", false, 15), StandardCharsets.UTF_8);
+        String before = Files.readString(source, StandardCharsets.UTF_8);
+        BuildResult result = run("staticAnalysis");
+        assertTrue(result.getOutput().contains("Activated 395 local Java rule(s)."),
+                result.getOutput());
         for (String key : new String[] {"java:S2095", "java:S2259", "java:S3655"}) {
             assertTrue(result.getOutput().contains("[" + key + "]"), result.getOutput());
         }

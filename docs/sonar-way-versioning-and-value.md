@@ -9,13 +9,14 @@ contains **491** rule identifiers copied from the
 [matching upstream profile](https://github.com/SonarSource/sonar-java/blob/8.6.0.37351/sonar-java-plugin/src/main/resources/org/sonar/l10n/java/rules/java/Sonar_way_profile.json).
 The runtime must find exactly the same set in the analyzer archive.
 
-The standalone engine selects **392** of these rules according to pinned
+The standalone engine selects **392 standard** rules according to pinned
 metadata: only ready, applicable production rules, excluding rule templates,
 security hotspots and vulnerabilities that do not have a corresponding
-supported review workflow. Both Maven and Gradle enforce this count; the
-snapshot is a reproducible baseline, **not a claim of parity with a current
-SonarQube or SonarCloud server's live profile**. Selecting `priority` remains
-the default; `sonar-way` must be explicitly chosen.
+supported review workflow. Both Maven and Gradle enforce this count. The opt-in `sonar-way` profile also
+includes three verified symbolic rules for **395 total**, while
+`sonar-way-standard` retains the 392-rule baseline for comparison. The
+snapshot is reproducible, **not a claim of parity with a current SonarQube
+or SonarCloud server's live profile**. Selecting `priority` remains the default.
 
 Run `python3 scripts/verify-sonar-way-snapshot.py` to compare standard and
 symbolic snapshot membership with [the catalog](rule-catalog.csv).
@@ -38,9 +39,11 @@ The selected rules are:
 
 These are correctness and reliability checks, not cosmetic refactorings.
 The `reliability` profile loads the compatible pinned symbolic analyzer
-alongside SonarJava and activates exactly these three rules. The
-`sonar-way-reliability` profile combines the same three rules with the 392
-pinned standard rules for **395 local checks**. Both profiles check an
+alongside SonarJava and activates exactly these three rules. The `sonar-way`
+profile now combines these three with the 392 pinned standard rules for
+**395 local checks**. The previous `sonar-way-reliability` selector remains
+as a compatibility alias; `sonar-way-standard` explicitly excludes symbolic
+analysis. Both profiles check an
 unclosed resource, null dereference, and unsafe `Optional.get()`. Safe controls
 and disabled-rule precedence are part of the integration fixtures. The other
 18 symbolic entries remain catalogued but unavailable; their identifiers are
