@@ -145,13 +145,77 @@ final class SupplementalAnalyzer {
         public Void visitClass(ClassTree tree, Void unused) {
             if (enabledRules.contains("java:S9398") && tree.getKind() == Tree.Kind.CLASS) {
                 TreePath parent = getCurrentPath().getParentPath();
-                if (parent != null && parent.getLeaf().getKind() == Tree.Kind.INTERFACE
+                if (parent != null && parent.getLeaf() instanceof ClassTree owner
+                        && owner.getKind() == Tree.Kind.INTERFACE
                         && !tree.getModifiers().getFlags().contains(Modifier.ABSTRACT)
-                        && !tree.getSimpleName().toString().endsWith("Builder")) {
+                        && !tree.getSimpleName().toString().endsWith("Builder")
+                        && !referencedInInterfaceSignature(owner, parent,
+                                trees.getElement(getCurrentPath()))) {
                     report(tree, "java:S9398", "Move this class out of this interface.");
                 }
             }
             return super.visitClass(tree, unused);
+        }
+
+        private boolean referencedInInterfaceSignature(ClassTree owner, TreePath ownerPath,
+                Element nestedType) {
+            for (Tree member : owner.getMembers()) {
+                if (!(member instanceof MethodTree method)) {
+                    continue;
+                }
+                TreePath methodPath = new TreePath(ownerPath, method);
+                if (referencesType(methodPath, method.getReturnType(), nestedType)) {
+                    return true;
+                }
+                for (VariableTree parameter : method.getParameters()) {
+                    if (referencesType(new TreePath(methodPath, parameter),
+                            parameter.getType(), nestedType)) {
+                        return true;
+                    }
+                }
+                for (ExpressionTree exceptionType : method.getThrows()) {
+                    if (referencesType(methodPath, exceptionType, nestedType)) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        private boolean referencesType(TreePath parent, Tree type, Element target) {
+            if (type == null || target == null) {
+                return false;
+            }
+            TypeReferenceVisitor visitor = new TypeReferenceVisitor(trees, target);
+            visitor.scan(new TreePath(parent, type), null);
+            return visitor.found;
+        }
+
+        private static final class TypeReferenceVisitor extends TreePathScanner<Void, Void> {
+            private final Trees trees;
+            private final Element target;
+            private boolean found;
+
+            private TypeReferenceVisitor(Trees trees, Element target) {
+                this.trees = trees;
+                this.target = target;
+            }
+
+            @Override
+            public Void visitIdentifier(IdentifierTree identifier, Void unused) {
+                if (target.equals(trees.getElement(getCurrentPath()))) {
+                    found = true;
+                }
+                return super.visitIdentifier(identifier, unused);
+            }
+
+            @Override
+            public Void visitMemberSelect(MemberSelectTree select, Void unused) {
+                if (target.equals(trees.getElement(getCurrentPath()))) {
+                    found = true;
+                }
+                return super.visitMemberSelect(select, unused);
+            }
         }
 
         @Override
