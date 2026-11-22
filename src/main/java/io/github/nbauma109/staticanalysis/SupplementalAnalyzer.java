@@ -112,6 +112,7 @@ final class SupplementalAnalyzer {
         private final Map<VariableElement, VariableTree> fields = new HashMap<>();
         private final Map<VariableElement, List<ExecutableElement>> mutations = new HashMap<>();
         private final Map<TypeElement, Set<ExecutableElement>> constructors = new HashMap<>();
+        private final Map<ExecutableElement, ExecutableElement> constructorDelegations = new HashMap<>();
         private final Map<ExecutableElement, MethodTree> methods = new HashMap<>();
         private final Map<ExecutableElement, MethodUsage> usages = new HashMap<>();
 
@@ -138,6 +139,7 @@ final class SupplementalAnalyzer {
             if (enabledRules.contains("java:S9398") && tree.getKind() == Tree.Kind.CLASS) {
                 TreePath parent = getCurrentPath().getParentPath();
                 if (parent != null && parent.getLeaf().getKind() == Tree.Kind.INTERFACE
+                        && !tree.getModifiers().getFlags().contains(Modifier.ABSTRACT)
                         && !tree.getSimpleName().toString().endsWith("Builder")) {
                     report(tree, "java:S9398", "Move this class out of this interface.");
                 }
@@ -152,6 +154,7 @@ final class SupplementalAnalyzer {
                 if (symbol.getKind() == ElementKind.CONSTRUCTOR
                         && symbol.getEnclosingElement() instanceof TypeElement owner) {
                     constructors.computeIfAbsent(owner, ignored -> new LinkedHashSet<>()).add(method);
+                    recordConstructorDelegation(method, tree);
                 }
                 if (enabledRules.contains("java:S3398") && symbol.getKind() == ElementKind.METHOD
                         && symbol.getModifiers().contains(Modifier.PRIVATE)) {
@@ -159,6 +162,26 @@ final class SupplementalAnalyzer {
                 }
             }
             return super.visitMethod(tree, unused);
+        }
+
+        private void recordConstructorDelegation(ExecutableElement constructor, MethodTree tree) {
+            if (tree.getBody() == null || tree.getBody().getStatements().isEmpty()) {
+                return;
+            }
+            Tree statement = tree.getBody().getStatements().get(0);
+            if (!(statement instanceof ExpressionStatementTree expression)
+                    || !(expression.getExpression() instanceof MethodInvocationTree call)
+                    || !(call.getMethodSelect() instanceof IdentifierTree identifier)
+                    || !"this".contentEquals(identifier.getName())) {
+                return;
+            }
+            TreePath statementPath = new TreePath(new TreePath(
+                    new TreePath(getCurrentPath(), tree.getBody()), statement), call);
+            Element target = trees.getElement(statementPath);
+            if (target instanceof ExecutableElement delegated
+                    && target.getKind() == ElementKind.CONSTRUCTOR) {
+                constructorDelegations.put(constructor, delegated);
+            }
         }
 
         @Override
@@ -205,8 +228,11 @@ final class SupplementalAnalyzer {
             }
             Element element = trees.getElement(new TreePath(getCurrentPath(), target));
             if (element instanceof VariableElement field && element.getKind() == ElementKind.FIELD) {
-                ExecutableElement directConstructor = simpleAssignment ? directConstructor() : null;
-                mutations.computeIfAbsent(field, ignored -> new ArrayList<>()).add(directConstructor);
+                ExecutableElement direct = null;
+                if (simpleAssignment) {
+                    direct = directConstructor();
+                }
+                mutations.computeIfAbsent(field, ignored -> new ArrayList<>()).add(direct);
             }
         }
 
@@ -332,16 +358,39 @@ final class SupplementalAnalyzer {
                 return false;
             }
             Set<ExecutableElement> expected = constructors.getOrDefault(owner, Set.of());
-            if (expected.isEmpty() || expected.size() != writes.size()) {
+            if (expected.isEmpty() || writes.isEmpty()) {
                 return false;
             }
-            Set<ExecutableElement> actual = new HashSet<>();
+            Map<ExecutableElement, Integer> directWrites = new HashMap<>();
             for (ExecutableElement constructor : writes) {
-                if (constructor == null || !actual.add(constructor)) {
+                if (constructor == null || !expected.contains(constructor)) {
+                    return false;
+                }
+                directWrites.merge(constructor, 1, Integer::sum);
+            }
+            for (ExecutableElement constructor : expected) {
+                if (constructorAssignmentCount(constructor, directWrites, new HashSet<>()) != 1) {
                     return false;
                 }
             }
-            return actual.equals(expected);
+            return true;
+        }
+
+        private int constructorAssignmentCount(ExecutableElement constructor,
+                Map<ExecutableElement, Integer> directWrites, Set<ExecutableElement> visited) {
+            if (!visited.add(constructor)) {
+                return -1;
+            }
+            int assignments = directWrites.getOrDefault(constructor, 0);
+            ExecutableElement delegated = constructorDelegations.get(constructor);
+            if (delegated != null) {
+                int nestedAssignments = constructorAssignmentCount(delegated, directWrites, visited);
+                if (nestedAssignments < 0) {
+                    return -1;
+                }
+                assignments += nestedAssignments;
+            }
+            return assignments;
         }
 
         private void checkRecordMethods() {
