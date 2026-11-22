@@ -43,3 +43,25 @@ jobs:
             org.codehaus.mojo:exec-maven-plugin:3.5.1:java \
             -Dexec.mainClass=io.github.nbauma109.staticanalysis.EmbeddedJdtCleanupProbe \
             "-Dexec.args=$GITHUB_WORKSPACE/transformer-api"
+      - name: Compile Java 17-compatible JDT alternative
+        run: mvn -B -ntp -f src/it/embedded-jdt-java17/pom.xml compile
+      - name: Compare older JDT cleanup with all eight source locations
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PROBE_CLASSPATH="$(cat transformer-api/target/embedded-jdt-classpath.txt)"
+          mvn -B -ntp -f src/it/embedded-jdt-java17/pom.xml \
+            org.codehaus.mojo:exec-maven-plugin:3.5.1:java \
+            -Dexec.mainClass=io.github.nbauma109.staticanalysis.EmbeddedJdtCleanupProbe \
+            "-Dexec.args=$GITHUB_WORKSPACE/transformer-api"
+  java17-compatibility:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+      - name: Compile older JDT cleanup adapter using Java 17
+        run: mvn -B -ntp -f src/it/embedded-jdt-java17/pom.xml compile
