@@ -161,3 +161,14 @@ cleanup options (ten added in the latest batch, plus our five system-property cl
 Both Maven and Gradle can use the [XML profile](src/it/broad-complementary/eclipse-cleanups.xml)
 with `eclipseEnabled` enabled and the configured external Eclipse runtime. These options
 remain opt-in because cleanup suggestions may have compatibility implications.
+
+## Experimental symbolic-execution analysis and overlap audit
+
+The matching `8.6.0.37351` Java symbolic execution analyzer is available behind an
+opt-in `symbolicEnabled` setting while compatibility, positive findings and execution
+cost are verified. See [the symbolic analysis gate](docs/symbolic-execution.md).
+
+Our [Eclipse overlap audit](docs/eclipse-overlap-audit.md) distinguishes tested
+exact-duplicate mappings from unresolved overlaps and cosmetic cleanups. We
+prioritize genuine, useful findings over syntax preferences such as changing
+`i++` to `++i`.

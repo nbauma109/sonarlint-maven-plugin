@@ -5,6 +5,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -53,7 +54,7 @@ final class StandaloneAnalyzer {
 
     private List<Issue> analyzeLocally(AnalysisConfiguration configuration) throws IOException {
         Files.createDirectories(workDirectory);
-        Set<Path> analyzers = new java.util.HashSet<>();
+        Set<Path> analyzers = new HashSet<>();
         analyzers.add(analyzerJar);
         symbolicAnalyzerJar.ifPresent(analyzers::add);
         PluginsLoader.Configuration pluginConfiguration = new PluginsLoader.Configuration(

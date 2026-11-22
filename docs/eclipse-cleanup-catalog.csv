@@ -30,7 +30,7 @@
 "cleanup.precompile_regex","TRUE","REVIEW","","No confirmed comparison yet; do not enable as Eclipse-only."
 "cleanup.add_missing_annotations","TRUE","REVIEW","","No confirmed comparison yet; do not enable as Eclipse-only."
 "cleanup.always_use_this_for_non_static_field_access","FALSE","REVIEW","","No confirmed comparison yet; do not enable as Eclipse-only."
-"cleanup.boolean_literal","TRUE","SONAR_OVERLAP","S1125","Redundant boolean literals."
+"cleanup.boolean_literal","TRUE","REVIEW","","Converts Boolean.TRUE and Boolean.FALSE into primitive literals; distinct from java:S1125 redundant boolean comparisons. No automatic deduplication."
 "cleanup.sort_members","FALSE","STYLE_POLICY","","Optional member ordering policy."
 "cleanup.always_use_parentheses_in_expressions","FALSE","STYLE_POLICY","","Parentheses preference."
 "cleanup.remove_unused_method_parameters","FALSE","SONAR_OVERLAP","S1172","Unused parameters; scope and overriding constraints differ."

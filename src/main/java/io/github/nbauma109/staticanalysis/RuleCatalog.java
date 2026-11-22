@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -48,10 +49,10 @@ final class RuleCatalog {
     }
 
     static RuleCatalog load(Path analyzer) throws IOException {
-        return load(analyzer, java.util.Optional.empty());
+        return load(analyzer, Optional.empty());
     }
 
-    static RuleCatalog load(Path analyzer, java.util.Optional<Path> symbolicAnalyzer) throws IOException {
+    static RuleCatalog load(Path analyzer, Optional<Path> symbolicAnalyzer) throws IOException {
         try (ZipFile archive = new ZipFile(analyzer.toFile())) {
             Map<String, RuleMetadata> definitions = new TreeMap<>();
             var entries = archive.entries();
