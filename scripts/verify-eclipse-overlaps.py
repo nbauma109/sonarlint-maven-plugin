@@ -20,6 +20,8 @@ EXPECTED = {
     "cleanup.remove_redundant_type_arguments": "S2293",
     "cleanup.remove_unnecessary_array_creation": "S3878",
     "cleanup.useless_return": "S3626",
+    "cleanup.remove_unused_private_fields": "S1068",
+    "cleanup.remove_unused_private_methods": "S1144",
 }
 EXPECTED_CATEGORIES = {
     "SONAR_OVERLAP": 33,

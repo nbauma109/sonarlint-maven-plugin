@@ -21,12 +21,13 @@ was corrected: `cleanup.boolean_literal` converts `Boolean.TRUE` and
 | Style policy | 18 | Preferences disabled unless selected explicitly |
 | **Total** | **147** | |
 
-**9 exact mappings** have passed full real Sonar plus Eclipse deduplication
+**11 exact mappings** have passed full real Sonar plus Eclipse deduplication
 regression in both Maven and Gradle: `S1128` (unused imports), `S1905`
 (redundant casts), `S1481` (unused local variables), `S1161` (missing
 `@Override`), `S2093` (try-with-resources), `S2129` (unnecessary
 `String` construction), `S2293` (redundant generic type arguments),
-`S3878` (unnecessary array creation), and `S3626` (redundant returns).
+`S3878` (unnecessary array creation), `S3626` (redundant returns),
+`S1068` (unused private fields), and `S1144` (unused private methods).
 Each is suppressed only when a matching active Sonar finding overlaps the
 original source edit. Integration includes disabling deduplication and
 removing corresponding Sonar rules to verify the negative controls.
@@ -92,7 +93,7 @@ is safe or a Sonar duplicate.
 
 ## What remains
 
-**24 candidate overlap classifications** lack a fully verified
+**22 candidate overlap classifications** lack a fully verified
 combined-engine deduplication mapping. An additional **80 options**
 remain under review. These are work items, not 108 confirmed duplicates.
 

@@ -23,3 +23,14 @@ Only after a green source-range comparison should the duplicate filter consider
 these exact option/rule pairs. A future negative control must prove that
 Eclipse remains visible whenever the corresponding Sonar rule is disabled.
 Do not treat parent cleanup options as identical to all child findings.
+
+## Exact-once duplicate filtering
+
+Maven and Gradle now exercise both production mappings with four controls for
+each member kind: real Sonar and Eclipse positives on the same declaration,
+only one combined warning when deduplication is active, both warnings when
+suppression is disabled, and the Eclipse warning preserved when its Sonar rule
+is not active. Only the child option for the specific field or method is mapped;
+`cleanup.remove_unused_private_members` remains an unmapped parent because its
+scope may include other kinds of private members. Used members are never
+reported in the tested source. Neither build modifies source files.

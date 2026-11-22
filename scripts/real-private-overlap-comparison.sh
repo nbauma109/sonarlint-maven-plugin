@@ -29,9 +29,43 @@ for option in remove_unused_private_fields remove_unused_private_methods; do
     cp "$fixture/build/static-analysis/eclipse/diagnostics.json" \
         "$output/gradle-$option.json"
 
+    fallback_rule="java:S1068"
+    if [ "$option" = "remove_unused_private_fields" ]; then
+        fallback_rule="java:S1144"
+    fi
+
+    mvn -B -ntp -f "$fixture/pom.xml" process-classes \
+        -DstaticAnalysis.profile=none \
+        -DstaticAnalysis.enabledRules=java:S1068,java:S1144 \
+        -DstaticAnalysis.eclipseEnabled=true \
+        "-DstaticAnalysis.eclipseExecutable=$RUNNER_TEMP/eclipse-check.sh" \
+        "-DstaticAnalysis.eclipseCleanupProfile=$profile" \
+        -DstaticAnalysis.eclipseDuplicatePolicy=none \
+        | tee "$output/maven-$option-unfiltered.log"
+
+    gradle --no-daemon -p "$fixture" staticAnalysis \
+        -PenabledRules=java:S1068,java:S1144 \
+        "-PcleanupProfile=eclipse-$option.xml" -PduplicatePolicy=none \
+        | tee "$output/gradle-$option-unfiltered.log"
+
+    mvn -B -ntp -f "$fixture/pom.xml" process-classes \
+        -DstaticAnalysis.profile=none \
+        "-DstaticAnalysis.enabledRules=$fallback_rule" \
+        -DstaticAnalysis.eclipseEnabled=true \
+        "-DstaticAnalysis.eclipseExecutable=$RUNNER_TEMP/eclipse-check.sh" \
+        "-DstaticAnalysis.eclipseCleanupProfile=$profile" \
+        | tee "$output/maven-$option-fallback.log"
+
+    gradle --no-daemon -p "$fixture" staticAnalysis \
+        "-PenabledRules=$fallback_rule" \
+        "-PcleanupProfile=eclipse-$option.xml" \
+        | tee "$output/gradle-$option-fallback.log"
+
     python3 - "$option" "$source_file" \
         "$output/maven-$option.log" "$output/maven-$option.json" \
-        "$output/gradle-$option.log" "$output/gradle-$option.json" <<'PY'
+        "$output/gradle-$option.log" "$output/gradle-$option.json" \
+        "$output/maven-$option-unfiltered.log" "$output/gradle-$option-unfiltered.log" \
+        "$output/maven-$option-fallback.log" "$output/gradle-$option-fallback.log" <<'PY'
 import json
 from pathlib import Path
 import re
@@ -61,8 +95,9 @@ for system, log_path, report_path in (
     assert target_name in changed, (system, option, changed)
     assert not re.search(r"\b(activeCounter|usedDescription)\b", changed), issue
     assert log.count("[" + expected_sonar + "]") == 1, (system, expected_sonar, log)
-    assert log.count("[eclipse:" + key + "]") == 1, (system, key, log)
-    assert "Duplicate Eclipse findings suppressed: 0." in log, (system, log)
+    assert log.count("[eclipse:" + key + "]") == 0, (system, key, log)
+    assert "Eclipse cleanup analysis: 0 violation(s)." in log, (system, log)
+    assert "Duplicate Eclipse findings suppressed: 1." in log, (system, log)
     sonar_lines = {
         int(match)
         for match in re.findall(
@@ -74,6 +109,21 @@ for system, log_path, report_path in (
     results[system] = (issue["line"], issue["startOffset"], issue["endOffset"])
     print(system, option, "Eclipse and Sonar independently flag the same declaration")
 assert results["Maven"] == results["Gradle"], results
+
+for system, unfiltered_path, fallback_path in (
+    ("Maven", Path(sys.argv[7]), Path(sys.argv[9])),
+    ("Gradle", Path(sys.argv[8]), Path(sys.argv[10])),
+):
+    unfiltered = unfiltered_path.read_text(encoding="utf-8")
+    fallback = fallback_path.read_text(encoding="utf-8")
+    eclipse_key = "[eclipse:" + key + "]"
+    assert unfiltered.count(eclipse_key) == 1, (system, key, unfiltered)
+    assert fallback.count(eclipse_key) == 1, (system, key, fallback)
+    assert unfiltered.count("[" + expected_sonar + "]") == 1, unfiltered
+    assert "[" + expected_sonar + "]" not in fallback, fallback
+    assert "Duplicate Eclipse findings suppressed: 0." in unfiltered, unfiltered
+    assert "Duplicate Eclipse findings suppressed: 0." in fallback, fallback
+print("Both engines report exactly one warning for matched private members.")
 PY
 
     test "$(sha256sum "$source_file")" = "$original_hash"
