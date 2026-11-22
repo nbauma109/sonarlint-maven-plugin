@@ -172,6 +172,7 @@ final class RuleCatalog {
                 || "sonar-way-reliability".equals(profile)) {
             selected.addAll(SUPPLEMENTAL_ONLY);
             selected.add(RECORD_METHOD_PLACEMENT);
+            selected.add("java:S2259");
         }
         for (String key : parseKeys(enabledRules)) {
             if (SUPPLEMENTAL_ONLY.contains(key) || RECORD_METHOD_PLACEMENT.equals(key)) {
