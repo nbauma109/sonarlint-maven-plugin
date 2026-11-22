@@ -22,7 +22,7 @@ The script verifies source-located findings on Java 8 fixtures, offline executio
 The Maven artifact is prepared for a signed release through the Maven Release
 Plugin and Sonatype's Central Publishing Portal. See the
 [release procedure](docs/maven-central-release.md) for validation, credentials,
-signing, tagging, uploading and promotion. Until the first release is visible on
+signing, unprefixed version tags, GitHub Releases and Maven Central publishing. Until the first release is visible on
 Maven Central, use the locally installed snapshot below. The separate Gradle
 adapter is not published by this Maven release procedure.
 

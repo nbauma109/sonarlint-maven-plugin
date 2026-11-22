@@ -3,7 +3,7 @@ name: Publish to Maven Central
 on:
   push:
     tags:
-      - "v*"
+      - "*"
 
 permissions:
   contents: read
@@ -52,7 +52,7 @@ jobs:
           case "$release_version" in
             *-SNAPSHOT) echo "Snapshot versions cannot be published"; exit 1 ;;
           esac
-          test "$GITHUB_REF_NAME" = "v$release_version" || {
+          test "$GITHUB_REF_NAME" = "$release_version" || {
             echo "Release tag does not match Maven project version"
             exit 1
           }

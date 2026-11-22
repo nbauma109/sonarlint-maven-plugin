@@ -52,35 +52,45 @@ The other commands check release preparation without pushing a tag.
 
 ## Prepare the first release
 
-From a clean and current `master` checkout, after checks pass:
+Run the manual [Maven Release workflow](../.github/workflows/maven.yml)
+on `master` after all tests pass. This follows the same workflow layout as
+`jd-util` and `jd-core-v0`. It requires the existing `SSH_PRIVATE_KEY` and
+`KNOWN_HOSTS` secrets to push release commits and tags through SSH.
+
+The workflow runs:
 
 ```sh
-mvn -B -ntp release:prepare \
-    -DreleaseVersion=0.1.0 \
-    -DdevelopmentVersion=0.1.1-SNAPSHOT \
-    -Dtag=v0.1.0
+mvn --no-transfer-progress -B -Dusername=git \
+    -Darguments="-Dgpg.skip=true" \
+    release:clean release:prepare release:perform
 ```
 
-The Maven Release Plugin commits the release version, pushes `v0.1.0`,
-and advances `master` to the next development snapshot. Its
-`release:perform` goal, when invoked separately, runs `install` rather
-than `deploy`, avoiding duplicate publication.
+The Maven Release Plugin selects the release version from
+`0.1.0-SNAPSHOT`, commits the release version, pushes the plain
+**`0.1.0` tag** without a `v` prefix, and advances the development
+version. `release:perform` builds and installs the released project,
+while the tag-triggered workflows handle external publishing.
 
-**The pushed version tag triggers
-[the publishing workflow](../.github/workflows/publish.yml).** The workflow
-verifies the tag matches the non-snapshot project version, loads the four
-existing secrets, builds and signs artifacts, and deploys the bundle to
-Sonatype Central via the `central-release` profile. The publishing plugin
-is configured with `autoPublish=true`, matching the existing repository
-convention: a validated bundle proceeds to publication without a separate
-manual promotion. Creating a release tag is therefore an intentional,
-irreversible publication action. Do not push the tag before the release is
-approved.
+The tag triggers two independent workflows:
 
-Watch the GitHub Actions run and the
-[Central Portal deployments](https://central.sonatype.com/publishing/deployments)
-page. The artifact is usable only after Maven Central indexing and
-publication succeed.
+- [`release.yml`](../.github/workflows/release.yml) builds the release
+  artifacts and creates the GitHub Release with the main, sources and Javadoc
+  archives.
+- [`publish.yml`](../.github/workflows/publish.yml) verifies the tag and
+  project version match, loads `CENTRAL_TOKEN_USERNAME`,
+  `CENTRAL_TOKEN_PASSWORD`, `PGP_PRIVATE_KEY` and `PGP_PASSPHRASE`,
+  signs the artifacts and publishes them to Sonatype Central.
+
+The Central publishing plugin uses `autoPublish=true`, matching the other
+repositories. The Maven workflow pushes the tag using SSH rather than the
+automatically supplied GitHub Actions token so that the tag push triggers
+both downstream workflows. Creating a release tag is therefore an intentional,
+irreversible publication action.
+
+Watch the [GitHub Actions](https://github.com/nbauma109/static-analysis-maven-plugin/actions)
+runs and [Central Portal deployments](https://central.sonatype.com/publishing/deployments).
+The artifact is usable only after Maven Central indexing and publication
+succeed.
 
 After publication, consumers can use:
 
@@ -104,12 +114,12 @@ The `check` goal runs after compilation, so execute
 
 ## Validation and failure handling
 
-The project release-validation workflow runs packaging checks without
+The release-validation workflow runs packaging checks without
 signing credentials. A successful GitHub build does not verify Sonatype
 namespace access or signing credentials. If preparation fails before
 tagging, investigate and use `mvn release:rollback` when appropriate.
-After pushing a release tag, inspect the publishing workflow and Portal
-deployment rather than publishing the same version a second time.
+After pushing a release tag, inspect the GitHub Release and Central publishing
+workflows and the Portal deployment rather than publishing the same version twice.
 
 See the [Maven Release Plugin documentation](https://maven.apache.org/maven-release/maven-release-plugin/)
 and [Central Publishing Maven Plugin documentation](https://central.sonatype.org/publish/publish-portal-maven/)
