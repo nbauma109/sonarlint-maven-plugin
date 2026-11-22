@@ -1,0 +1,61 @@
+name: Github Release
+
+on:
+  push:
+    tags:
+      - "*"
+
+permissions:
+  contents: write
+
+jobs:
+  tagged-release:
+    name: Github Release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+
+      - name: Verify tag matches Maven version
+        shell: bash
+        run: |
+          set -euo pipefail
+          release_version="$(mvn -B -ntp help:evaluate -Dexpression=project.version -DforceStdout -q)"
+          case "$release_version" in
+            *-SNAPSHOT) echo "Snapshot versions cannot be released"; exit 1 ;;
+          esac
+          test "$GITHUB_REF_NAME" = "$release_version" || {
+            echo "Release tag does not match Maven project version"
+            exit 1
+          }
+
+      - name: Build GitHub Release archives
+        run: mvn --no-transfer-progress -B -Pcentral-release -Dgpg.skip=true clean package
+
+      - name: Create GitHub Release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          release_version="$GITHUB_REF_NAME"
+          artifacts=(
+            "target/static-analysis-maven-plugin-${release_version}.jar"
+            "target/static-analysis-maven-plugin-${release_version}-sources.jar"
+            "target/static-analysis-maven-plugin-${release_version}-javadoc.jar"
+          )
+          for artifact in "${artifacts[@]}"; do
+            test -f "$artifact"
+          done
+          if gh release view "$release_version" > /dev/null 2>&1; then
+            gh release upload "$release_version" "${artifacts[@]}" --clobber
+          else
+            gh release create "$release_version" "${artifacts[@]}" \
+              --verify-tag --generate-notes --title "$release_version"
+          fi
