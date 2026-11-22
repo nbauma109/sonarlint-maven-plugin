@@ -9,6 +9,8 @@ import com.sun.source.tree.CompoundAssignmentTree;
 import com.sun.source.tree.ExpressionStatementTree;
 import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.IdentifierTree;
+import com.sun.source.tree.LiteralTree;
+import com.sun.source.tree.MemberSelectTree;
 import com.sun.source.tree.MemberReferenceTree;
 import com.sun.source.tree.MethodInvocationTree;
 import com.sun.source.tree.MethodTree;
@@ -257,7 +259,44 @@ final class SupplementalAnalyzer {
             if (enabledRules.contains("java:S3398")) {
                 addMethodUsage(trees.getElement(getCurrentPath()));
             }
+            if (enabledRules.contains("java:S8786")) {
+                checkRegularExpression(tree);
+            }
             return super.visitMethodInvocation(tree, unused);
+        }
+
+        private void checkRegularExpression(MethodInvocationTree tree) {
+            if (!(tree.getMethodSelect() instanceof MemberSelectTree select)
+                    || tree.getArguments().isEmpty()
+                    || !(tree.getArguments().get(0) instanceof LiteralTree literal)
+                    || !(literal.getValue() instanceof String pattern)
+                    || !isUnanchoredGreedyWhitespacePattern(pattern)) {
+                return;
+            }
+            String method = select.getIdentifier().toString();
+            if (!"replaceAll".equals(method) && !"replaceFirst".equals(method)
+                    && !"matches".equals(method)) {
+                return;
+            }
+            Element element = trees.getElement(getCurrentPath());
+            if (!(element instanceof ExecutableElement executable)
+                    || !(executable.getEnclosingElement() instanceof TypeElement owner)
+                    || !"java.lang.String".contentEquals(owner.getQualifiedName())) {
+                return;
+            }
+            report(literal, "java:S8786",
+                    "Simplify this regular expression to reduce its runtime, "
+                            + "as it has super-linear performance due to backtracking.");
+        }
+
+        private static boolean isUnanchoredGreedyWhitespacePattern(String pattern) {
+            boolean repeatedWhitespace = pattern.startsWith(" *")
+                    || pattern.startsWith("\\s*");
+            if (!repeatedWhitespace || pattern.startsWith("^")) {
+                return false;
+            }
+            String remainder = pattern.substring(pattern.indexOf('*') + 1);
+            return remainder.equals("\r?\n") || remainder.equals("\\r?\\n");
         }
 
         @Override
