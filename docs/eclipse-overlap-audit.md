@@ -14,9 +14,9 @@ was corrected: `cleanup.boolean_literal` converts `Boolean.TRUE` and
 
 | Classification | Options | Verification status |
 | --- | ---: | --- |
-| Potential Sonar overlap | 34 | Real combined-engine comparison still needed for most |
+| Potential Sonar overlap | 35 | Real combined-engine comparison still needed for most |
 | Eclipse candidate | 14 | Distinct on selected fixtures, not a universal exclusivity guarantee |
-| Review | 79 | Actual overlap, usefulness or transformation scope not settled |
+| Review | 78 | Actual overlap, usefulness or transformation scope not settled |
 | Aesthetics | 2 | Available only through the separate opt-in aesthetics profile |
 | Style policy | 18 | Preferences disabled unless selected explicitly |
 | **Total** | **147** | |
@@ -32,6 +32,22 @@ regression in both Maven and Gradle: `S1128` (unused imports), `S1905`
 Each is suppressed only when a matching active Sonar finding overlaps the
 original source edit. Integration includes disabling deduplication and
 removing corresponding Sonar rules to verify the negative controls.
+
+A **separate supplemental-rule overlap** is now verified for
+`S9438`: with both `cleanup.make_variable_declarations_final` and
+`cleanup.make_private_fields_final` enabled, real Eclipse 2026-09
+reported the exact eight private-field finality findings in the pinned
+`transformer-api` revision, including constructor initialization, with
+no extra findings. This does not change the 12 pinned SonarJava mappings
+above. The Eclipse cleanup currently identifies its diagnostics as
+`VariableDeclarationCleanUpCore`. The Maven goal prefers those matching
+Eclipse findings over duplicate supplemental `S9438` messages; without
+Eclipse, or when the cleanup does not report a particular field, the
+compiler-backed supplemental detector remains active. This preference
+requires the same file, line and finality edit kind. The
+[real comparison](../scripts/real-eclipse-modern-sonar-comparison.sh)
+tests the Eclipse-only, combined and local-only paths without rewriting
+sources.
 
 Some other potential overlaps are supported by individual fixtures
 but not a combined exact-once guarantee. The `S818` numeric-suffix

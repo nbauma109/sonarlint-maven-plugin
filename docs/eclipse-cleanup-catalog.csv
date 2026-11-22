@@ -81,7 +81,7 @@
 "cleanup.extract_increment","FALSE","ECLIPSE_CANDIDATE","","Real Eclipse reports extracting ++ from an expression; no Sonar issue on the tested source line under pinned sonar-way."
 "cleanup.comparison_statement","TRUE","REVIEW","","No confirmed comparison yet; do not enable as Eclipse-only."
 "cleanup.insert_inferred_type_arguments","FALSE","REVIEW","","No confirmed comparison yet; do not enable as Eclipse-only."
-"cleanup.make_private_fields_final","FALSE","REVIEW","","Compare Sonar rules and selected final policy."
+"cleanup.make_private_fields_final","FALSE","SONAR_OVERLAP","S9438","Real Eclipse 2026-09 matched all eight pinned transformer-api S9438 field locations, including constructor initialization; requires cleanup.make_variable_declarations_final. Prefer Eclipse when enabled, retaining the local analyzer otherwise."
 "cleanup.remove_unnecessary_suppress_warnings","TRUE","ECLIPSE_CANDIDATE","","Redundant suppression is not equivalent to S1309 tracking uses of SuppressWarnings."
 "cleanup.useless_return","TRUE","SONAR_OVERLAP","S3626","Exact-once real Sonar/Eclipse Maven and Gradle integration verified for S3626; source-range matching and disabled-rule fallback tested."
 "cleanup.instanceof_keyword","TRUE","REVIEW","","No confirmed comparison yet; do not enable as Eclipse-only."

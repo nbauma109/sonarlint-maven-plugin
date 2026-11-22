@@ -88,7 +88,7 @@ dashboard or the number of activated rules.
 | `java:S106` | 2 | Pinned SonarJava analyzer |
 | `java:S1452` | 2 | Pinned SonarJava analyzer |
 | `java:S3398` | 9 | Supplemental nested-record method-use check |
-| `java:S9438` | 8 | Supplemental private-field finality check, including delegated constructors |
+| `java:S9438` | 8 | Supplemental compiler-tree detection, or verified Eclipse private-field finality cleanup when enabled |
 | `java:S9398` | 1 | Supplemental interface-nested concrete class check |
 | `javabugs:S2259` | 1 | Supplemental local `java:S2259` check for null-tolerant helper arguments later dereferenced |
 | `java:S8786` | 2 | Supplemental test-source unanchored whitespace replacement check |
@@ -102,6 +102,34 @@ The [comparison script](../scripts/verify-transformer-api-parity.py)
 asserts exact diagnostics, including both regex findings at the
 same source line. Source-located regression fixtures also cover
 the new checks in isolation with non-triggering controls.
+
+### Eclipse reuse for newer-rule coverage
+
+Real Eclipse 2026-09 with
+[`cleanup.make_private_fields_final`](../src/it/modern-production-rules/eclipse-private-fields-final.xml)
+and its parent finality option enabled reported **exactly eight** edits
+for the eight pinned `S9438` findings, including fields initialized
+in constructors. No additional source locations were reported. Its
+report currently uses the module label
+`VariableDeclarationCleanUpCore` rather than the specific option key.
+
+When Eclipse is configured, matching finality edits take precedence
+over supplemental `S9438` warnings so each finding is reported once.
+The supplemental check remains available locally without a separately
+installed Eclipse runtime, and remains active for fields that Eclipse
+does not flag. This matching is limited to the `S9438` rule and the
+confirmed field declaration location; it does not enable Eclipse or
+other optional cleanup rules by default. The
+[real-engine comparison](../scripts/real-eclipse-modern-sonar-comparison.sh)
+checks the alternative paths and verifies original source preservation.
+
+Eclipse's Java compiler also has an unused-exception-parameter
+warning, related to `S7467`, but our current Eclipse integration
+imports *cleanup changes*, not general compiler warnings, and only
+collects production source roots. The existing compiler-tree `S7467`
+test-source check therefore remains necessary. Eclipse
+`cleanup.precompile_regex` addresses repeated pattern compilation,
+not the excessive-backtracking behavior of `S8786`.
 
 The additional detectors use the Java compiler's parse trees and
 resolved symbols; they **do not load a newer SonarJava artifact**

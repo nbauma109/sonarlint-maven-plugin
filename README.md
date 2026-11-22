@@ -145,6 +145,15 @@ and a conservative `S2259` null dereference pattern involving
 null-tolerant helper methods. The test goal currently checks **`S7467`
 and `S8786`**, not the entire standard SonarJava profile against tests.
 
+If the optional Eclipse cleanup engine is configured with
+`cleanup.make_variable_declarations_final` and
+`cleanup.make_private_fields_final`, matching Eclipse finality
+suggestions are preferred over duplicate supplemental `S9438`
+warnings. The local `S9438` detector stays enabled for ordinary Maven
+builds with no Eclipse installation and for fields Eclipse does not flag.
+The [real Eclipse comparison](scripts/real-eclipse-modern-sonar-comparison.sh)
+covers all eight pinned `S9438` cases.
+
 A [pinned parity regression](.github/workflows/transformer-api-parity.yml)
 verifies that the local engine reproduces the exact 26 open SonarCloud
 findings from `transformer-api` master at commit
