@@ -65,6 +65,19 @@ for rule in S3398 S9398 S9438; do
 done
 grep -F 'Sonar found 4 violation(s).' "$logs/modern-production-strict.log"
 test "$(grep -Ec '\[WARNING\].*\[java:S9438\]' "$logs/modern-production-strict.log")" -eq 2
+grep -F 'Embedded Eclipse JDT core cleanups found 2 private-field finality issue(s).' \
+    "$logs/modern-production-strict.log"
+if mvn -B -ntp -o -f "$production_fixture" process-classes \
+    -DstaticAnalysis.embeddedJdtEnabled=false > "$logs/modern-production-fallback.log" 2>&1; then
+    cat "$logs/modern-production-fallback.log"
+    echo "Expected compiler-backed fallback to fail on the same issues." >&2
+    exit 1
+fi
+test "$(grep -Ec '\[WARNING\].*\[java:S9438\]' "$logs/modern-production-fallback.log")" -eq 2
+if grep -F 'Embedded Eclipse JDT core cleanups' "$logs/modern-production-fallback.log"; then
+    echo "The embedded engine must remain disabled for the fallback run." >&2
+    exit 1
+fi
 mvn -B -ntp -o -f "$production_fixture" process-classes \
     -DstaticAnalysis.disabledRules=java:S3398,java:S9398,java:S9438 \
     | tee "$logs/modern-production-disabled.log"
