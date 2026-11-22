@@ -75,9 +75,12 @@ def main() -> None:
     for option in sorted(recommended | broad | aesthetics | OPTIONAL_AESTHETICS):
         if option not in catalog:
             raise ValueError(f"Unknown cleanup option: {option}")
-    for option in sorted(recommended | aesthetics):
+    for option in sorted(recommended):
         if catalog[option]["triage"] != "ECLIPSE_CANDIDATE":
-            raise ValueError(f"Unverified or overlapping rule enabled: {option}")
+            raise ValueError(f"Unverified maintainability rule enabled: {option}")
+    for option in sorted(aesthetics):
+        if catalog[option]["triage"] != "ECLIPSE_AESTHETIC":
+            raise ValueError(f"Non-aesthetic or overlapping rule enabled: {option}")
 
     print(f"Verified {len(recommended)} maintainability, {len(broad_rules)} broad, "
           f"and {len(aesthetics)} opt-in aesthetic cleanup options.")
