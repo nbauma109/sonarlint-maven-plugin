@@ -97,6 +97,62 @@ release workflow. The [release procedure](docs/maven-central-release.md)
 documents publishing. The separate Gradle adapter is not published by this
 Maven release.
 
+### Development preview: detect more SonarCloud findings
+
+The unreleased `0.1.1-SNAPSHOT` development version includes independent
+Java compiler-tree checks for cases missed by the pinned SonarJava engine.
+Install that version locally from this repository using `mvn clean install`,
+then use the following configuration in a consuming project's
+`<build><plugins>` section:
+
+```xml
+<plugin>
+    <groupId>io.github.nbauma109</groupId>
+    <artifactId>static-analysis-maven-plugin</artifactId>
+    <version>0.1.1-SNAPSHOT</version>
+    <configuration>
+        <profile>sonar-way</profile>
+        <failOnViolation>true</failOnViolation>
+    </configuration>
+    <executions>
+        <execution>
+            <goals>
+                <goal>check</goal>
+            </goals>
+        </execution>
+        <execution>
+            <goals>
+                <goal>check-tests</goal>
+            </goals>
+        </execution>
+    </executions>
+</plugin>
+```
+
+No explicit phase is needed: `check` runs at `process-classes`, and
+`check-tests` runs at `process-test-classes`, after test compilation and
+before tests execute. For production-only feedback, run
+`mvn process-classes`. For both production and test-source feedback,
+run `mvn process-test-classes`; both goals fail at their respective
+phases if findings remain. Do not replace the published `0.1.0` version
+with this development version unless it has been installed locally.
+
+The supplemental production checks cover selected `S3398` record
+method-placement cases, `S9398` interface-nested classes, `S9438`
+private fields eligible for `final`, `S7467` unused catch variables,
+`S8786` high-cost unanchored whitespace regular-expression replacements,
+and a conservative `S2259` null dereference pattern involving
+null-tolerant helper methods. The test goal currently checks **`S7467`
+and `S8786`**, not the entire standard SonarJava profile against tests.
+
+A [pinned parity regression](.github/workflows/transformer-api-parity.yml)
+verifies that the local engine reproduces the exact 26 open SonarCloud
+findings from `transformer-api` master at commit
+`fdc55663e6c9d5836db57e6369fd08d6bc4651cd`, without a SonarCloud
+service connection. The additional checks are purposefully conservative
+and **do not promise complete rule-by-rule parity** with the current
+SonarCloud analyzer. See the [rule coverage policy](docs/sonar-way-versioning-and-value.md).
+
 ### Optional configuration
 
 | Property | Default | Purpose |
