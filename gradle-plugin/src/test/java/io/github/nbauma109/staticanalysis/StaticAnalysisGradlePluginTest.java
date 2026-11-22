@@ -55,8 +55,8 @@ class StaticAnalysisGradlePluginTest {
 
     @Test
     void reportsThreeReviewedSymbolicReliabilityRules() throws IOException {
-        Path original = Path.of(System.getProperty("staticAnalysis.fixtureDirectory"))
-                .resolve("../../../../../../../src/it/reliability/src/main/java/example/ReliabilityIssues.java");
+        Path original = Path.of(System.getProperty("staticAnalysis.reliabilityFixtureDirectory"),
+                "example", "ReliabilityIssues.java");
         Path source = projectDirectory.resolve("src/main/java/example/ReliabilityIssues.java");
         Files.createDirectories(source.getParent());
         Files.copy(original.toAbsolutePath().normalize(), source);
