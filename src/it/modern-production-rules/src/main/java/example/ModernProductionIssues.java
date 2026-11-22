@@ -46,5 +46,10 @@ public final class ModernProductionIssues {
 
         abstract class AbstractHelper {
         }
+
+        final class SignatureHelper {
+        }
+
+        SignatureHelper createHelper();
     }
 }
