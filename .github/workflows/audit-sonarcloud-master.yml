@@ -39,6 +39,10 @@ jobs:
           issues = payload.get("issues", [])
           print("SONAR_ISSUE_TOTAL", payload.get("total"), "RETRIEVED", len(issues))
           for issue in issues:
+              if issue.get("rule") == "javabugs:S2259":
+                  print("NULL_FLOW", json.dumps(issue.get("flows", []), ensure_ascii=True))
+                  print("NULL_SECONDARY", json.dumps(issue.get("secondaryLocations", []), ensure_ascii=True))
+                  print("NULL_CONTEXT", json.dumps(issue.get("message"), ensure_ascii=True))
               location = issue.get("component", "").split(":")[-1]
               position = issue.get("textRange", {}).get("startLine", issue.get("line", "?"))
               print("SONAR_ISSUE", json.dumps({
