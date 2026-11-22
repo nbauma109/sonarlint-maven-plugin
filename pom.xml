@@ -123,8 +123,7 @@
                 <configuration>
                     <tagNameFormat>v@{project.version}</tagNameFormat>
                     <preparationGoals>clean verify</preparationGoals>
-                    <goals>deploy</goals>
-                    <releaseProfiles>central-release</releaseProfiles>
+                    <goals>install</goals>
                 </configuration>
             </plugin>
             <plugin>
@@ -191,8 +190,7 @@
                         <extensions>true</extensions>
                         <configuration>
                             <publishingServerId>central</publishingServerId>
-                            <autoPublish>false</autoPublish>
-                            <waitUntil>validated</waitUntil>
+                            <autoPublish>true</autoPublish>
                         </configuration>
                     </plugin>
                 </plugins>

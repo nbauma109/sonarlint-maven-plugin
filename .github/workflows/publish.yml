@@ -1,0 +1,70 @@
+name: Publish to Maven Central
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    name: Build and Publish
+    steps:
+      - name: Checkout release tag
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Set up Java and Maven Central credentials
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
+          server-id: central
+          server-username-env-var: CENTRAL_TOKEN_USERNAME
+          server-password-env-var: CENTRAL_TOKEN_PASSWORD
+          gpg-private-key: ${{ secrets.PGP_PRIVATE_KEY }}
+          gpg-passphrase-env-var: MAVEN_GPG_PASSPHRASE
+
+      - name: Verify release credentials
+        shell: bash
+        env:
+          CENTRAL_TOKEN_USERNAME: ${{ secrets.CENTRAL_TOKEN_USERNAME }}
+          CENTRAL_TOKEN_PASSWORD: ${{ secrets.CENTRAL_TOKEN_PASSWORD }}
+          PGP_PRIVATE_KEY: ${{ secrets.PGP_PRIVATE_KEY }}
+          PGP_PASSPHRASE: ${{ secrets.PGP_PASSPHRASE }}
+        run: |
+          set -euo pipefail
+          test -n "$CENTRAL_TOKEN_USERNAME" || { echo "Missing CENTRAL_TOKEN_USERNAME"; exit 1; }
+          test -n "$CENTRAL_TOKEN_PASSWORD" || { echo "Missing CENTRAL_TOKEN_PASSWORD"; exit 1; }
+          test -n "$PGP_PRIVATE_KEY" || { echo "Missing PGP_PRIVATE_KEY"; exit 1; }
+          test -n "$PGP_PASSPHRASE" || { echo "Missing PGP_PASSPHRASE"; exit 1; }
+
+      - name: Verify tag matches release version
+        shell: bash
+        run: |
+          set -euo pipefail
+          release_version="$(mvn -B -ntp help:evaluate -Dexpression=project.version -DforceStdout -q)"
+          case "$release_version" in
+            *-SNAPSHOT) echo "Snapshot versions cannot be published"; exit 1 ;;
+          esac
+          test "$GITHUB_REF_NAME" = "v$release_version" || {
+            echo "Release tag does not match Maven project version"
+            exit 1
+          }
+
+      - name: Build and verify signed release
+        env:
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.PGP_PASSPHRASE }}
+        run: mvn --no-transfer-progress -B -Pcentral-release -Dgpg.skip=false clean verify
+
+      - name: Deploy to Sonatype Central
+        env:
+          CENTRAL_TOKEN_USERNAME: ${{ secrets.CENTRAL_TOKEN_USERNAME }}
+          CENTRAL_TOKEN_PASSWORD: ${{ secrets.CENTRAL_TOKEN_PASSWORD }}
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.PGP_PASSPHRASE }}
+        run: mvn --no-transfer-progress -B -Pcentral-release -Dgpg.skip=false deploy

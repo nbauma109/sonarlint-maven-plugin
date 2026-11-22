@@ -5,39 +5,40 @@ The published Maven coordinates are
 The Maven artifact requires Java 17 and Maven 3.9.9 or later. The Gradle
 adapter is a separate build and is **not** published by this procedure.
 
+## Existing GitHub publishing secrets
+
+This repository uses the same GitHub Actions secret names as
+`nbauma109/jd-util`, `nbauma109/jd-core-v0`, and other Maven Central projects:
+
+| GitHub Actions secret | Usage |
+| --- | --- |
+| `CENTRAL_TOKEN_USERNAME` | Central Portal publishing token username |
+| `CENTRAL_TOKEN_PASSWORD` | Central Portal publishing token password |
+| `PGP_PRIVATE_KEY` | Exported ASCII-armored GnuPG private key |
+| `PGP_PASSPHRASE` | Passphrase for the signing key |
+
+The publishing workflow generates the Maven server `central` using
+`actions/setup-java`. It passes the existing `PGP_PASSPHRASE` secret to
+GnuPG as `MAVEN_GPG_PASSPHRASE`. No extra Maven credentials or new secret
+names are required, but the secrets must be accessible to this repository
+through its GitHub settings or organization-level configuration.
+
+Never commit token values, Maven settings with credentials, private keys,
+or passphrases.
+
 ## Release prerequisites
 
 1. Confirm that the `io.github.nbauma109` namespace is verified for the
    publishing account at [Central Portal](https://central.sonatype.com/).
-2. Generate a Central Portal user token and configure a Maven `server` entry
-   named `central` in the local Maven settings file. Use the token username
-   and token password, not the account password.
-3. Import a signing key into GnuPG and publish its public key to a key server.
-   Confirm the signing identity with `gpg --list-secret-keys --keyid-format LONG`.
-   Arrange an unlocked GnuPG agent for non-interactive signing.
-4. Ensure the Git checkout is clean, the `master` branch is current, and the
-   Git credentials can push commits and tags. All project workflows must pass.
-5. Confirm the candidate version is not already published. Central releases
-   cannot be overwritten.
+2. Confirm all four existing GitHub Actions secrets are available in this
+   repository and correspond to a valid Portal user token and signing key.
+3. Ensure the signing public key is discoverable by Central's validation.
+4. Ensure the `master` checkout is clean and current and has permission to
+   push commits and tags. All build and integration workflows must pass.
+5. Confirm the candidate version is not already published. Maven Central
+   releases cannot be overwritten.
 
-The `central` entry in `~/.m2/settings.xml` uses this structure:
-
-```xml
-<settings xmlns="http://maven.apache.org/SETTINGS/1.2.0">
-    <servers>
-        <server>
-            <id>central</id>
-            <username>${env.CENTRAL_TOKEN_USERNAME}</username>
-            <password>${env.CENTRAL_TOKEN_PASSWORD}</password>
-        </server>
-    </servers>
-</settings>
-```
-
-Set both environment variables privately in the release environment. Never
-commit Maven settings, access tokens, signing keys, or signing passphrases.
-
-## Validate the release build without publishing
+## Validate release artifacts without publishing
 
 ```sh
 mvn -B -ntp -Pcentral-release -Dgpg.skip=true clean verify
@@ -45,38 +46,41 @@ mvn -B -ntp release:prepare -DdryRun=true
 mvn -B -ntp release:clean
 ```
 
-The first command builds the main plugin, sources, and Javadoc artifacts
-without signing or uploading. Verify the plugin descriptor is present in the
-main archive and inspect the resulting files in `target/`.
+The first command verifies the main Maven plugin, sources, Javadoc, plugin
+descriptor, license and third-party notices without requiring secrets.
+The other commands check release preparation without pushing a tag.
 
-The dry run checks release preparation without committing or tagging.
-Do not use `-Dgpg.skip=true` for an actual release.
+## Prepare the first release
 
-## Prepare and upload the first release
-
-From the clean, current `master` checkout with the prerequisites configured:
+From a clean and current `master` checkout, after checks pass:
 
 ```sh
 mvn -B -ntp release:prepare \
     -DreleaseVersion=0.1.0 \
     -DdevelopmentVersion=0.1.1-SNAPSHOT \
     -Dtag=v0.1.0
-mvn -B -ntp release:perform
 ```
 
-The release plugin commits the release version, creates and pushes the tag,
-and advances the working branch to the next development snapshot.
-`release:perform` checks out that tag and runs `deploy` with the
-`central-release` profile. That profile builds the sources and Javadoc
-archives, signs the Maven artifacts and POM with GnuPG, and uploads the
-release bundle using the Central Publishing Maven Plugin. It waits until
-Sonatype validates the bundle, **not** until it is publicly available.
+The Maven Release Plugin commits the release version, pushes `v0.1.0`,
+and advances `master` to the next development snapshot. Its
+`release:perform` goal, when invoked separately, runs `install` rather
+than `deploy`, avoiding duplicate publication.
 
-Publishing is deliberately manual (`autoPublish=false`). Review the
-validated deployment in
+**The pushed version tag triggers
+[the publishing workflow](../.github/workflows/publish.yml).** The workflow
+verifies the tag matches the non-snapshot project version, loads the four
+existing secrets, builds and signs artifacts, and deploys the bundle to
+Sonatype Central via the `central-release` profile. The publishing plugin
+is configured with `autoPublish=true`, matching the existing repository
+convention: a validated bundle proceeds to publication without a separate
+manual promotion. Creating a release tag is therefore an intentional,
+irreversible publication action. Do not push the tag before the release is
+approved.
+
+Watch the GitHub Actions run and the
 [Central Portal deployments](https://central.sonatype.com/publishing/deployments)
-and explicitly publish it. Wait for it to be visible in Central before
-advertising the released version.
+page. The artifact is usable only after Maven Central indexing and
+publication succeed.
 
 After publication, consumers can use:
 
@@ -100,12 +104,12 @@ The `check` goal runs after compilation, so execute
 
 ## Validation and failure handling
 
-The project release-validation workflow runs the packaging checks without
-signing credentials. A successful GitHub build is not proof that the Sonatype
-account has namespace access or that GnuPG can sign on the release machine.
-If preparation fails before tagging, investigate and use
-`mvn release:rollback` when appropriate. Never rerun a publication against
-an already-published version; diagnose the deployment in Central Portal.
+The project release-validation workflow runs packaging checks without
+signing credentials. A successful GitHub build does not verify Sonatype
+namespace access or signing credentials. If preparation fails before
+tagging, investigate and use `mvn release:rollback` when appropriate.
+After pushing a release tag, inspect the publishing workflow and Portal
+deployment rather than publishing the same version a second time.
 
 See the [Maven Release Plugin documentation](https://maven.apache.org/maven-release/maven-release-plugin/)
 and [Central Publishing Maven Plugin documentation](https://central.sonatype.org/publish/publish-portal-maven/)
