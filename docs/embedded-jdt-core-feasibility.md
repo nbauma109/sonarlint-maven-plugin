@@ -27,6 +27,9 @@ separate **Eclipse installation**, not to deny the transitive dependency graph.
 This experiment intentionally does not register a new Maven plugin goal or
 silently change the existing `sonar-way` profile. It verifies one conservative
 standalone execution path before touching the production integration.
+The proposed production adapter can reuse these core visitors, but must
+handle source roots, diagnostics, classpath fidelity, and cleanup selection
+under strict Maven failure semantics.
 
 ## Execution
 
@@ -36,14 +39,30 @@ mvn -B -ntp -f src/it/embedded-jdt-core-cleanups/pom.xml compile exec:java
 
 The source fixture contains two fields that can be `final` (one initialized
 at declaration, one through delegated constructors) and one deliberately
-mutable field. The expected output is
-`EMBEDDED_JDT_CORE_SUCCESS`, with exactly the two eligible field names.
+mutable field. The check passes on Java 17, Java 21 and Java 25, reporting
+`EMBEDDED_JDT_CORE_SUCCESS` with exactly the two eligible field names.
+The Java 25 job additionally verifies parsing of a flexible constructor
+body that places statements before `super(...)`.
+
+For real-project parity, the Java 25 job compiles the exact
+[`transformer-api` source revision](https://github.com/nbauma109/transformer-api/commit/fdc55663e6c9d5836db57e6369fd08d6bc4651cd)
+and passes its resolved Maven classpath to the same JDT Core Manipulation
+visitors. This reproduced **all eight pinned `S9438` field findings at
+the exact source lines, with no extra findings**, without an installed
+Eclipse application or `refactoring-cli`. The
+[successful workflow run](https://github.com/nbauma109/static-analysis-maven-plugin/actions/runs/45081615043)
+verifies this behavior end to end.
+
+The standalone probe also checks the resolved dependency tree for
+Eclipse user-interface and application artifacts, in addition to the
+compiler and Core Manipulation runtime dependencies.
 
 ## Scope and release blockers
 
-- **Binding and classpath fidelity:** Production usage must parse the
-  project's actual source files and dependencies, not an inline fixture,
-  and verify all eight pinned `S9438` findings and non-triggering controls.
+- **Binding and classpath fidelity:** The standalone probe now parses the
+  actual pinned `transformer-api` sources and dependencies, and all eight
+  `S9438` findings match. A future Maven adapter still needs to handle
+  arbitrary source roots, module paths and unresolved source safely.
 - **Source ranges:** The probe checks the Eclipse visitor's selected
   declarations. Production diagnostics need stable field ranges and must
   remain strictly report-only.
