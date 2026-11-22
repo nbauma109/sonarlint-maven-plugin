@@ -93,6 +93,35 @@ public final class EmbeddedJdtCoreCleanupProbe {
         if (!eligible.equals(expected)) {
             throw new IllegalStateException("Unexpected JDT core cleanup findings: " + eligible);
         }
+        if (Runtime.version().feature() >= 25) {
+            String modernSource = """
+                    package example;
+                    class Java25Candidate extends RuntimeException {
+                        Java25Candidate(String message) {
+                            int length = message.length();
+                            super(Integer.toString(length));
+                        }
+                    }
+                    """;
+            ASTParser modernParser = ASTParser.newParser(AST.getJLSLatest());
+            modernParser.setKind(ASTParser.K_COMPILATION_UNIT);
+            modernParser.setUnitName("example/Java25Candidate.java");
+            modernParser.setSource(modernSource.toCharArray());
+            modernParser.setEnvironment(new String[0], new String[0], null, true);
+            modernParser.setResolveBindings(true);
+            modernParser.setCompilerOptions(Map.of(
+                    JavaCore.COMPILER_SOURCE, "25",
+                    JavaCore.COMPILER_COMPLIANCE, "25",
+                    JavaCore.COMPILER_CODEGEN_TARGET_PLATFORM, "25"));
+            CompilationUnit modernUnit = (CompilationUnit) modernParser.createAST(null);
+            for (var problem : modernUnit.getProblems()) {
+                if (problem.isError()) {
+                    throw new IllegalStateException("Java 25 syntax was not understood: "
+                            + problem.getMessage());
+                }
+            }
+            System.out.println("EMBEDDED_JDT_JAVA25_SYNTAX_SUCCESS");
+        }
         System.out.println("EMBEDDED_JDT_CORE_FINAL_FIELDS " + String.join(",", eligible));
         System.out.println("EMBEDDED_JDT_CORE_SUCCESS");
     }
