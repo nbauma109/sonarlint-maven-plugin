@@ -64,6 +64,9 @@ def main() -> None:
     if not recommended.issubset(broad):
         raise ValueError(f"Recommended rules absent from broad profile: "
                          f"{sorted(recommended - broad)}")
+    broad_rules = broad - {"cleanup.system_property"}
+    if len(broad_rules) != 13:
+        raise ValueError(f"Expected 13 modernization options, found {len(broad_rules)}")
     if (recommended | broad) & (aesthetics | OPTIONAL_AESTHETICS):
         raise ValueError("Aesthetic choices leaked into maintainability profiles")
 
@@ -76,7 +79,7 @@ def main() -> None:
         if catalog[option]["triage"] != "ECLIPSE_CANDIDATE":
             raise ValueError(f"Unverified or overlapping rule enabled: {option}")
 
-    print(f"Verified {len(recommended)} maintainability, {len(broad)} broad, "
+    print(f"Verified {len(recommended)} maintainability, {len(broad_rules)} broad, "
           f"and {len(aesthetics)} opt-in aesthetic cleanup options.")
 
 
