@@ -45,8 +45,17 @@ class StaticAnalysisGradlePluginTest {
     }
 
     @Test
-    void loadsVersionedSonarWayRulesFromGradlePluginResources() throws IOException {
+    void loadsCuratedSonarWayRulesFromGradlePluginResources() throws IOException {
         prepare("sonar-way", false, 15);
+        BuildResult result = run("staticAnalysis");
+        assertTrue(result.getOutput().contains("Activated 395 local Java rule(s)."),
+                result.getOutput());
+        assertTrue(result.getOutput().contains("[java:S3776]"), result.getOutput());
+    }
+
+    @Test
+    void keepsTheStandardSonarWayBaselineAvailable() throws IOException {
+        prepare("sonar-way-standard", false, 15);
         BuildResult result = run("staticAnalysis");
         assertTrue(result.getOutput().contains("Activated 392 local Java rule(s)."),
                 result.getOutput());

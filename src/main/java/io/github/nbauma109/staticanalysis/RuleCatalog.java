@@ -167,9 +167,9 @@ final class RuleCatalog {
             case "priority" -> PRIORITY;
             case "complexity" -> Set.of(COMPLEXITY);
             case "none" -> Set.of();
-            case "sonar-way" -> standardSonarWay();
+            case "sonar-way-standard" -> standardSonarWay();
+            case "sonar-way", "sonar-way-reliability" -> sonarWayWithReliability();
             case "reliability" -> REVIEWED_SYMBOLIC;
-            case "sonar-way-reliability" -> sonarWayWithReliability();
             default -> throw new IllegalArgumentException("Unknown rule profile: " + profile);
         };
     }

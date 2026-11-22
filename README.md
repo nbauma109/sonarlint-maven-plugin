@@ -45,7 +45,7 @@ mvn compile io.github.nbauma109:static-analysis-maven-plugin:0.1.0-SNAPSHOT:chec
 | `staticAnalysis.skip` | `false` | Skip analysis |
 | `staticAnalysis.failOnViolation` | `false` | Fail if any violation is reported |
 | `staticAnalysis.cognitiveComplexityThreshold` | `15` | Maximum allowed cognitive complexity |
-| `staticAnalysis.profile` | `priority` | priority, complexity, sonar-way, reliability, sonar-way-reliability or none |
+| `staticAnalysis.profile` | `priority` | priority, complexity, sonar-way, sonar-way-standard, reliability, sonar-way-reliability or none |
 | `staticAnalysis.enabledRules` | empty | Comma-separated additional rule keys |
 | `staticAnalysis.disabledRules` | empty | Comma-separated exclusions, taking precedence |
 | `staticAnalysis.eclipseEnabled` | `false` | Enable a separate Eclipse cleanup process |
@@ -67,10 +67,11 @@ plugin archive and fails if its membership or eligible rule count changes.
 Maven and Gradle use the same snapshot.
 
 The separate [21 symbolic Sonar Way rules](docs/sonar-way-symbolic-java-8.6.0.37351.rules)
-are not included in the standard Sonar Way profile. The opt-in `reliability`
-profile loads a compatible symbolic analyzer and activates **three reviewed
-correctness rules** for resource leaks, null dereferences, and unsafe `Optional`
-access. The other 18 remain unimplemented locally. We do not automatically
+are recorded independently. The opt-in `sonar-way` profile includes the 392 eligible
+standard rules **plus three reviewed symbolic correctness checks** for resource leaks,
+null dereferences and unsafe `Optional` access (395 total). The `sonar-way-standard`
+profile retains the original 392-rule baseline, and `reliability` runs just those
+three symbolic checks. The other 18 remain unimplemented locally. We do not automatically
 promote cosmetic rules such as uppercase literal suffixes or wholesale increment
 rewriting. See [the rule selection policy](docs/sonar-way-versioning-and-value.md).
 
@@ -78,9 +79,10 @@ rewriting. See [the rule selection policy](docs/sonar-way-versioning-and-value.m
 
 - `priority`: S100, S107, S112, S1128, S1192, S1066, S1481 and S3776.
 - `complexity`: S3776 only.
-- `sonar-way`: eligible ready standard production rules from our versioned Sonar Way snapshot; experimental and not equivalent to a server profile.
+- `sonar-way`: the 392 eligible standard Java rules **plus** three verified symbolic correctness checks (395 total); this opt-in profile is not equivalent to a server profile.
+- `sonar-way-standard`: 392 eligible standard Java rules, without the symbolic analyzer, for comparisons and explicit opt-out.
 - `reliability`: opt-in symbolic execution checks for unclosed resources (`S2095`), null dereferences (`S2259`) and unsafe `Optional.get()` (`S3655`); requires the separately packaged matching symbolic analyzer.
-- `sonar-way-reliability`: the 392 pinned eligible Sonar Way Java checks **plus** the three reviewed symbolic reliability rules (395 total); opt-in only.
+- `sonar-way-reliability`: backward-compatible alias for the 395-rule `sonar-way` profile.
 - `none`: select rules explicitly.
 
 Example:
@@ -110,7 +112,7 @@ Property names are case-sensitive. Explicit property overrides take precedence o
 
 ## Limitations
 
-Only production Java sources are analyzed. Three reviewed symbolic execution rules are available in the opt-in reliability profiles. Test-source analysis, security review reporting, complete rule parameter validation, reactor tests, modern language compatibility, and XML reporting are not yet implemented. The older analyzer and engine require a security and compatibility review before publication.
+Only production Java sources are analyzed. Three reviewed symbolic execution rules are available through `sonar-way`, `reliability` and the compatibility alias `sonar-way-reliability`. Test-source analysis, security review reporting, complete rule parameter validation, reactor tests, modern language compatibility, and XML reporting are not yet implemented. The older analyzer and engine require a security and compatibility review before publication.
 
 See [the design](docs/design.md) and [licensing considerations](docs/licensing.md).
 

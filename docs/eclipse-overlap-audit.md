@@ -47,9 +47,9 @@ explicitly **not** the boolean-comparison cleanup.
 - Suppress an Eclipse warning only if the cleanup identifier and
   Sonar rule are an established pair **and** both engines report
   overlapping source ranges for that specific problem.
-- Revalidate overlaps after enabling additional SonarJava symbolic
-  rules. Newly detectable resource and null-state bugs may change
-  which Eclipse findings are complementary.
+- Revalidate overlaps under the symbolic-enabled `sonar-way` profile.
+  Resource and null-state bugs may overlap Eclipse cleanup findings that
+  previously looked complementary under the standard-only rule set.
 - Preserve dissimilar warnings occurring on the same source line.
 
 ## What remains

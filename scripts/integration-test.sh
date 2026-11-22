@@ -51,7 +51,7 @@ grep -F 'Rule javasecurity:S3649 is not an eligible standard production Java rul
 
 mvn -B -ntp -o -f "$priority_fixture" process-classes \
     -DstaticAnalysis.profile=sonar-way | tee "$logs/sonar-way.log"
-grep -F 'Activated 392 local Java rule(s).' "$logs/sonar-way.log"
+grep -F 'Activated 395 local Java rule(s).' "$logs/sonar-way.log"
 grep -F '[java:S3776]' "$logs/sonar-way.log"
 
 eclipse_executable="$(pwd)/scripts/mock-eclipse.sh"
@@ -163,12 +163,12 @@ test "$(sha256sum "$reliability_source")" = "$reliability_checksum"
 
 /usr/bin/time -f '%e %M' -o "$logs/standard-sonar-way-timing.txt" \
     mvn -B -ntp -o -f "$reliability_fixture" process-classes \
-        -DstaticAnalysis.profile=sonar-way > "$logs/standard-sonar-way.log" 2>&1
+        -DstaticAnalysis.profile=sonar-way-standard > "$logs/standard-sonar-way.log" 2>&1
 grep -F 'Activated 392 local Java rule(s).' "$logs/standard-sonar-way.log"
 
 /usr/bin/time -f '%e %M' -o "$logs/sonar-way-reliability-timing.txt" \
     mvn -B -ntp -o -f "$reliability_fixture" process-classes \
-        -DstaticAnalysis.profile=sonar-way-reliability | tee "$logs/sonar-way-reliability.log"
+        -DstaticAnalysis.profile=sonar-way | tee "$logs/sonar-way-reliability.log"
 grep -F 'Activated 395 local Java rule(s).' "$logs/sonar-way-reliability.log"
 for rule in S2095 S2259 S3655; do
     grep -E "\\[WARNING\\].*ReliabilityIssues\\.java:[0-9]+.*\\[java:$rule\\]" \

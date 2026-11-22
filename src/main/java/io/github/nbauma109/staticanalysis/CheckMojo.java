@@ -54,7 +54,7 @@ public final class CheckMojo extends AbstractMojo {
     @Parameter(property = "staticAnalysis.cognitiveComplexityThreshold", defaultValue = "15")
     private int cognitiveComplexityThreshold;
 
-    /** Default rule profile: priority, complexity, sonar-way, reliability, sonar-way-reliability or none. */
+    /** Default rule profile: priority, complexity, sonar-way, sonar-way-standard, reliability or none. */
     @Parameter(property = "staticAnalysis.profile", defaultValue = "priority")
     private String profile;
 
@@ -181,6 +181,7 @@ public final class CheckMojo extends AbstractMojo {
             Path workDirectory = Path.of(project.getBuild().getDirectory(), "static-analysis").toAbsolutePath();
             Path analyzer = findAnalyzer();
             boolean useSymbolicAnalyzer = "reliability".equals(profile)
+                    || "sonar-way".equals(profile)
                     || "sonar-way-reliability".equals(profile);
             Path symbolicAnalyzer = null;
             RuleCatalog catalog;
