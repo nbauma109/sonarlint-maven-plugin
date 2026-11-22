@@ -45,7 +45,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: nbauma109/refactoring-cli
-          ref: 5da25d4b405e87bb66fbb31d60686e40c6977b10
+          ref: 39b6a8851cb5eab2fd856db163636e7240c595d3
           path: refactoring-cli-source
       - name: Build Eclipse cleanup CLI
         run: mvn -B -ntp -f refactoring-cli-source/pom.xml package
@@ -87,6 +87,8 @@ jobs:
         run: bash scripts/real-eclipse-more-overlaps-test.sh
       - name: Compare two profile-dependent Eclipse and Sonar findings
         run: bash scripts/real-eclipse-high-signal-comparison.sh
+      - name: Compare unused private field and method overlaps
+        run: bash scripts/real-private-overlap-comparison.sh
       - name: Upload real integration logs
         if: always()
         uses: actions/upload-artifact@v4
@@ -98,6 +100,7 @@ jobs:
             target/real-eclipse-complementary/
             target/real-eclipse-broad/
             target/high-signal-comparison/
+            target/private-overlap-comparison/
             src/it/real-eclipse/target/static-analysis/eclipse/
             src/it/real-eclipse/build/static-analysis/eclipse/
             src/it/complementary-eclipse/target/static-analysis/eclipse/
