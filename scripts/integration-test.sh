@@ -60,11 +60,11 @@ if mvn -B -ntp -o -f "$production_fixture" process-classes \
     exit 1
 fi
 for rule in S3398 S9398 S9438; do
-    grep -E "\\[WARNING\\].*ModernProductionIssues\\.java:[0-9]+ \\[java:$rule\\]" \
+    grep -E "\[WARNING\].*ModernProductionIssues\.java:[0-9]+ \[java:$rule\]" \
         "$logs/modern-production-strict.log"
 done
 grep -F 'Sonar found 4 violation(s).' "$logs/modern-production-strict.log"
-test "$(grep -Ec '\\[WARNING\\].*\\[java:S9438\\]' "$logs/modern-production-strict.log")" -eq 2
+test "$(grep -Ec '\[WARNING\].*\[java:S9438\]' "$logs/modern-production-strict.log")" -eq 2
 mvn -B -ntp -o -f "$production_fixture" process-classes \
     -DstaticAnalysis.disabledRules=java:S3398,java:S9398,java:S9438 \
     | tee "$logs/modern-production-disabled.log"
@@ -73,7 +73,7 @@ test_fixture=src/it/modern-test-rules/pom.xml
 compiler_release=17
 expected_test_issues=2
 java_major="$(java -XshowSettings:properties -version 2>&1 \
-    | sed -n 's/^ *java.specification.version = \\([0-9]*\\).*$/\\1/p' | head -1)"
+    | sed -n 's/^ *java.specification.version = \([0-9]*\).*$/\1/p' | head -1)"
 if [ "$java_major" -ge 21 ]; then
     compiler_release=21
     expected_test_issues=3
@@ -86,9 +86,9 @@ if mvn -B -ntp -o -f "$test_fixture" test -Dmaven.compiler.release="$compiler_re
 fi
 grep -F "Test-source analysis found $expected_test_issues violation(s)." \
     "$logs/modern-test-strict.log"
-test "$(grep -Ec '\\[WARNING\\].*\\[java:S8786\\]' "$logs/modern-test-strict.log")" -eq 2
+test "$(grep -Ec '\[WARNING\].*\[java:S8786\]' "$logs/modern-test-strict.log")" -eq 2
 if [ "$java_major" -ge 21 ]; then
-    grep -E '\\[WARNING\\].*ModernTestIssues\\.java:[0-9]+ \\[java:S7467\\]' \
+    grep -E '\[WARNING\].*ModernTestIssues\.java:[0-9]+ \[java:S7467\]' \
         "$logs/modern-test-strict.log"
 else
     if grep -F '[java:S7467]' "$logs/modern-test-strict.log"; then
