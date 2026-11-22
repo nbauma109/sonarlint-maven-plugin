@@ -15,16 +15,21 @@ was corrected: `cleanup.boolean_literal` converts `Boolean.TRUE` and
 | Classification | Options | Verification status |
 | --- | ---: | --- |
 | Potential Sonar overlap | 33 | Real combined-engine comparison still needed for most |
-| Eclipse candidate | 16 | Distinct on selected fixtures, not a universal exclusivity guarantee |
+| Eclipse candidate | 14 | Distinct on selected fixtures, not a universal exclusivity guarantee |
 | Review | 80 | Actual overlap, usefulness or transformation scope not settled |
-| Style policy | 18 | Not a recommended standalone warning |
+| Aesthetics | 2 | Available only through the separate opt-in aesthetics profile |
+| Style policy | 18 | Preferences disabled unless selected explicitly |
 | **Total** | **147** | |
 
-Only **five exact mappings** have passed the full real Sonar plus
-real Eclipse deduplication regression: `S1128` for unused imports,
-`S1905` for redundant casts, `S1481` for unused locals,
-`S1161` for missing `@Override`, and `S2093` for
-try-with-resources.
+**Nine exact mappings** have passed full real Sonar plus Eclipse deduplication
+regression in both Maven and Gradle: `S1128` (unused imports), `S1905`
+(redundant casts), `S1481` (unused local variables), `S1161` (missing
+`@Override`), `S2093` (try-with-resources), `S2129` (unnecessary
+`String` construction), `S2293` (redundant generic type arguments),
+`S3878` (unnecessary array creation), and `S3626` (redundant returns).
+Each is suppressed only when a matching active Sonar finding overlaps the
+original source edit. Integration includes disabling deduplication and
+removing corresponding Sonar rules to verify the negative controls.
 
 Some other potential overlaps are supported by individual fixtures
 but not a combined exact-once guarantee. The `S818` numeric-suffix
@@ -54,12 +59,15 @@ explicitly **not** the boolean-comparison cleanup.
 
 ## What remains
 
-**28 candidate overlap classifications** lack a fully verified
+**24 candidate overlap classifications** lack a fully verified
 combined-engine deduplication mapping. An additional 80 options
 remain under review. These are work items, not 108 confirmed duplicates.
 
-Our existing 15-option opt-in Eclipse profile supplies verified
-complementary warnings on representative Java fixtures. We should
+Our opt-in Eclipse profiles separately provide **3 maintainability**, **13 broad
+modernization**, and **2 aesthetic** cleanups, plus 14 additional disabled
+style preferences. The broad profile includes the 3 maintainability options;
+these are not additive counts of unique options. The aesthetic options are
+enabled only when their separate profile is explicitly selected. We should
 expand it only when a cleanup passes both positive and negative
 tests against the selected versioned Sonar profile.
 

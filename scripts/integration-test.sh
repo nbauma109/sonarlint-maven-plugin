@@ -7,6 +7,7 @@ fixture=src/it/cognitive-complexity/pom.xml
 logs=target/integration-tests
 python3 scripts/verify-sonar-way-snapshot.py
 python3 scripts/verify-eclipse-recommendations.py
+python3 scripts/verify-eclipse-overlaps.py
 mvn -B -ntp clean install
 mkdir -p "$logs"
 
