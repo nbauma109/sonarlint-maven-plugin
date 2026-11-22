@@ -27,7 +27,7 @@
 "cleanup.sort_members_all","FALSE","STYLE_POLICY","","Optional member ordering policy."
 "cleanup.system_property_path_separator","TRUE","ECLIPSE_CANDIDATE","","Candidate for an independently reported Eclipse warning; integration testing against the pinned Sonar profile."
 "cleanup.instanceof","TRUE","REVIEW","","No confirmed comparison yet; do not enable as Eclipse-only."
-"cleanup.precompile_regex","TRUE","REVIEW","S4248","Potential overlap with Sonar S4248, which is not active in pinned Sonar Way; verify actual source-range equivalence before suppressing."
+"cleanup.precompile_regex","TRUE","REVIEW","S4248","Real Maven and Gradle comparison finds auxiliary import and field edits separate from S4248 literal-pattern warnings; do not suppress without semantic edit attribution."
 "cleanup.add_missing_annotations","TRUE","REVIEW","","No confirmed comparison yet; do not enable as Eclipse-only."
 "cleanup.always_use_this_for_non_static_field_access","FALSE","REVIEW","","No confirmed comparison yet; do not enable as Eclipse-only."
 "cleanup.boolean_literal","TRUE","REVIEW","","Converts Boolean.TRUE and Boolean.FALSE into primitive literals; unrelated to S1125 redundant boolean comparisons. Keep distinct and unsuppressed."

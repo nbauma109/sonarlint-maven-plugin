@@ -121,7 +121,7 @@ final class EclipseDuplicateFilter {
         if (nameEnd == nameStart) {
             return false;
         }
-        return sonarStart < nameEnd && sonarEnd > keyword;
+        return sonarStart < nameEnd && sonarEnd > nameStart;
     }
 
     private static boolean matchesOverrideInsertion(EclipseCleanupRunner.Diagnostic finding,

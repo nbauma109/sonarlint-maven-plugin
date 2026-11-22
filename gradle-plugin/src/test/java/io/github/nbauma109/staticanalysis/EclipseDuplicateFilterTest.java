@@ -206,8 +206,7 @@ class EclipseDuplicateFilterTest {
         String source = """
                 package example;
                 class Owner {
-                    private class Inner { }
-                    private class Unrelated { }
+                    private class Inner { } private class Unrelated { }
                 }
                 """;
         writeSource(source);
@@ -218,9 +217,12 @@ class EclipseDuplicateFilterTest {
         Issue matched = sonarIssue("java:S2694", "Inner", source);
         Issue other = sonarIssue("java:S2694", "Unrelated", source);
         Issue wrongRule = sonarIssue("java:S4248", "Inner", source);
+        Issue keywordOnly = sonarIssue("java:S2694", "class", source,
+                source.indexOf("private class Inner"));
 
         assertTrue(EclipseDuplicateFilter.isDuplicate(insertedStatic, List.of(matched), project));
         assertFalse(EclipseDuplicateFilter.isDuplicate(insertedStatic, List.of(other), project));
+        assertFalse(EclipseDuplicateFilter.isDuplicate(insertedStatic, List.of(keywordOnly), project));
         assertFalse(EclipseDuplicateFilter.isDuplicate(insertedStatic, List.of(wrongRule), project));
         assertFalse(EclipseDuplicateFilter.isDuplicate(insertedStatic, List.of(), project));
         assertFalse(EclipseDuplicateFilter.isDuplicate(
