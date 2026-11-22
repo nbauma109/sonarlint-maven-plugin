@@ -244,10 +244,26 @@ public final class CheckMojo extends AbstractMojo {
                 additionalIssues = SupplementalAnalyzer.analyze(baseDirectory, sourcePaths,
                         project.getCompileClasspathElements(), sourceVersion, supplementalRules);
             }
-            return new ProjectAnalysis(sonarIssues, additionalIssues);
+            return new ProjectAnalysis(sonarIssues, removeDuplicateIssues(sonarIssues, additionalIssues));
         } catch (IOException | DependencyResolutionRequiredException | RuntimeException exception) {
             throw new MojoExecutionException("Local Sonar analysis could not complete: " + exception.getMessage(), exception);
         }
+    }
+
+    private static List<SupplementalAnalyzer.Finding> removeDuplicateIssues(
+            List<Issue> sonarIssues, List<SupplementalAnalyzer.Finding> additionalIssues) {
+        Set<String> reported = new LinkedHashSet<>();
+        for (Issue issue : sonarIssues) {
+            reported.add(location(issue) + ":" + issue.getRuleKey());
+        }
+        List<SupplementalAnalyzer.Finding> distinct = new ArrayList<>();
+        for (SupplementalAnalyzer.Finding issue : additionalIssues) {
+            String key = issue.file() + ":" + issue.line() + ":" + issue.rule();
+            if (reported.add(key)) {
+                distinct.add(issue);
+            }
+        }
+        return distinct;
     }
 
     private List<JavaSourceFile> collectSources(Path baseDirectory) throws IOException {
