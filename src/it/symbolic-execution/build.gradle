@@ -16,5 +16,5 @@ staticAnalysis {
     profile = providers.gradleProperty('analysisProfile').getOrElse('none')
     enabledRules = 'java:S2259,java:S2095,java:S3655'
     symbolicEnabled = providers.gradleProperty('symbolicEnabled')
-            .map(String::toBoolean).getOrElse(true)
+            .map { value -> value.toBoolean() }.getOrElse(true)
 }
