@@ -45,15 +45,17 @@ if gradle --no-daemon -p "$fixture" staticAnalysis -PsymbolicEnabled=false \
 fi
 grep -F 'not an eligible standard production Java rule' "$output/gradle-disabled.log"
 
-mvn -B -ntp -f "$fixture/pom.xml" process-classes \
-    -DstaticAnalysis.profile=sonar-way \
-    -DstaticAnalysis.symbolicEnabled=false \
-    > "$output/maven-standard-way.log" 2>&1
+/usr/bin/time -f '%e %M' -o "$output/maven-standard-way-time.txt" \
+    mvn -B -ntp -f "$fixture/pom.xml" process-classes \
+        -DstaticAnalysis.profile=sonar-way \
+        -DstaticAnalysis.symbolicEnabled=false \
+        > "$output/maven-standard-way.log" 2>&1
 
-mvn -B -ntp -f "$fixture/pom.xml" process-classes \
-    -DstaticAnalysis.profile=sonar-way \
-    -DstaticAnalysis.symbolicEnabled=true \
-    > "$output/maven-symbolic-way.log" 2>&1
+/usr/bin/time -f '%e %M' -o "$output/maven-symbolic-way-time.txt" \
+    mvn -B -ntp -f "$fixture/pom.xml" process-classes \
+        -DstaticAnalysis.profile=sonar-way \
+        -DstaticAnalysis.symbolicEnabled=true \
+        > "$output/maven-symbolic-way.log" 2>&1
 
 python3 - "$output/maven-standard-way.log" "$output/maven-symbolic-way.log" <<'PY'
 from pathlib import Path
@@ -70,7 +72,23 @@ standard = count(sys.argv[1])
 symbolic = count(sys.argv[2])
 print(f"Standard Sonar Way: {standard}, symbolic Sonar Way: {symbolic}")
 assert standard == 392, standard
-assert standard < symbolic <= standard + 21, (standard, symbolic)
+assert symbolic == 409, symbolic
+PY
+
+python3 - "$output/maven-standard-way-time.txt" "$output/maven-symbolic-way-time.txt" <<'PY'
+from pathlib import Path
+import sys
+
+def duration_and_memory(path):
+    elapsed, memory = Path(path).read_text(encoding="utf-8").strip().split()
+    return float(elapsed), int(memory)
+
+baseline = duration_and_memory(sys.argv[1])
+symbolic = duration_and_memory(sys.argv[2])
+ratio = symbolic[0] / baseline[0]
+print(f"Sonar Way baseline: {baseline[0]:.2f} seconds, {baseline[1]} KiB peak memory")
+print(f"Sonar Way + symbolic: {symbolic[0]:.2f} seconds, {symbolic[1]} KiB peak memory")
+print(f"Observed time ratio: {ratio:.2f}x")
 PY
 
 test "$(sha256sum "$source_file")" = "$original"
