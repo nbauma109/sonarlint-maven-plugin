@@ -34,3 +34,18 @@ The fixture includes literal-pattern and dynamically supplied-pattern calls:
 the former is eligible for the pinned `S4248` detector, while the latter
 must not be treated as an equivalent static-constant opportunity. This
 helps expose different detection scopes before considering deduplication.
+
+## S2694 exact-once conditional overlap
+
+The real Maven and Gradle integration now verifies an explicit rule-key match between
+`cleanup.static_inner_class` and `S2694` on the same class declaration. The
+filter recognizes the zero-length insertion of `static` immediately before the
+`class` keyword, but only when the active Sonar warning covers that declaration.
+Disabling duplicate suppression exposes both warnings; disabling `S2694` preserves
+the Eclipse finding. This is a **profile-dependent** mapping: `S2694` is not part
+of our pinned Sonar Way profile and is not implicitly enabled.
+
+The regex cleanup is deliberately **not mapped** to `S4248`: its observed
+source edits are associated with creating a reusable pattern and importing
+support, whereas Sonar flags repeated literal `String.matches` calls at
+another source location. These distinct findings must remain visible.

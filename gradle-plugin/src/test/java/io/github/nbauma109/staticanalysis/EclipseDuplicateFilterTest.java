@@ -202,6 +202,35 @@ class EclipseDuplicateFilterTest {
     }
 
     @Test
+    void suppressesOnlyTheExplicitlyEnabledSonarInnerClassFinding() throws IOException {
+        String source = """
+                package example;
+                class Owner {
+                    private class Inner { }
+                    private class Unrelated { }
+                }
+                """;
+        writeSource(source);
+        int innerDeclaration = source.indexOf("class Inner");
+        EclipseCleanupRunner.Diagnostic insertedStatic = new EclipseCleanupRunner.Diagnostic(
+                RELATIVE_FILE, 3, 13, "cleanup.static_inner_class",
+                "Make inner class static", innerDeclaration, innerDeclaration);
+        Issue matched = sonarIssue("java:S2694", "Inner", source);
+        Issue other = sonarIssue("java:S2694", "Unrelated", source);
+        Issue wrongRule = sonarIssue("java:S4248", "Inner", source);
+
+        assertTrue(EclipseDuplicateFilter.isDuplicate(insertedStatic, List.of(matched), project));
+        assertFalse(EclipseDuplicateFilter.isDuplicate(insertedStatic, List.of(other), project));
+        assertFalse(EclipseDuplicateFilter.isDuplicate(insertedStatic, List.of(wrongRule), project));
+        assertFalse(EclipseDuplicateFilter.isDuplicate(insertedStatic, List.of(), project));
+        assertFalse(EclipseDuplicateFilter.isDuplicate(
+                new EclipseCleanupRunner.Diagnostic(RELATIVE_FILE, 3, 13,
+                        "cleanup.precompile_regex", "Unrelated edit",
+                        innerDeclaration, innerDeclaration),
+                List.of(matched), project));
+    }
+
+    @Test
     void preservesComplementaryCleanupsEvenWhenSonarReportsTheSameText() throws IOException {
         writeSource(SOURCE);
         Issue sonar = sonarIssue("java:S1128", "java.util.List", SOURCE);

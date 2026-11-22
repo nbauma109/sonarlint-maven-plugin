@@ -115,7 +115,7 @@
 "cleanup.convert_to_switch_expressions","TRUE","REVIEW","","No confirmed comparison yet; do not enable as Eclipse-only."
 "cleanup.use_this_for_non_static_field_access","FALSE","REVIEW","","No confirmed comparison yet; do not enable as Eclipse-only."
 "cleanup.use_string_is_blank","TRUE","ECLIPSE_CANDIDATE","","Real Eclipse reports strip().isEmpty() to isBlank() conversion; requires Java 11 and has no same-line Sonar finding in the tested profile."
-"cleanup.static_inner_class","TRUE","REVIEW","S2694","Potential overlap with Sonar S2694, which is not active in pinned Sonar Way; verify equivalent class declaration and safe transformation before suppressing."
+"cleanup.static_inner_class","TRUE","SONAR_OVERLAP","S2694","Conditional S2694 duplicate; source-range-qualified zero-length static insertion, with real Maven/Gradle exact-once and disabled-rule controls."
 "cleanup.qualify_static_member_accesses_through_instances_with_declaring_class","FALSE","REVIEW","","No confirmed comparison yet; do not enable as Eclipse-only."
 "cleanup.add_missing_nls_tags","FALSE","REVIEW","","No confirmed comparison yet; do not enable as Eclipse-only."
 "cleanup.remove_unnecessary_casts","TRUE","SONAR_OVERLAP","S1905","Exact-option S1905 range overlap implemented; full detection equivalence pending real Eclipse comparison."

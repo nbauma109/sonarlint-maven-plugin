@@ -27,7 +27,8 @@ final class EclipseDuplicateFilter {
             "cleanup.no_string_creation", "java:S2129",
             "cleanup.remove_redundant_type_arguments", "java:S2293",
             "cleanup.remove_unnecessary_array_creation", "java:S3878",
-            "cleanup.useless_return", "java:S3626");
+            "cleanup.useless_return", "java:S3626",
+            "cleanup.static_inner_class", "java:S2694");
 
     private EclipseDuplicateFilter() {
     }
@@ -88,10 +89,34 @@ final class EclipseDuplicateFilter {
         if ("java:S2093".equals(expectedRule)) {
             return matchesTryRewrite(finding, source, start, end);
         }
+        if ("java:S2694".equals(expectedRule)) {
+            return matchesStaticNestedClassInsertion(finding, source, start, end);
+        }
         return finding.endOffset() > finding.startOffset()
                 && finding.startOffset() < end && finding.endOffset() > start;
     }
 
+
+    private static boolean matchesStaticNestedClassInsertion(
+            EclipseCleanupRunner.Diagnostic finding, String source, int sonarStart, int sonarEnd) {
+        if (finding.startOffset() != finding.endOffset()) {
+            return false;
+        }
+        int insertion = finding.startOffset();
+        if (!source.startsWith("class ", insertion)) {
+            return false;
+        }
+        int nameStart = insertion + "class ".length();
+        int nameEnd = nameStart;
+        while (nameEnd < source.length()
+                && Character.isJavaIdentifierPart(source.charAt(nameEnd))) {
+            nameEnd++;
+        }
+        if (nameEnd == nameStart) {
+            return false;
+        }
+        return sonarStart < nameEnd && sonarEnd > insertion;
+    }
 
     private static boolean matchesOverrideInsertion(EclipseCleanupRunner.Diagnostic finding,
             String source, int methodNameStart, int methodNameEnd) {
