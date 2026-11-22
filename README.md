@@ -17,6 +17,15 @@ bash scripts/integration-test.sh
 
 The script verifies source-located findings on Java 8 fixtures, offline execution, optional build failure, configurable complexity threshold, the priority and Sonar Way profiles, rule selection and unsupported-rule rejection.
 
+## Maven Central release preparation
+
+The Maven artifact is prepared for a signed release through the Maven Release
+Plugin and Sonatype's Central Publishing Portal. See the
+[release procedure](docs/maven-central-release.md) for validation, credentials,
+signing, tagging, uploading and promotion. Until the first release is visible on
+Maven Central, use the locally installed snapshot below. The separate Gradle
+adapter is not published by this Maven release procedure.
+
 ## Usage from a locally installed snapshot
 
 ```xml
