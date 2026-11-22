@@ -145,6 +145,32 @@ and a conservative `S2259` null dereference pattern involving
 null-tolerant helper methods. The test goal currently checks **`S7467`
 and `S8786`**, not the entire standard SonarJava profile against tests.
 
+**Embedded Eclipse JDT core cleanups (development version):** the plugin
+now resolves JDT Core Manipulation `1.18.0` from Maven Central and runs
+its upstream private-field finality cleanup directly, in the same Maven
+process, without an installed Eclipse IDE, launcher, workspace or
+`refactoring-cli`. No additional consumer configuration is needed
+when `sonar-way` selects `S9438`. The existing compiler-backed
+detector remains active and handles fields the embedded cleanup skips,
+including files with unsupported source syntax. The engines' matching
+findings are deduplicated. Set
+`<embeddedJdtEnabled>false</embeddedJdtEnabled>` to disable only the
+embedded JDT pass; other locally supported rules remain available.
+
+The pinned comparison verifies all eight known `S9438` locations
+using JDT Core Manipulation `1.18.0`, including on Java 17, without
+an Eclipse installation. That older version's parser is not guaranteed
+to understand every newer Java language feature, so it is not yet a
+general-purpose replacement for all Eclipse cleanup rules. The
+[headless compatibility proof](src/it/embedded-jdt-java17/) and
+[dedicated runner](src/main/java/io/github/nbauma109/staticanalysis/EmbeddedJdtCleanupRunner.java)
+record the precise behavior tested.
+
+The **optional external Eclipse cleanup engine** remains available
+for the broader cleanup profiles until individual rules have been
+validated through the embedded JDT library. Its installation
+requirements are not necessary for the bundled `S9438` check.
+
 If the optional Eclipse cleanup engine is configured with
 `cleanup.make_variable_declarations_final` and
 `cleanup.make_private_fields_final`, matching Eclipse finality
@@ -172,7 +198,7 @@ SonarCloud analyzer. See the [rule coverage policy](docs/sonar-way-versioning-an
 | `staticAnalysis.profile` | `priority` | `priority`, `complexity`, `sonar-way`, `sonar-way-standard`, `reliability`, `sonar-way-reliability` or `none` |
 | `staticAnalysis.enabledRules` | empty | Comma-separated additional rule keys |
 | `staticAnalysis.disabledRules` | empty | Comma-separated exclusions, taking precedence |
-| `staticAnalysis.eclipseEnabled` | `false` | Enable a separate Eclipse cleanup process |
+| `staticAnalysis.embeddedJdtEnabled` | `true` | Run embedded JDT Core private-field finality cleanup when selected; no Eclipse installation |\n| `staticAnalysis.eclipseEnabled` | `false` | Enable a separate Eclipse cleanup process |
 | `staticAnalysis.eclipseExecutable` | empty | Eclipse executable or launcher wrapper |
 | `staticAnalysis.eclipseCleanupProfile` | empty | Exported Eclipse cleanup profile |
 | `staticAnalysis.eclipseDuplicatePolicy` | `prefer-sonar` | Suppress verified overlapping Sonar findings, or `none` |
