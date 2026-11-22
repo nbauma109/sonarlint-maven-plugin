@@ -70,6 +70,10 @@ public final class CheckMojo extends AbstractMojo {
     @Parameter
     private List<RuleParameters> ruleParameters;
 
+    /** Run the embedded JDT field-finality cleanup, without a separate Eclipse installation. */
+    @Parameter(property = "staticAnalysis.embeddedJdtEnabled", defaultValue = "true")
+    private boolean embeddedJdtEnabled;
+
     /** Enable the separately installed Eclipse cleanup analyzer. */
     @Parameter(property = "staticAnalysis.eclipseEnabled", defaultValue = "false")
     private boolean eclipseEnabled;
@@ -277,8 +281,17 @@ public final class CheckMojo extends AbstractMojo {
                 String sourceVersion = Optional.ofNullable(release).filter(value -> !value.isBlank())
                         .or(() -> Optional.ofNullable(source).filter(value -> !value.isBlank()))
                         .orElse("");
-                additionalIssues = SupplementalAnalyzer.analyze(baseDirectory, sourcePaths,
-                        project.getCompileClasspathElements(), sourceVersion, supplementalRules);
+                List<SupplementalAnalyzer.Finding> combined = new ArrayList<>();
+                if (embeddedJdtEnabled && supplementalRules.contains("java:S9438")) {
+                    Charset sourceCharset = Charset.forName(Optional.ofNullable(encoding)
+                            .filter(value -> !value.isBlank()).orElse("UTF-8"));
+                    combined.addAll(EmbeddedJdtCleanupRunner.analyze(baseDirectory, sourcePaths,
+                            project.getCompileSourceRoots(), project.getCompileClasspathElements(),
+                            sourceCharset, getLog()::info));
+                }
+                combined.addAll(SupplementalAnalyzer.analyze(baseDirectory, sourcePaths,
+                        project.getCompileClasspathElements(), sourceVersion, supplementalRules));
+                additionalIssues = removeDuplicateIssues(List.of(), combined);
             }
             return new ProjectAnalysis(sonarIssues, removeDuplicateIssues(sonarIssues, additionalIssues));
         } catch (IOException | DependencyResolutionRequiredException | RuntimeException exception) {
