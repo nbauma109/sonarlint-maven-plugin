@@ -36,6 +36,7 @@ if mvn -B -ntp -f "$logger_fixture" package > "$logs/logger-category-strict.log"
     echo "Expected the normal Maven build to fail at process-classes for an incorrect logger category." >&2
     exit 1
 fi
+cat "$logs/logger-category-strict.log"
 grep -F 'Activated 395 local Java rule(s).' "$logs/logger-category-strict.log"
 grep -E '\[WARNING\].*LoggerCategories\.java:[0-9]+ \[java:S3416\] Update this logger to use "WrongCategory.class".' \
     "$logs/logger-category-strict.log"
