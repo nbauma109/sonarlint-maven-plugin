@@ -31,5 +31,8 @@ jobs:
           javadoc_jar="$(find target -maxdepth 1 -type f -name 'static-analysis-maven-plugin-*-javadoc.jar' -print -quit)"
           test -n "$main_jar" && test -n "$sources_jar" && test -n "$javadoc_jar"
           jar tf "$main_jar" | grep -qx 'META-INF/maven/plugin.xml'
+          jar tf "$main_jar" | grep -qx 'META-INF/LICENSE'
+          jar tf "$main_jar" | grep -qx 'META-INF/COPYRIGHT.md'
+          jar tf "$main_jar" | grep -qx 'META-INF/THIRD_PARTY_NOTICES.md'
           jar tf "$sources_jar" | grep -q 'CheckMojo.java'
           jar tf "$javadoc_jar" | grep -q 'index.html'
