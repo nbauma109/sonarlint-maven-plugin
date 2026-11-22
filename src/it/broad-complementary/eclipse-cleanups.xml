@@ -10,9 +10,7 @@
         <setting id="cleanup.system_property_javaversion" value="true"/>
         <setting id="cleanup.system_property_javaspecversion" value="true"/>
         <setting id="cleanup.add_all" value="true"/>
-        <setting id="cleanup.array_with_curly" value="true"/>
         <setting id="cleanup.reduce_indentation" value="true"/>
-        <setting id="cleanup.remove_redundant_modifiers" value="true"/>
         <setting id="cleanup.module_imports" value="true"/>
         <setting id="cleanup.use_string_is_blank" value="true"/>
         <setting id="cleanup.extract_increment" value="true"/>

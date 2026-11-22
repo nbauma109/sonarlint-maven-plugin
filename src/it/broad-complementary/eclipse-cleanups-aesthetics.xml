@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<profiles version="2">
+    <profile kind="CleanUpProfile" name="eclipse-aesthetics-opt-in" version="2">
+        <setting id="cleanup.array_with_curly" value="true"/>
+        <setting id="cleanup.remove_redundant_modifiers" value="true"/>
+        <setting id="cleanup.make_variable_declarations_final" value="false"/>
+        <setting id="cleanup.make_local_variable_final" value="false"/>
+        <setting id="cleanup.make_parameters_final" value="false"/>
+        <setting id="cleanup.use_var" value="false"/>
+        <setting id="cleanup.insert_inferred_type_arguments" value="false"/>
+        <setting id="cleanup.use_parentheses_in_expressions" value="false"/>
+        <setting id="cleanup.always_use_parentheses_in_expressions" value="false"/>
+        <setting id="cleanup.never_use_parentheses_in_expressions" value="false"/>
+        <setting id="cleanup.sort_members" value="false"/>
+        <setting id="cleanup.sort_members_all" value="false"/>
+        <setting id="cleanup.number_suffix" value="false"/>
+        <setting id="cleanup.correct_indentation" value="false"/>
+        <setting id="cleanup.remove_trailing_whitespaces" value="false"/>
+        <setting id="cleanup.format_source_code" value="false"/>
+    </profile>
+</profiles>

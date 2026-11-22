@@ -165,8 +165,8 @@ and [the example profile](src/it/complementary-eclipse/eclipse-cleanups.xml).
 
 ## Broader complementary Eclipse cleanup profile
 
-A [Java 25 complementary profile](docs/eclipse-complementary-broad.md) enables 15 Eclipse
-cleanup options (ten added in the latest batch, plus our five system-property cleanups).
+A [Java 25 complementary profile](docs/eclipse-complementary-broad.md) enables 13 Eclipse
+cleanup options (eight added in the latest batch, plus five system-property cleanups).
 Both Maven and Gradle can use the [XML profile](src/it/broad-complementary/eclipse-cleanups.xml)
 with `eclipseEnabled` enabled and the configured external Eclipse runtime. These options
 remain opt-in because cleanup suggestions may have compatibility implications.
@@ -182,13 +182,18 @@ and [CI records a representative runtime comparison](docs/symbolic-performance.m
 
 ## Signal-first Eclipse recommendation
 
-For a low-noise opt-in cleanup profile, use
+For low-noise Eclipse maintainability warnings, use
 [`eclipse-cleanups-recommended.xml`](src/it/broad-complementary/eclipse-cleanups-recommended.xml):
-it enables assignment extraction, reduction of needless nesting, collection
-`addAll` conversion, array-initializer simplification and redundant-modifier cleanup.
-Modifier ordering (`java:S1124`) and collection `isEmpty()` instead of size comparisons
-(`java:S1155`) are already active in the pinned `sonar-way` profile; use that
-profile or explicitly enable these two Sonar rules rather than duplicating them in Eclipse. The 15-option broad profile remains available separately.
+it enables assignment extraction, needless nesting reduction, and collection `addAll` conversion.
+For cosmetic preferences, explicitly select the separate
+[`eclipse-cleanups-aesthetics.xml`](src/it/broad-complementary/eclipse-cleanups-aesthetics.xml).
+It enables array-initializer simplification and redundant-modifier cleanup only when selected;
+additional `final`, type-inference, parentheses and formatting preferences are present as
+individually switchable settings, initially `false`. No profile is loaded automatically:
+`staticAnalysis.eclipseEnabled` defaults to `false`.
+The broader 13-option modernization profile stays available without aesthetic warnings.
+Sonar Way still contains its own versioned rules, including `java:S1124` and
+`java:S1155`; those are not duplicated by Eclipse's aesthetic profile.
 Our [rule-value review](docs/eclipse-rule-value-review.md) ranks the current picks,
 the next eight substantive candidates and the trivial/style-only options we would
 usually omit. Neither profile changes source code automatically.

@@ -51,18 +51,13 @@ for system, log_file, report_file in (
         "cleanup.system_property_javaversion",
         "cleanup.system_property_javaspecversion",
         "cleanup.add_all",
-        "cleanup.array_with_curly",
         "cleanup.reduce_indentation",
-        "cleanup.remove_redundant_modifiers",
         "cleanup.module_imports",
         "cleanup.use_string_is_blank",
         "cleanup.extract_increment",
         "cleanup.pull_up_assignment",
     }
     assert set(counts) == expected, (system, counts, issues)
-    assert counts["cleanup.remove_redundant_modifiers"] == 1, (
-        system, counts, issues
-    )
     assert "Duplicate Eclipse findings suppressed: 0." in log, (system, log)
     for cleanup, count in counts.items():
         assert log.count("[eclipse:" + cleanup + "]") == count, (
@@ -87,14 +82,11 @@ for system, log_file, report_file in (
     }
     for cleanup, details in overlap.items():
         for source_line, rule_keys in details["sonar_on_lines"].items():
-            if cleanup == "cleanup.array_with_curly":
-                assert rule_keys == ["java:S1488"], (system, cleanup, source_line, rule_keys)
-            else:
-                assert not rule_keys, (system, cleanup, source_line, rule_keys)
+            assert not rule_keys, (system, cleanup, source_line, rule_keys)
     findings[system] = overlap
     print("VERIFIED COMPLEMENTARY ECLIPSE OPTIONS", system, json.dumps(overlap, sort_keys=True))
 assert findings["Maven"] == findings["Gradle"], findings
-print("Both build adapters report the same ten complementary cleanup options")
+print("Both build adapters report the same eight complementary modernization cleanups")
 PY
 
 recommended="$fixture/eclipse-cleanups-recommended.xml"
@@ -124,8 +116,6 @@ expected = {
     "cleanup.pull_up_assignment",
     "cleanup.reduce_indentation",
     "cleanup.add_all",
-    "cleanup.array_with_curly",
-    "cleanup.remove_redundant_modifiers",
 }
 for system, log_path, report_path in (
     ("Maven", Path(sys.argv[1]), Path(sys.argv[2])),
@@ -136,12 +126,66 @@ for system, log_path, report_path in (
     assert report["formatVersion"] == 1, (system, report)
     issues = report["issues"]
     actual = [issue["cleanup"] for issue in issues]
-    assert len(actual) == 5 and set(actual) == expected, (system, issues)
+    assert len(actual) == 3 and set(actual) == expected, (system, issues)
     assert "Duplicate Eclipse findings suppressed: 0." in log, (system, log)
-    assert "Eclipse cleanup analysis: 5 violation(s)." in log, (system, log)
+    assert "Eclipse cleanup analysis: 3 violation(s)." in log, (system, log)
     for option in expected:
         assert log.count("[eclipse:" + option + "]") == 1, (system, option)
-    print(f"{system}: five distinct selected Eclipse findings, no duplicates")
+    print(f"{system}: three distinct maintainability Eclipse findings, no duplicates")
+PY
+
+aesthetics="$fixture/eclipse-cleanups-aesthetics.xml"
+
+mvn -B -ntp -f "$fixture/pom.xml" process-classes \
+    -DstaticAnalysis.profile=sonar-way \
+    -DstaticAnalysis.eclipseEnabled=true \
+    "-DstaticAnalysis.eclipseExecutable=$RUNNER_TEMP/eclipse-check.sh" \
+    "-DstaticAnalysis.eclipseCleanupProfile=$aesthetics" \
+    | tee "$output/maven-aesthetics.log"
+cp "$fixture/target/static-analysis/eclipse/diagnostics.json" \
+    "$output/maven-aesthetics.json"
+
+gradle --no-daemon -p "$fixture" staticAnalysis \
+    -PcleanupProfile=eclipse-cleanups-aesthetics.xml \
+    | tee "$output/gradle-aesthetics.log"
+cp "$fixture/build/static-analysis/eclipse/diagnostics.json" \
+    "$output/gradle-aesthetics.json"
+
+python3 - "$output/maven-aesthetics.log" "$output/maven-aesthetics.json" \
+    "$output/gradle-aesthetics.log" "$output/gradle-aesthetics.json" <<'PY'
+import json
+from pathlib import Path
+import re
+import sys
+
+expected = {
+    "cleanup.array_with_curly",
+    "cleanup.remove_redundant_modifiers",
+}
+locations = {}
+for system, log_path, report_path in (
+    ("Maven", Path(sys.argv[1]), Path(sys.argv[2])),
+    ("Gradle", Path(sys.argv[3]), Path(sys.argv[4])),
+):
+    log = log_path.read_text(encoding="utf-8")
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    assert report["formatVersion"] == 1, (system, report)
+    issues = report["issues"]
+    actual = [issue["cleanup"] for issue in issues]
+    assert len(actual) == 2 and set(actual) == expected, (system, issues)
+    assert "Duplicate Eclipse findings suppressed: 0." in log, (system, log)
+    assert "Eclipse cleanup analysis: 2 violation(s)." in log, (system, log)
+    for option in expected:
+        assert log.count("[eclipse:" + option + "]") == 1, (system, option)
+    array = next(issue for issue in issues
+                 if issue["cleanup"] == "cleanup.array_with_curly")
+    sonar = re.findall(
+        r"(?m)^.*BroadComplementaryCleanups\.java:"
+        + str(array["line"]) + r".*\[java:S1488\].*$", log)
+    assert len(sonar) == 1, (system, array, sonar, log)
+    locations[system] = {issue["cleanup"]: issue["line"] for issue in issues}
+    print(f"{system}: two opt-in aesthetic findings, no suppressed duplicates")
+assert locations["Maven"] == locations["Gradle"], locations
 PY
 
 test "$(sha256sum "$source_file")" = "$original_sha"
