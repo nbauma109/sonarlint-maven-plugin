@@ -52,11 +52,49 @@ for issue in issues:
         "edit": source[issue["startOffset"]:issue["endOffset"]],
         "sourceLine": source_line.strip(),
     }, sort_keys=True))
+    assert issue["cleanup"] in {"VariableDeclarationCleanUpCore", "cleanup.make_private_fields_final"}, issue
+    assert issue["startOffset"] == issue["endOffset"], issue
     actual_locations.add((path, line))
 print("EXPECTED_S9438_LOCATIONS", len(expected_locations))
 print("MATCHED_S9438_LOCATIONS", len(actual_locations & expected_locations))
 print("MISSED_S9438_LOCATIONS", sorted(expected_locations - actual_locations))
 print("UNEXPECTED_ECLIPSE_LOCATIONS", sorted(actual_locations - expected_locations))
+assert report["formatVersion"] == 1, report
+assert len(issues) == 8, issues
+assert actual_locations == expected_locations, (actual_locations, expected_locations)
+PY
+
+mvn -B -ntp -f "$project/pom.xml" \
+    io.github.nbauma109:static-analysis-maven-plugin:0.1.1-SNAPSHOT:check \
+    -DstaticAnalysis.profile=sonar-way \
+    -DstaticAnalysis.failOnViolation=false \
+    -DstaticAnalysis.eclipseEnabled=true \
+    "-DstaticAnalysis.eclipseExecutable=$RUNNER_TEMP/eclipse-check.sh" \
+    "-DstaticAnalysis.eclipseCleanupProfile=$profile" \
+    | tee "$output/maven-combined.log"
+
+mvn -B -ntp -f "$project/pom.xml" \
+    io.github.nbauma109:static-analysis-maven-plugin:0.1.1-SNAPSHOT:check \
+    -DstaticAnalysis.profile=sonar-way \
+    -DstaticAnalysis.failOnViolation=false \
+    -DstaticAnalysis.eclipseEnabled=false \
+    | tee "$output/maven-local-only.log"
+
+python3 - "$output/maven-combined.log" "$output/maven-local-only.log" <<'PY'
+from pathlib import Path
+import sys
+
+combined = Path(sys.argv[1]).read_text(encoding="utf-8")
+local_only = Path(sys.argv[2]).read_text(encoding="utf-8")
+
+assert "Equivalent private-field findings provided by Eclipse: 8." in combined, combined
+assert combined.count("[java:S9438]") == 0, combined
+assert combined.count("[eclipse:VariableDeclarationCleanUpCore]") == 8, combined
+assert "Eclipse cleanup analysis: 8 violation(s)." in combined, combined
+assert local_only.count("[java:S9438]") == 8, local_only
+assert "[eclipse:VariableDeclarationCleanUpCore]" not in local_only, local_only
+print("ECLIPSE_PREFERRED_FIELD_FINALITY", 8)
+print("LOCAL_S9438_FALLBACK", 8)
 PY
 
 git -C "$project" diff --exit-code -- src/main/java
