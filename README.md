@@ -197,3 +197,13 @@ Sonar Way still contains its own versioned rules, including `java:S1124` and
 Our [rule-value review](docs/eclipse-rule-value-review.md) ranks the current picks,
 the next eight substantive candidates and the trivial/style-only options we would
 usually omit. Neither profile changes source code automatically.
+
+## Opt-in high-signal Eclipse cleanup
+
+For a substantive Eclipse diagnostic not included in the versioned Sonar Way
+profile, see [non-static nested-class review](docs/eclipse-high-signal-comparison.md)
+and the [high-signal Eclipse XML profile](src/it/high-signal-eclipse/eclipse-cleanups-high-signal.xml).
+It reports an inner class that needlessly retains its enclosing instance.
+When Sonar `S2694` is explicitly enabled, the same class declaration is
+reported only once after exact-range matching. Regex precompilation remains
+an experimental option until auxiliary edits can be attributed precisely.

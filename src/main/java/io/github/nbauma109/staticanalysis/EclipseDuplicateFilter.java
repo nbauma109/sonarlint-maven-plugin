@@ -18,18 +18,17 @@ import org.sonarsource.sonarlint.core.commons.api.TextRange;
  */
 final class EclipseDuplicateFilter {
 
-    private static final Map<String, String> EQUIVALENTS = Map.ofEntries(
-            Map.entry("cleanup.remove_unused_imports", "java:S1128"),
-            Map.entry("cleanup.remove_unnecessary_casts", "java:S1905"),
-            Map.entry("cleanup.remove_unused_local_variables", "java:S1481"),
-            Map.entry("cleanup.add_missing_override_annotations", "java:S1161"),
-            Map.entry("cleanup.try_with_resource", "java:S2093"),
-            Map.entry("cleanup.no_string_creation", "java:S2129"),
-            Map.entry("cleanup.remove_redundant_type_arguments", "java:S2293"),
-            Map.entry("cleanup.remove_unnecessary_array_creation", "java:S3878"),
-            Map.entry("cleanup.useless_return", "java:S3626"),
-            Map.entry("cleanup.remove_unused_private_fields", "java:S1068"),
-            Map.entry("cleanup.remove_unused_private_methods", "java:S1144"));
+    private static final Map<String, String> EQUIVALENTS = Map.of(
+            "cleanup.remove_unused_imports", "java:S1128",
+            "cleanup.remove_unnecessary_casts", "java:S1905",
+            "cleanup.remove_unused_local_variables", "java:S1481",
+            "cleanup.add_missing_override_annotations", "java:S1161",
+            "cleanup.try_with_resource", "java:S2093",
+            "cleanup.no_string_creation", "java:S2129",
+            "cleanup.remove_redundant_type_arguments", "java:S2293",
+            "cleanup.remove_unnecessary_array_creation", "java:S3878",
+            "cleanup.useless_return", "java:S3626",
+            "cleanup.static_inner_class", "java:S2694");
 
     private EclipseDuplicateFilter() {
     }
@@ -90,10 +89,40 @@ final class EclipseDuplicateFilter {
         if ("java:S2093".equals(expectedRule)) {
             return matchesTryRewrite(finding, source, start, end);
         }
+        if ("java:S2694".equals(expectedRule)) {
+            return matchesStaticNestedClassInsertion(finding, source, start, end);
+        }
         return finding.endOffset() > finding.startOffset()
                 && finding.startOffset() < end && finding.endOffset() > start;
     }
 
+
+    private static boolean matchesStaticNestedClassInsertion(
+            EclipseCleanupRunner.Diagnostic finding, String source, int sonarStart, int sonarEnd) {
+        if (finding.startOffset() != finding.endOffset()) {
+            return false;
+        }
+        int insertion = finding.startOffset();
+        int keyword = insertion;
+        while (keyword < source.length()
+                && keyword - insertion <= 8
+                && (source.charAt(keyword) == ' ' || source.charAt(keyword) == '\t')) {
+            keyword++;
+        }
+        if (keyword - insertion > 8 || !source.startsWith("class ", keyword)) {
+            return false;
+        }
+        int nameStart = keyword + "class ".length();
+        int nameEnd = nameStart;
+        while (nameEnd < source.length()
+                && Character.isJavaIdentifierPart(source.charAt(nameEnd))) {
+            nameEnd++;
+        }
+        if (nameEnd == nameStart) {
+            return false;
+        }
+        return sonarStart < nameEnd && sonarEnd > nameStart;
+    }
 
     private static boolean matchesOverrideInsertion(EclipseCleanupRunner.Diagnostic finding,
             String source, int methodNameStart, int methodNameEnd) {

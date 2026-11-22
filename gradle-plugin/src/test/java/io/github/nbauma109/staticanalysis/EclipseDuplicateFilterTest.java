@@ -202,39 +202,34 @@ class EclipseDuplicateFilterTest {
     }
 
     @Test
-    void suppressesOnlyMatchingUnusedPrivateDeclarations() throws IOException {
+    void suppressesOnlyTheExplicitlyEnabledSonarInnerClassFinding() throws IOException {
         String source = """
                 package example;
-                final class PrivateMemberChecks {
-                    private int unusedCounter = 7;
-                    private int usedCounter = 11;
-                    private String unusedDescription() { return "unused"; }
-                    private int usedDescription() { return usedCounter; }
-                    int value() { return usedDescription(); }
+                class Owner {
+                    private class Inner { } private class Unrelated { }
                 }
                 """;
         writeSource(source);
-        String[][] pairs = {
-            {"cleanup.remove_unused_private_fields", "java:S1068",
-                    "private int unusedCounter = 7;", "unusedCounter"},
-            {"cleanup.remove_unused_private_methods", "java:S1144",
-                    "private String unusedDescription()", "unusedDescription"}
-        };
-        for (String[] pair : pairs) {
-            Issue sonar = sonarIssue(pair[1], pair[3], source);
-            EclipseCleanupRunner.Diagnostic finding = finding(pair[0], pair[2], source);
-            assertTrue(EclipseDuplicateFilter.isDuplicate(finding, List.of(sonar), project),
-                    pair[0]);
-            assertFalse(EclipseDuplicateFilter.isDuplicate(finding, List.of(), project),
-                    pair[0]);
-            Issue wrongRule = sonarIssue("java:S2694", pair[3], source);
-            assertFalse(EclipseDuplicateFilter.isDuplicate(finding, List.of(wrongRule), project),
-                    pair[0]);
-            String used = pair[0].endsWith("_fields") ? "private int usedCounter"
-                    : "private int usedDescription";
-            assertFalse(EclipseDuplicateFilter.isDuplicate(
-                    finding(pair[0], used, source), List.of(sonar), project), pair[0]);
-        }
+        int innerDeclaration = source.indexOf(" class Inner");
+        EclipseCleanupRunner.Diagnostic insertedStatic = new EclipseCleanupRunner.Diagnostic(
+                RELATIVE_FILE, 3, 13, "cleanup.static_inner_class",
+                "Make inner class static", innerDeclaration, innerDeclaration);
+        Issue matched = sonarIssue("java:S2694", "Inner", source);
+        Issue other = sonarIssue("java:S2694", "Unrelated", source);
+        Issue wrongRule = sonarIssue("java:S4248", "Inner", source);
+        Issue keywordOnly = sonarIssue("java:S2694", "class", source,
+                source.indexOf("private class Inner"));
+
+        assertTrue(EclipseDuplicateFilter.isDuplicate(insertedStatic, List.of(matched), project));
+        assertFalse(EclipseDuplicateFilter.isDuplicate(insertedStatic, List.of(other), project));
+        assertFalse(EclipseDuplicateFilter.isDuplicate(insertedStatic, List.of(keywordOnly), project));
+        assertFalse(EclipseDuplicateFilter.isDuplicate(insertedStatic, List.of(wrongRule), project));
+        assertFalse(EclipseDuplicateFilter.isDuplicate(insertedStatic, List.of(), project));
+        assertFalse(EclipseDuplicateFilter.isDuplicate(
+                new EclipseCleanupRunner.Diagnostic(RELATIVE_FILE, 3, 13,
+                        "cleanup.precompile_regex", "Unrelated edit",
+                        innerDeclaration, innerDeclaration),
+                List.of(matched), project));
     }
 
     @Test

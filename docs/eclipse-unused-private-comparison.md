@@ -7,7 +7,7 @@ Two common maintainability rules already exist in pinned SonarJava:
 | `cleanup.remove_unused_private_fields` | `S1068` | An unread private field |
 | `cleanup.remove_unused_private_methods` | `S1144` | An uncalled private method |
 
-This is **screening**, not new duplicate suppression. Eclipse's parent
+This comparison includes verified, source-qualified duplicate suppression. Eclipse's parent
 `cleanup.remove_unused_private_members` must be enabled alongside each child
 cleanup. Each option is tested separately against the real Eclipse Java runtime
 and SonarJava in both Maven and Gradle. The test verifies one source-located
@@ -19,10 +19,9 @@ The workflow uses the merged and independently tested
 pinned to commit `39b6a885`. Its source tree matches the successful standalone
 Eclipse test.
 
-Only after a green source-range comparison should the duplicate filter consider
-these exact option/rule pairs. A future negative control must prove that
-Eclipse remains visible whenever the corresponding Sonar rule is disabled.
-Do not treat parent cleanup options as identical to all child findings.
+The production duplicate filter maps only these two child options, and both
+negative controls are covered. Eclipse remains visible when the corresponding
+Sonar rule is disabled. The parent option is not mapped.
 
 ## Exact-once duplicate filtering
 
