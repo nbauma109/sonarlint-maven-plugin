@@ -89,7 +89,7 @@ def validate_queue(catalog, queue):
             raise ValueError("Unknown snapshot membership: " + row["eclipse_option"])
         if row["snapshot_membership"] != expected:
             raise ValueError("Pinned Sonar Way membership changed: " + row["eclipse_option"])
-    if counts != {"SONAR_OVERLAP": 24, "REVIEW": 79}:
+    if counts != {"SONAR_OVERLAP": 22, "REVIEW": 79}:
         raise ValueError(f"Unexpected pending classification totals: {counts}")
     return counts
 

@@ -202,6 +202,42 @@ class EclipseDuplicateFilterTest {
     }
 
     @Test
+    void suppressesOnlyMatchingUnusedPrivateDeclarations() throws IOException {
+        String source = """
+                package example;
+                final class PrivateMemberChecks {
+                    private int unusedCounter = 7;
+                    private int usedCounter = 11;
+                    private String unusedDescription() { return "unused"; }
+                    private int usedDescription() { return usedCounter; }
+                    int value() { return usedDescription(); }
+                }
+                """;
+        writeSource(source);
+        String[][] pairs = {
+            {"cleanup.remove_unused_private_fields", "java:S1068",
+                    "private int unusedCounter = 7;", "unusedCounter"},
+            {"cleanup.remove_unused_private_methods", "java:S1144",
+                    "private String unusedDescription()", "unusedDescription"}
+        };
+        for (String[] pair : pairs) {
+            Issue sonar = sonarIssue(pair[1], pair[3], source);
+            EclipseCleanupRunner.Diagnostic finding = finding(pair[0], pair[2], source);
+            assertTrue(EclipseDuplicateFilter.isDuplicate(finding, List.of(sonar), project),
+                    pair[0]);
+            assertFalse(EclipseDuplicateFilter.isDuplicate(finding, List.of(), project),
+                    pair[0]);
+            Issue wrongRule = sonarIssue("java:S2694", pair[3], source);
+            assertFalse(EclipseDuplicateFilter.isDuplicate(finding, List.of(wrongRule), project),
+                    pair[0]);
+            String used = pair[0].endsWith("_fields") ? "private int usedCounter"
+                    : "private int usedDescription";
+            assertFalse(EclipseDuplicateFilter.isDuplicate(
+                    finding(pair[0], used, source), List.of(sonar), project), pair[0]);
+        }
+    }
+
+    @Test
     void suppressesOnlyTheExplicitlyEnabledSonarInnerClassFinding() throws IOException {
         String source = """
                 package example;
