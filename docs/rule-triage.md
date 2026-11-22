@@ -28,7 +28,7 @@ The symbolic execution resource directory is named javase, but the actual reposi
 1. Discover rule definitions from the actual standalone engine, respecting the analyzer version, rule scope, status, templates, and the user-selected configuration.
 2. Enable eligible standard Sonar Way rules in production source analysis; exclude unsupported and unverified execution paths until tests pass.
 3. Provide adequate Maven source level, target JDK, compiled classes, dependency classpath and module context. Test sources must be identified separately.
-4. Add the compatible LGPL-era symbolic execution artifact only after verifying its license and availability. It declares SonarLint support and requires its matching Java plugin. Test representative null dereference, resource leak and Optional misuse rules.
+4. The compatible LGPLv3 symbolic execution artifact at version 8.6.0.37351 is now bundled for the opt-in `reliability` and `sonar-way-reliability` profiles. Real Maven and Gradle fixture tests verify null dereferences (S2259), resource leaks (S2095) and unsafe `Optional.get()` access (S3655). Further symbolic rules require positive and negative validation before inclusion.
 5. Emit security hotspots separately as review warnings. Retain the server for taint, commercial analysis, architecture, quality gates, coverage/duplication metrics and review history.
 6. Validate configured but unavailable rule keys explicitly. Never silently discard an unsupported rule or imply that a local clean result is a complete SonarCloud analysis.
 

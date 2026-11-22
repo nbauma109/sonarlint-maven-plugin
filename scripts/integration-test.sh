@@ -161,8 +161,14 @@ if grep -F '[java:S2259]' "$logs/reliability-disabled.log"; then
 fi
 test "$(sha256sum "$reliability_source")" = "$reliability_checksum"
 
-mvn -B -ntp -o -f "$reliability_fixture" process-classes \
-    -DstaticAnalysis.profile=sonar-way-reliability | tee "$logs/sonar-way-reliability.log"
+/usr/bin/time -f '%e %M' -o "$logs/standard-sonar-way-timing.txt" \
+    mvn -B -ntp -o -f "$reliability_fixture" process-classes \
+        -DstaticAnalysis.profile=sonar-way > "$logs/standard-sonar-way.log" 2>&1
+grep -F 'Activated 392 local Java rule(s).' "$logs/standard-sonar-way.log"
+
+/usr/bin/time -f '%e %M' -o "$logs/sonar-way-reliability-timing.txt" \
+    mvn -B -ntp -o -f "$reliability_fixture" process-classes \
+        -DstaticAnalysis.profile=sonar-way-reliability | tee "$logs/sonar-way-reliability.log"
 grep -F 'Activated 395 local Java rule(s).' "$logs/sonar-way-reliability.log"
 for rule in S2095 S2259 S3655; do
     grep -E "\\[WARNING\\].*ReliabilityIssues\\.java:[0-9]+.*\\[java:$rule\\]" \
@@ -170,3 +176,21 @@ for rule in S2095 S2259 S3655; do
 done
 test "$(sha256sum "$reliability_source")" = "$reliability_checksum"
 
+
+python3 - "$logs/standard-sonar-way-timing.txt" \
+    "$logs/sonar-way-reliability-timing.txt" <<'PY'
+from pathlib import Path
+import sys
+
+def measurements(path):
+    elapsed, peak_memory = Path(path).read_text(encoding="utf-8").strip().split()
+    return float(elapsed), int(peak_memory)
+
+standard = measurements(sys.argv[1])
+reliability = measurements(sys.argv[2])
+ratio = reliability[0] / standard[0]
+print(f"Standard Sonar Way: {standard[0]:.2f} seconds, {standard[1]} KiB peak memory")
+print(f"Sonar Way plus symbolic reliability: {reliability[0]:.2f} seconds, "
+      f"{reliability[1]} KiB peak memory")
+print(f"Observed runtime ratio: {ratio:.2f}x")
+PY

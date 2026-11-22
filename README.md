@@ -45,7 +45,7 @@ mvn compile io.github.nbauma109:static-analysis-maven-plugin:0.1.0-SNAPSHOT:chec
 | `staticAnalysis.skip` | `false` | Skip analysis |
 | `staticAnalysis.failOnViolation` | `false` | Fail if any violation is reported |
 | `staticAnalysis.cognitiveComplexityThreshold` | `15` | Maximum allowed cognitive complexity |
-| `staticAnalysis.profile` | `priority` | priority, complexity, sonar-way or none |
+| `staticAnalysis.profile` | `priority` | priority, complexity, sonar-way, reliability, sonar-way-reliability or none |
 | `staticAnalysis.enabledRules` | empty | Comma-separated additional rule keys |
 | `staticAnalysis.disabledRules` | empty | Comma-separated exclusions, taking precedence |
 | `staticAnalysis.eclipseEnabled` | `false` | Enable a separate Eclipse cleanup process |
@@ -110,7 +110,7 @@ Property names are case-sensitive. Explicit property overrides take precedence o
 
 ## Limitations
 
-Only production Java sources are analyzed. Symbolic execution, test sources, security review reporting, complete rule parameter validation, reactor tests, modern language compatibility, and XML reporting are not yet implemented. The older analyzer and engine require a security and compatibility review before publication.
+Only production Java sources are analyzed. Three reviewed symbolic execution rules are available in the opt-in reliability profiles. Test-source analysis, security review reporting, complete rule parameter validation, reactor tests, modern language compatibility, and XML reporting are not yet implemented. The older analyzer and engine require a security and compatibility review before publication.
 
 See [the design](docs/design.md) and [licensing considerations](docs/licensing.md).
 
@@ -164,3 +164,12 @@ cleanup options (ten added in the latest batch, plus our five system-property cl
 Both Maven and Gradle can use the [XML profile](src/it/broad-complementary/eclipse-cleanups.xml)
 with `eclipseEnabled` enabled and the configured external Eclipse runtime. These options
 remain opt-in because cleanup suggestions may have compatibility implications.
+
+## Overlap review and signal quality
+
+Our [Eclipse–Sonar overlap audit](docs/eclipse-overlap-audit.md) distinguishes the five
+verified exact-duplicate mappings from the many catalog entries still requiring
+confirmation. We prioritize correctness and maintainability over cosmetic rewrites.
+A change between `i++` and `++i` by itself is not a useful build warning.
+The `reliability` and `sonar-way-reliability` profiles use real symbolic execution,
+and [CI records a representative runtime comparison](docs/symbolic-performance.md).
