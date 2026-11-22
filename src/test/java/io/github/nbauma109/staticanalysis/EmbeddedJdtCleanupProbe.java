@@ -44,7 +44,7 @@ public final class EmbeddedJdtCleanupProbe {
         }
         Path project = Path.of(arguments[0]).toAbsolutePath().normalize();
         Path sourceRoot = project.resolve("src/main/java");
-        String classpathProperty = System.getProperty("probe.classpath", "");
+        String classpathProperty = System.getenv().getOrDefault("PROBE_CLASSPATH", "");
         String[] classpath = classpathProperty.isBlank() ? new String[0]
                 : classpathProperty.split(java.util.regex.Pattern.quote(File.pathSeparator));
         Set<String> actual = new TreeSet<>();
