@@ -57,6 +57,30 @@ explicitly **not** the boolean-comparison cleanup.
   previously looked complementary under the standard-only rule set.
 - Preserve dissimilar warnings occurring on the same source line.
 
+## Profile-dependent overlaps to test next
+
+The pinned Sonar Way profile does **not** activate two existing SonarJava
+rules that resemble high-value Eclipse refactorings:
+
+- `cleanup.precompile_regex` may overlap Sonar `S4248`, which flags
+  needlessly created regular-expression patterns. The match is not universal:
+  Eclipse's cleanup considers repeated uses of a regular expression within
+  one method. Require matching source ranges and positive/negative real-engine
+  examples before filtering.
+- `cleanup.static_inner_class` may overlap Sonar `S2694`, which identifies
+  inner classes that need not retain an enclosing instance. Check framework,
+  reflective-instantiation, and serialization constraints before recommending
+  rewriting the class.
+- `cleanup.remove_unnecessary_suppress_warnings` is distinct from `S1309`,
+  which restricts use of `@SuppressWarnings` rather than proving an
+  individual suppression unnecessary. Compiler diagnostics must establish
+  that a suppression is stale.
+
+Both `S4248` and `S2694` are available as explicitly enabled standard
+rules in the pinned analyzer but are not in its versioned Sonar Way snapshot.
+A finding is therefore complementary **relative to the selected profile**,
+not necessarily to the complete SonarJava rule inventory.
+
 ## What remains
 
 **24 candidate overlap classifications** lack a fully verified
