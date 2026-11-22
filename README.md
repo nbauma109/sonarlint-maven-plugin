@@ -184,8 +184,11 @@ and [CI records a representative runtime comparison](docs/symbolic-performance.m
 
 For a low-noise opt-in cleanup profile, use
 [`eclipse-cleanups-recommended.xml`](src/it/broad-complementary/eclipse-cleanups-recommended.xml):
-it enables only assignment extraction, reduction of needless nesting and collection
-`addAll` conversion. The 15-option broad profile remains available separately.
+it enables assignment extraction, reduction of needless nesting, collection
+`addAll` conversion, array-initializer simplification and redundant-modifier cleanup.
+Modifier ordering (`java:S1124`) and collection `isEmpty()` instead of size comparisons
+(`java:S1155`) are already active in the pinned `sonar-way` profile; use that
+profile or explicitly enable these two Sonar rules rather than duplicating them in Eclipse. The 15-option broad profile remains available separately.
 Our [rule-value review](docs/eclipse-rule-value-review.md) ranks the current picks,
 the next eight substantive candidates and the trivial/style-only options we would
 usually omit. Neither profile changes source code automatically.

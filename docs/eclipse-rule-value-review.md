@@ -5,11 +5,11 @@
 The default Maven and Gradle profiles remain unchanged. Eclipse cleanup analysis
 remains opt-in and runs without modifying sources. For users who want fewer,
 more actionable suggestions, we recommend the
-[three-option maintainability profile](../src/it/broad-complementary/eclipse-cleanups-recommended.xml)
+[five-option maintainability and aesthetics profile](../src/it/broad-complementary/eclipse-cleanups-recommended.xml)
 rather than enabling all 15 broad cleanup options.
 
 This is a **maintainability** recommendation, not a new set of bug detectors.
-The three candidates produced distinct Eclipse findings in the real Java 25
+The five selected options produced distinct Eclipse findings in the real Java 25
 integration fixtures against the pinned SonarJava configuration. Their usefulness
 and behavioral safety still depend on source context. We must not treat a shared
 source line or superficially similar rule title as proof of duplication.
@@ -26,13 +26,37 @@ source line or superficially similar rule title as proof of duplication.
 | `cleanup.use_string_is_blank` | **Convenience** in broad profile | An understandable Java 11 modernization; too small to warrant a core build warning. |
 | `cleanup.module_imports` | **Java 25 migration** in broad profile | Only useful in an explicit module/import modernization effort. |
 | `cleanup.system_property_* ` | **Compatibility review** in broad profile | Seven distinct options are available; replacing a property lookup can change the effect of runtime overrides. |
-| `cleanup.array_with_curly` | **Trivial** in broad profile | Shorter syntax rather than a material defect. |
-| `cleanup.remove_redundant_modifiers` | **Trivial** in broad profile | Compiler-redundant modifiers; optional codebase consistency, not a reliability problem. |
+| `cleanup.array_with_curly` | **Keep for aesthetics**, opt-in Eclipse | Shorter array-initializer syntax, explicitly requested as an aesthetic convention. |
+| `cleanup.remove_redundant_modifiers` | **Keep for aesthetics**, opt-in Eclipse | Removes redundant interface and other modifiers; useful for consistency. |
+| Sonar `S1124` (modifier ordering) | **Keep**, pinned Sonar Way | Checks Java Language Specification modifier ordering; no separate Eclipse member-sort rule is needed. |
+| Sonar `S1155` (`isEmpty()` instead of `size() == 0`) | **Keep**, pinned Sonar Way | Prefer an explicit collection emptiness check; uses Sonar's existing detector. |
 
 The 15-option
 [broad profile](../src/it/broad-complementary/eclipse-cleanups.xml)
-is kept intact, but it is not our signal-first recommendation. A cleanup
+is kept intact; the five selected recommendations include the two consciously
+retained aesthetic conventions. Modifier ordering and collection `isEmpty()` checks
+come from the pinned Sonar Way profile rather than duplicate Eclipse diagnostics. A cleanup
 that reports correctly is not automatically worth enabling by default.
+
+## Conventions retained using Sonar Way
+
+Two preferred conventions are already implemented by **active SonarJava checks**
+in the pinned versioned Sonar Way profile:
+
+- `java:S1124` detects misplaced Java declaration modifiers such as
+  `static public` instead of `public static`. This is *modifier ordering*,
+  not `cleanup.sort_members`, which rearranges field/method declarations
+  and may change initialization order.
+- `java:S1155` detects collection emptiness comparisons such as
+  `values.size() == 0` and recommends `values.isEmpty()`.
+
+Both are exercised on real source by the Maven and Gradle integration tests.
+We do not add duplicate Eclipse cleanup options or change the default
+`priority` profile. Select `sonar-way`, or explicitly enable
+`java:S1124,java:S1155` when using a narrower rule profile.
+
+The five-option Eclipse profile and these two Sonar checks are preferences
+we consciously keep, without treating their findings as bugs.
 
 ## Next candidates to investigate (not enabled)
 
@@ -65,7 +89,7 @@ comparison, a non-mutating report, and a reason the diagnostic merits attention.
 | `cleanup.use_anonymous_class_creation`, `cleanup.use_lambda` | **Do not recommend automatically** | Expression form preference; the latter overlaps active Sonar `S1604` on tested shapes. |
 | `cleanup.always_use_this_for_non_static_field_access` | **Exclude** | Repeated qualification adds noise without stronger semantics. |
 | `cleanup.remove_unnecessary_nls_tags`, `cleanup.add_missing_nls_tags` | **Project-specific** | Localization tagging policy, not an unconditional maintainability improvement. |
-| `cleanup.array_with_curly`, `cleanup.remove_redundant_modifiers` | **Convenience only** | Present in the legacy broad profile; intentionally omitted from the recommended profile. |
+| `cleanup.array_with_curly`, `cleanup.remove_redundant_modifiers` | **Keep for aesthetics** | Explicitly included in the recommended profile, not mistaken for correctness bugs. |
 
 ## Guardrails
 

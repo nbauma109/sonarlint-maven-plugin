@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <profiles version="2">
-    <profile kind="CleanUpProfile" name="recommended-eclipse-maintainability" version="2">
+    <profile kind="CleanUpProfile" name="recommended-eclipse-maintainability-and-aesthetics" version="2">
         <setting id="cleanup.pull_up_assignment" value="true"/>
         <setting id="cleanup.reduce_indentation" value="true"/>
         <setting id="cleanup.add_all" value="true"/>
+        <setting id="cleanup.array_with_curly" value="true"/>
+        <setting id="cleanup.remove_redundant_modifiers" value="true"/>
     </profile>
 </profiles>

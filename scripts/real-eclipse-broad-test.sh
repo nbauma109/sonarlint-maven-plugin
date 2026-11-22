@@ -124,6 +124,8 @@ expected = {
     "cleanup.pull_up_assignment",
     "cleanup.reduce_indentation",
     "cleanup.add_all",
+    "cleanup.array_with_curly",
+    "cleanup.remove_redundant_modifiers",
 }
 for system, log_path, report_path in (
     ("Maven", Path(sys.argv[1]), Path(sys.argv[2])),
@@ -134,12 +136,12 @@ for system, log_path, report_path in (
     assert report["formatVersion"] == 1, (system, report)
     issues = report["issues"]
     actual = [issue["cleanup"] for issue in issues]
-    assert len(actual) == 3 and set(actual) == expected, (system, issues)
+    assert len(actual) == 5 and set(actual) == expected, (system, issues)
     assert "Duplicate Eclipse findings suppressed: 0." in log, (system, log)
-    assert "Eclipse cleanup analysis: 3 violation(s)." in log, (system, log)
+    assert "Eclipse cleanup analysis: 5 violation(s)." in log, (system, log)
     for option in expected:
         assert log.count("[eclipse:" + option + "]") == 1, (system, option)
-    print(f"{system}: three distinct signal-first Eclipse findings, no duplicates")
+    print(f"{system}: five distinct selected Eclipse findings, no duplicates")
 PY
 
 test "$(sha256sum "$source_file")" = "$original_sha"

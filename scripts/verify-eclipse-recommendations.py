@@ -13,6 +13,8 @@ SELECTED = {
     "cleanup.pull_up_assignment",
     "cleanup.reduce_indentation",
     "cleanup.add_all",
+    "cleanup.array_with_curly",
+    "cleanup.remove_redundant_modifiers",
 }
 
 

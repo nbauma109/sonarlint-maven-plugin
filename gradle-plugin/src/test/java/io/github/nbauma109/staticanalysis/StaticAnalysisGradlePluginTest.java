@@ -114,6 +114,30 @@ class StaticAnalysisGradlePluginTest {
     }
 
     @Test
+    void reportsModifierOrderAndCollectionEmptinessInCuratedSonarWay() throws IOException {
+        prepare("sonar-way", false, 15);
+        Path source = projectDirectory.resolve("src/main/java/example/AestheticPreferences.java");
+        Files.writeString(source, """
+                package example;
+
+                import java.util.Collection;
+
+                public class AestheticPreferences {
+                    static public boolean hasNoItems(Collection<String> values) {
+                        return values.size() == 0;
+                    }
+                }
+                """, StandardCharsets.UTF_8);
+        String before = Files.readString(source, StandardCharsets.UTF_8);
+        BuildResult result = run("staticAnalysis");
+        assertTrue(result.getOutput().contains("Activated 395 local Java rule(s)."),
+                result.getOutput());
+        assertTrue(result.getOutput().contains("[java:S1124]"), result.getOutput());
+        assertTrue(result.getOutput().contains("[java:S1155]"), result.getOutput());
+        assertTrue(before.equals(Files.readString(source, StandardCharsets.UTF_8)));
+    }
+
+    @Test
     void rejectsServerOnlyRules() throws IOException {
         prepare("none", false, 15);
         Files.writeString(projectDirectory.resolve("build.gradle"), configuration("none", false, 15)
