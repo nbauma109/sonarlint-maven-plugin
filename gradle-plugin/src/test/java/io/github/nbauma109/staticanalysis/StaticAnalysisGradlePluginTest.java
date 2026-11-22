@@ -64,11 +64,14 @@ class StaticAnalysisGradlePluginTest {
                 "rootProject.name = 'reliability-fixture'\n", StandardCharsets.UTF_8);
         Files.writeString(projectDirectory.resolve("build.gradle"),
                 configuration("reliability", false, 15), StandardCharsets.UTF_8);
+        String before = Files.readString(source, StandardCharsets.UTF_8);
         BuildResult result = run("staticAnalysis");
         assertTrue(result.getOutput().contains("Activated 3 local Java rule(s)."), result.getOutput());
+        assertTrue(result.getOutput().contains("Sonar analysis: 3 violation(s)."), result.getOutput());
         for (String key : new String[] {"java:S2095", "java:S2259", "java:S3655"}) {
             assertTrue(result.getOutput().contains("[" + key + "]"), result.getOutput());
         }
+        assertTrue(before.equals(Files.readString(source, StandardCharsets.UTF_8)));
     }
 
     @Test

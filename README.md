@@ -67,9 +67,10 @@ plugin archive and fails if its membership or eligible rule count changes.
 Maven and Gradle use the same snapshot.
 
 The separate [21 symbolic Sonar Way rules](docs/sonar-way-symbolic-java-8.6.0.37351.rules)
-are **not active** in our standalone analyzer. We prioritize resource leaks,
-null dereferences and unsafe `Optional` access for a separately tested symbolic
-engine, rather than silently claiming those checks. We do not automatically
+are not included in the standard Sonar Way profile. The opt-in `reliability`
+profile loads a compatible symbolic analyzer and activates **three reviewed
+correctness rules** for resource leaks, null dereferences, and unsafe `Optional`
+access. The other 18 remain unimplemented locally. We do not automatically
 promote cosmetic rules such as uppercase literal suffixes or wholesale increment
 rewriting. See [the rule selection policy](docs/sonar-way-versioning-and-value.md).
 

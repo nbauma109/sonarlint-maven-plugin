@@ -142,7 +142,21 @@ reliability_checksum="$(sha256sum "$reliability_source")"
 mvn -B -ntp -o -f "$reliability_fixture" process-classes \
     -DstaticAnalysis.profile=reliability | tee "$logs/reliability.log"
 grep -F 'Activated 3 local Java rule(s).' "$logs/reliability.log"
+grep -F 'Sonar analysis: 3 violation(s).' "$logs/reliability.log"
 for rule in S2095 S2259 S3655; do
-    grep -E "\\[WARNING\\].*ReliabilityIssues\\.java:[0-9]+.*\\[java:$rule\\]" "$logs/reliability.log"
+    count="$(grep -Ec "\\[WARNING\\].*ReliabilityIssues\\.java:[0-9]+.*\\[java:$rule\\]" "$logs/reliability.log" || true)"
+    if [ "$count" -ne 1 ]; then
+        echo "Expected one source-located symbolic reliability finding for $rule, got $count." >&2
+        exit 1
+    fi
 done
+
+mvn -B -ntp -o -f "$reliability_fixture" process-classes \
+    -DstaticAnalysis.profile=reliability \
+    -DstaticAnalysis.disabledRules=java:S2259 | tee "$logs/reliability-disabled.log"
+grep -F 'Sonar analysis: 2 violation(s).' "$logs/reliability-disabled.log"
+if grep -F '[java:S2259]' "$logs/reliability-disabled.log"; then
+    echo "Disabled null-dereference rule was unexpectedly reported." >&2
+    exit 1
+fi
 test "$(sha256sum "$reliability_source")" = "$reliability_checksum"
