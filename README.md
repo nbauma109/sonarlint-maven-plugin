@@ -262,9 +262,50 @@ Our original project code is licensed under the [GNU General Public License vers
 
 The descriptive name **Static Analysis Maven Plugin** refers to this independent project, not an official SonarSource or Eclipse Foundation product. Our rule implementation still uses the pinned SonarJava and SonarLint Core upstream libraries. We use their names only to describe compatibility and dependencies.
 
-## Eclipse cleanup warnings (experimental)
+## Bundled Eclipse JDT cleanup analysis (experimental)
 
-An opt-in second analysis engine reports Eclipse Java Development Tools cleanup opportunities **without changing source files**. This requires an Eclipse installation with a version of [refactoring-cli](https://github.com/nbauma109/refactoring-cli) supporting `--report` and `--source-root`; the previously released 2.0.0 CLI cannot produce these reports. No automatic runtime downloads occur inside the goal.
+Maven now includes Eclipse JDT Core and Core Manipulation dependencies. **No Eclipse IDE,
+separate CLI installation, graphical display or `xvfb-run` is required** for the
+embedded private-field finality check. Enable it inside the normal plugin
+configuration:
+
+```xml
+<configuration>
+    <profile>sonar-way</profile>
+    <failOnViolation>true</failOnViolation>
+    <eclipseEnabled>true</eclipseEnabled>
+</configuration>
+```
+
+The bundled integration is covered by a narrowly scoped [GPLv3 section 7 Eclipse JDT linking exception](ECLIPSE-JDT-LINKING-EXCEPTION.md). The project's GPL-3.0-only license remains otherwise unchanged, and Eclipse dependencies retain EPL-2.0. The exception must be included in release artifacts alongside the unchanged GPL license and third-party notices.
+
+The embedded engine runs at `process-classes` with the existing `check` goal.
+It calls the genuine Eclipse `VariableDeclarationFixCore` visitor to identify
+safe `final` modifiers; it does not rewrite source files or require an Eclipse
+workspace. The default embedded cleanup currently implements **only private-field
+finality**. With a supplied `eclipseCleanupProfile`, both
+`cleanup.make_variable_declarations_final` and
+`cleanup.make_private_fields_final` must be enabled. Other enabled cleanup
+options are rejected explicitly rather than silently ignored.
+
+The embedded backend runs on our supported Java 17 baseline. It uses
+`org.eclipse.jdt.core:3.47.0` and
+`org.eclipse.jdt.core.manipulation:1.21.0`, with their resolved transitive
+dependencies. It is new in unreleased `0.1.1-SNAPSHOT`, and requires
+third-party licensing review before publication. When Eclipse and the local
+supplemental analyzer report the same `S9438` location, the warning appears
+once; without Eclipse enabled, the local `S9438` check still works.
+
+## External Eclipse cleanup warnings (legacy, broader coverage)
+
+For the broader collection of Eclipse cleanups that need workspace-backed
+refactoring services, the existing external executable option remains available.
+It requires an Eclipse installation with a version of
+[refactoring-cli](https://github.com/nbauma109/refactoring-cli) supporting
+`--report` and `--source-root`. The previously released 2.0.0 CLI cannot
+produce these reports. The external process is used only when
+`eclipseExecutable` is explicitly configured; otherwise the embedded backend
+is selected.
 
 ```xml
 <configuration>
@@ -275,7 +316,12 @@ An opt-in second analysis engine reports Eclipse Java Development Tools cleanup 
 </configuration>
 ```
 
-On Linux build agents without a graphical display, configure `eclipseExecutable` to an executable wrapper that starts Eclipse through `xvfb-run` and forwards all arguments. The Eclipse runtime and its refactoring CLI plugin must be installed separately. Eclipse analysis runs in a separate process, and the application writes structured diagnostics under `target/static-analysis/eclipse`. A nonzero exit code, missing profile, missing executable or malformed report fails analysis instead of silently succeeding.
+For the external mode on Linux build agents without a display, configure
+`eclipseExecutable` to an executable wrapper using `xvfb-run`. That
+mode requires a separately installed Eclipse runtime and compatible refactoring
+CLI. Its separate process writes structured diagnostics under
+`target/static-analysis/eclipse`. Invalid profiles and failed external
+processes fail the Maven build instead of silently succeeding.
 
 Duplicate suppression is conservative and source-range aware. Five mappings are enabled for exact Eclipse cleanup identifiers: unused imports (`S1128`), unnecessary casts (`S1905`), unused local variables (`S1481`), missing `@Override` (`S1161`) and try-with-resources (`S2093`). Real Eclipse and Sonar integration tests verify the latter two using a concrete overridden method and a `java.io.Closeable` resource. The Eclipse CLI groups related refactoring text edits so one cleanup opportunity produces one warning. We retain Eclipse findings when no matching Sonar issue is reported, and ambiguous cleanup modules remain visible. Other potential overlaps require rule-by-rule verification.
 

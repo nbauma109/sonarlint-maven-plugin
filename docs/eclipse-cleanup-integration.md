@@ -6,6 +6,27 @@ Provide both standalone Sonar warnings and nonredundant Eclipse Java Development
 
 The existing projects are [refactoring-cleanup-action](https://github.com/nbauma109/refactoring-cleanup-action) and [refactoring-cli](https://github.com/nbauma109/refactoring-cli). The action currently uses an Eclipse installation and a Java 25 runtime in Docker, with a virtual display on Linux. The CLI uses workspace projects, linked sources, JDT cleanup registry, refactoring validation and TextEdit objects. Reuse the cleanup engine rather than recreating Eclipse transformations. A direct JDT Core dependency alone does not provide the full JDT UI cleanup registry.
 
+## Embedded engine compatibility
+
+The development plugin `0.1.1-SNAPSHOT` now bundles JDT Core
+`3.47.0` and JDT Core Manipulation `1.21.0`. This pairing was
+chosen because the newer manipulation `1.25.0` requires Java 21 bytecode,
+while Maven plugin consumers still run Java 17. A standalone Maven
+probe demonstrated that the genuine
+`VariableDeclarationFixCore.VariableDeclarationFinder` can identify a
+private-field finality edit without any Eclipse workbench. Calling
+`createChange()` is not workspace-free, so the embedded engine extracts
+the cleanup visitor's findings instead of applying the resulting change.
+
+Currently only private-field finality is implemented in the embedded mode.
+The original external CLI remains necessary for broader cleanup profiles.
+Unsupported enabled options in an embedded profile fail validation.
+Neither engine modifies Java sources when used through this Maven goal.
+
+The embedded dependencies are Eclipse Public License 2.0 components.
+Check the complete transitive dependency inventory and upstream secondary
+license notices before publishing a combined GPL-3.0-only artifact.
+
 ## Initial option inventory
 
 [eclipse-cleanup-catalog.csv](eclipse-cleanup-catalog.csv) inventories 147 input options declared in the action. The example profile is the existing [jd-core-v0 workflow](https://github.com/nbauma109/jd-core-v0/blob/master/.github/workflows/refactor.yml), with the actual true/false settings when present. This is an initial triage, not an exhaustive equivalence test. Categories: SONAR_OVERLAP means a known candidate for duplicate or partial coverage; ECLIPSE_CANDIDATE means potentially complementary, not proven unique; ECLIPSE_AESTHETIC means a verified complementary but cosmetic cleanup selected only in the opt-in aesthetics profile; STYLE_POLICY means a preference exposed as an initially disabled aesthetic option or left to the configured formatter/Checkstyle; REVIEW means we have not established coverage. Options can be parent switches, subordinate choices or mutually exclusive settings, not one warning each.
@@ -16,7 +37,7 @@ Sonar candidates are compared with the pinned SonarJava 8.6.0.37351 metadata, no
 
 1. Run Sonar locally once with the selected rules, collecting rule IDs and source locations before rendering warnings.
 2. Load existing Eclipse exported cleanup XML with the exact Maven source level, source roots, encoding and compilation classpath. Derive complementary settings without modifying the original profile.
-3. Run the Eclipse cleanup engine in a separate process with a compatible Eclipse distribution, Java runtime and isolated workspace. Make the Eclipse engine opt-in until runtime provisioning and cross-platform behavior are validated. Pin versions and verify downloaded components; downloads are setup/dependency resolution rather than analysis.
+3. For the initial private-field finality cleanup, run the bundled Eclipse JDT Core and Core Manipulation visitor in the Maven process, without an Eclipse distribution or workspace. The embedded mode uses the compiled production classpath, returns only diagnostics and never edits source. For other workspace-backed cleanups, retain the existing optional external Eclipse process and its isolated workspace; it is selected only when an executable is configured.
 4. Add a report-only mode to the CLI: after creating and validating each Change, inspect its effective TextEdits against original source. Record cleanup option/module, source path, original line/column or range, description and proposed edit. Do not invoke change.perform or write through linked resources. Audit any fallbacks (including the instanceof fallback) for write operations. Use copies for any transformations that cannot safely be previewed. Failed or skipped cleanups must be diagnosable, not silently reported as a clean result.
 5. Merge warnings using stable identifiers and deterministic sorting. Keep the existing Maven failure policy explicit. No GitHub action, Docker daemon or external server is required by the eventual user-facing Maven goal; the current Eclipse distribution may still need a platform-specific runtime and display until a truly headless route is verified.
 

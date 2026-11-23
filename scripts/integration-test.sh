@@ -52,6 +52,41 @@ mvn -B -ntp -o -f "$logger_fixture" process-classes \
 grep -F 'Activated 394 local Java rule(s).' "$logs/logger-category-disabled.log"
 grep -F 'Sonar analysis: 0 violation(s).' "$logs/logger-category-disabled.log"
 
+embedded_fixture=src/it/embedded-eclipse/pom.xml
+if mvn -B -ntp -f "$embedded_fixture" process-classes > "$logs/embedded-eclipse-strict.log" 2>&1; then
+    cat "$logs/embedded-eclipse-strict.log"
+    echo "Expected bundled JDT Core finality cleanup to fail the Maven build." >&2
+    exit 1
+fi
+grep -F 'Running embedded Eclipse JDT cleanup analysis without an IDE.' \
+    "$logs/embedded-eclipse-strict.log"
+grep -E '\[WARNING\].*EmbeddedJdtFinality\.java:[0-9]+:[0-9]+ \[eclipse:VariableDeclarationCleanUpCore\]' \
+    "$logs/embedded-eclipse-strict.log"
+grep -F 'Eclipse cleanup analysis: 1 violation(s).' "$logs/embedded-eclipse-strict.log"
+grep -F 'Static analysis found 1 violation(s).' "$logs/embedded-eclipse-strict.log"
+
+embedded_profile="$(pwd)/src/it/embedded-eclipse/eclipse-private-fields-final.xml"
+mvn -B -ntp -f "$embedded_fixture" process-classes \
+    -DstaticAnalysis.failOnViolation=false \
+    "-DstaticAnalysis.eclipseCleanupProfile=$embedded_profile" \
+    | tee "$logs/embedded-eclipse-profile.log"
+grep -F 'Eclipse cleanup analysis: 1 violation(s).' "$logs/embedded-eclipse-profile.log"
+
+unsupported_profile="$(pwd)/src/it/embedded-eclipse/eclipse-unsupported-cleanup.xml"
+if mvn -B -ntp -f "$embedded_fixture" process-classes \
+    "-DstaticAnalysis.eclipseCleanupProfile=$unsupported_profile" \
+    > "$logs/embedded-eclipse-unsupported.log" 2>&1; then
+    cat "$logs/embedded-eclipse-unsupported.log"
+    echo "Expected unsupported embedded cleanup option to fail." >&2
+    exit 1
+fi
+grep -F 'The embedded Eclipse engine does not support cleanup: cleanup.make_parameters_final' \
+    "$logs/embedded-eclipse-unsupported.log"
+
+mvn -B -ntp -o -f "$embedded_fixture" process-classes \
+    -DstaticAnalysis.eclipseEnabled=false | tee "$logs/embedded-eclipse-disabled.log"
+grep -F 'Sonar analysis: 0 violation(s).' "$logs/embedded-eclipse-disabled.log"
+
 production_fixture=src/it/modern-production-rules/pom.xml
 if mvn -B -ntp -o -f "$production_fixture" process-classes \
     > "$logs/modern-production-strict.log" 2>&1; then
