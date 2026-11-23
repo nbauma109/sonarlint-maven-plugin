@@ -41,6 +41,35 @@ jobs:
             -DstaticAnalysis.eclipseEnabled=true \
             -DstaticAnalysis.failOnViolation=false \
             | tee embedded-eclipse-transformer.log
+      - name: Compare embedded and supplemental finality without duplicate warnings
+        shell: bash
+        run: |
+          set -euo pipefail
+          mvn -B -ntp -f transformer-api/pom.xml \
+            io.github.nbauma109:static-analysis-maven-plugin:0.1.1-SNAPSHOT:check \
+            -DstaticAnalysis.profile=sonar-way \
+            -DstaticAnalysis.eclipseEnabled=true \
+            -DstaticAnalysis.failOnViolation=false \
+            | tee combined-eclipse-transformer.log
+          mvn -B -ntp -f transformer-api/pom.xml \
+            io.github.nbauma109:static-analysis-maven-plugin:0.1.1-SNAPSHOT:check \
+            -DstaticAnalysis.profile=sonar-way \
+            -DstaticAnalysis.eclipseEnabled=false \
+            -DstaticAnalysis.failOnViolation=false \
+            | tee local-only-transformer.log
+          python3 - <<'PY'
+          from pathlib import Path
+
+          combined = Path("combined-eclipse-transformer.log").read_text(encoding="utf-8")
+          local = Path("local-only-transformer.log").read_text(encoding="utf-8")
+          assert combined.count("[eclipse:VariableDeclarationCleanUpCore]") == 8
+          assert combined.count("[java:S9438]") == 0
+          assert "Equivalent private-field findings provided by Eclipse: 8." in combined
+          assert local.count("[java:S9438]") == 8
+          assert "[eclipse:VariableDeclarationCleanUpCore]" not in local
+          print("EMBEDDED_PREFERRED_FINALITY 8")
+          print("LOCAL_FALLBACK_FINALITY 8")
+          PY
       - name: Check expected finality findings and false positives
         shell: bash
         run: |
