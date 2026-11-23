@@ -1,7 +1,19 @@
 package io.github.nbauma109.test;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import org.eclipse.jdt.core.dom.ASTVisitor;
+import org.eclipse.jdt.core.dom.FieldDeclaration;
+import org.eclipse.jdt.core.dom.IBinding;
+import org.eclipse.jdt.core.dom.Name;
+import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
+import org.eclipse.jdt.internal.corext.fix.VariableDeclarationFixCore.ModifierChangeOperation;
+import org.eclipse.jdt.internal.corext.fix.VariableDeclarationFixCore.VariableDeclarationFinder;
+import org.eclipse.jdt.internal.corext.fix.VariableDeclarationFixCore.WrittenNamesFinder;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.compiler.IProblem;
 import org.eclipse.jdt.core.dom.AST;
@@ -9,14 +21,15 @@ import org.eclipse.jdt.core.dom.ASTParser;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.internal.corext.fix.VariableDeclarationFixCore;
 import org.eclipse.jdt.ui.cleanup.ICleanUpFix;
-import org.eclipse.jdt.core.refactoring.CompilationUnitChange;
 
 public final class HeadlessManipulationProbe {
     private static final String SOURCE = """
             package example;
             public final class EclipseProbe {
                 private String name = "example";
+                private String changed = "before";
                 public String name() { return name; }
+                public void change(String replacement) { changed = replacement; }
             }
             """;
 
@@ -46,13 +59,31 @@ public final class HeadlessManipulationProbe {
             throw new IllegalStateException("Expected Eclipse final-field cleanup");
         }
 
-        try {
-            CompilationUnitChange change = cleanup.createChange(null);
-            System.out.println("JDT_CORE_CHANGE_PRESENT=" + (change != null));
-        } catch (Exception | LinkageError failure) {
-            System.out.println("JDT_CORE_CHANGE_FAILED=" + failure.getClass().getName()
-                    + ":" + failure.getMessage());
-            failure.printStackTrace(System.out);
+        Map<IBinding, List<Name>> writes = new HashMap<>();
+        HashSet<String> unresolved = new HashSet<>();
+        unit.accept(new WrittenNamesFinder(new HashMap<>(writes), unresolved));
+        HashMap<IBinding, List<Name>> recordedWrites = new HashMap<>();
+        unit.accept(new WrittenNamesFinder(recordedWrites, unresolved));
+        List<Integer> fixLines = new ArrayList<>();
+        unit.accept(new ASTVisitor() {
+            @Override
+            public boolean visit(FieldDeclaration declaration) {
+                List<ModifierChangeOperation> operations = new ArrayList<>();
+                VariableDeclarationFinder finder = new VariableDeclarationFinder(
+                        true, false, false, operations, recordedWrites, unresolved);
+                declaration.accept(finder);
+                if (!operations.isEmpty()) {
+                    for (Object fragment : declaration.fragments()) {
+                        VariableDeclarationFragment variable = (VariableDeclarationFragment) fragment;
+                        fixLines.add(unit.getLineNumber(variable.getStartPosition()));
+                    }
+                }
+                return false;
+            }
+        });
+        System.out.println("JDT_CORE_FINAL_FIELD_FIX_LINES=" + fixLines);
+        if (fixLines.size() != 1) {
+            throw new IllegalStateException("Expected one safe field-finality cleanup");
         }
     }
 }
