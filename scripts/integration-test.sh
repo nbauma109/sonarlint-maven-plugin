@@ -123,9 +123,11 @@ compiler_release=17
 expected_test_issues=2
 java_major="$(java -XshowSettings:properties -version 2>&1 \
     | sed -n 's/^ *java.specification.version = \([0-9]*\).*$/\1/p' | head -1)"
-if [ "$java_major" -ge 21 ]; then
-    compiler_release=21
+if [ "$java_major" -ge 22 ]; then
+    compiler_release=22
     expected_test_issues=3
+elif [ "$java_major" -ge 21 ]; then
+    compiler_release=21
 fi
 if mvn -B -ntp -o -f "$test_fixture" test -Dmaven.compiler.release="$compiler_release" \
     > "$logs/modern-test-strict.log" 2>&1; then
@@ -136,7 +138,7 @@ fi
 grep -F "Test-source analysis found $expected_test_issues violation(s)." \
     "$logs/modern-test-strict.log"
 test "$(grep -Ec '\[WARNING\].*\[java:S8786\]' "$logs/modern-test-strict.log")" -eq 2
-if [ "$java_major" -ge 21 ]; then
+if [ "$java_major" -ge 22 ]; then
     grep -E '\[WARNING\].*ModernTestIssues\.java:[0-9]+ \[java:S7467\]' \
         "$logs/modern-test-strict.log"
 else
