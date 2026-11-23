@@ -36,9 +36,21 @@
         <maven.plugin.tools.version>3.15.1</maven.plugin.tools.version>
         <sonarlint.version>10.13.0.79996</sonarlint.version>
         <sonarjava.version>8.6.0.37351</sonarjava.version>
+        <eclipse.jdt.core.version>3.47.0</eclipse.jdt.core.version>
+        <eclipse.jdt.manipulation.version>1.21.0</eclipse.jdt.manipulation.version>
     </properties>
 
     <dependencies>
+        <dependency>
+            <groupId>org.eclipse.jdt</groupId>
+            <artifactId>org.eclipse.jdt.core</artifactId>
+            <version>${eclipse.jdt.core.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.jdt</groupId>
+            <artifactId>org.eclipse.jdt.core.manipulation</artifactId>
+            <version>${eclipse.jdt.manipulation.version}</version>
+        </dependency>
         <dependency>
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>

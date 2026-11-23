@@ -3,6 +3,7 @@ package io.github.nbauma109.staticanalysis;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -174,10 +175,10 @@ public final class CheckMojo extends AbstractMojo {
                 String javaSource = Optional.ofNullable(release).filter(value -> !value.isBlank())
                         .or(() -> Optional.ofNullable(source).filter(value -> !value.isBlank()))
                         .orElse("17");
-                java.nio.charset.Charset sourceEncoding = Optional.ofNullable(encoding)
+                Charset sourceEncoding = Optional.ofNullable(encoding)
                         .filter(value -> !value.isBlank() && !value.startsWith("${"))
-                        .map(java.nio.charset.Charset::forName)
-                        .orElse(java.nio.charset.StandardCharsets.UTF_8);
+                        .map(Charset::forName)
+                        .orElse(StandardCharsets.UTF_8);
                 EclipseCleanupRunner.Result result = EmbeddedEclipseCleanupRunner.run(baseDirectory,
                         project.getCompileSourceRoots(), project.getCompileClasspathElements(),
                         javaSource, sourceEncoding,

@@ -6,6 +6,7 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -14,6 +15,7 @@ import java.util.Set;
 import java.util.stream.Stream;
 import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTParser;
@@ -57,7 +59,7 @@ final class EmbeddedEclipseCleanupRunner {
         List<EclipseCleanupRunner.Diagnostic> findings = new ArrayList<>();
         String[] sourcePaths = sourceDirectories.stream().map(Path::toString).toArray(String[]::new);
         String[] encodings = new String[sourcePaths.length];
-        java.util.Arrays.fill(encodings, encoding.name());
+        Arrays.fill(encodings, encoding.name());
         String[] classpathEntries = classpath.toArray(new String[0]);
 
         for (Path root : sourceDirectories) {
@@ -178,7 +180,7 @@ final class EmbeddedEclipseCleanupRunner {
             return finalDeclarations && finalPrivate;
         } catch (IOException exception) {
             throw exception;
-        } catch (SAXException | javax.xml.parsers.ParserConfigurationException exception) {
+        } catch (SAXException | ParserConfigurationException exception) {
             throw new IOException("Unable to read Eclipse cleanup profile: " + profile, exception);
         }
     }

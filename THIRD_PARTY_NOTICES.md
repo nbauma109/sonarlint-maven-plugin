@@ -6,7 +6,8 @@ Our own code is licensed GPL-3.0-only. The components below are not relicensed b
 | --- | --- | --- | --- |
 | SonarLint Analysis Engine and other SonarLint Core modules | 10.13.0.79996 | GNU Lesser General Public License, version 3 | Retain notices; provide corresponding source and required replacement/relinking rights when distributing the combined executable. |
 | SonarJava | 8.6.0.37351 | GNU Lesser General Public License, version 3 | Historical LGPL-era analyzer. Preserve upstream notices and distribution rights. Later releases have different terms. |
-| Eclipse Java Development Tools | Optional planned engine | Eclipse Public License, version 2.0 | Not yet bundled. Verify the distribution's component licences and any secondary licence notices before shipping. |
+| Eclipse Java Development Tools Core | 3.47.0 | Eclipse Public License, version 2.0 | Runtime dependency of the embedded cleanup engine; retain upstream notices and review GPL compatibility. |
+| Eclipse Java Development Tools Core Manipulation | 1.21.0 | Eclipse Public License, version 2.0 | Provides the genuine cleanup analysis visitors. Review transitive dependencies and redistribution terms before release. |
 | refactoring-cli | Planned separate executable | GNU General Public License, version 3 | Our independent tool; its copyright notices and source distribution requirements remain applicable. |
 
 Before publishing a binary, generate and review an actual resolved dependency inventory and the individual third-party license files, including any shaded or transitive packages. This list is a design-time inventory and not a representation that all runtime component notices have been audited.
