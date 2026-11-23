@@ -34,5 +34,18 @@ jobs:
           jar tf "$main_jar" | grep -qx 'META-INF/LICENSE'
           jar tf "$main_jar" | grep -qx 'META-INF/COPYRIGHT.md'
           jar tf "$main_jar" | grep -qx 'META-INF/THIRD_PARTY_NOTICES.md'
+          jar tf "$main_jar" | grep -qx 'META-INF/ECLIPSE-JDT-LINKING-EXCEPTION.md'
           jar tf "$sources_jar" | grep -q 'CheckMojo.java'
           jar tf "$javadoc_jar" | grep -q 'index.html'
+      - name: Verify GPLv3 linking permission and Maven artifact notices
+        run: python3 scripts/verify-eclipse-jdt-license-exception.py
+      - name: Record JDT runtime dependency inventory for license review
+        run: |
+          mvn -B -ntp org.apache.maven.plugins:maven-dependency-plugin:3.8.1:tree \
+            -Dscope=runtime -DoutputFile=target/eclipse-jdt-runtime-dependencies.txt
+          cat target/eclipse-jdt-runtime-dependencies.txt
+      - name: Upload JDT dependency inventory
+        uses: actions/upload-artifact@v4
+        with:
+          name: eclipse-jdt-runtime-license-inventory
+          path: target/eclipse-jdt-runtime-dependencies.txt
