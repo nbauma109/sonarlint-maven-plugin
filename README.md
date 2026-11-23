@@ -277,6 +277,8 @@ configuration:
 </configuration>
 ```
 
+The bundled integration is covered by a narrowly scoped [GPLv3 section 7 Eclipse JDT linking exception](ECLIPSE-JDT-LINKING-EXCEPTION.md). The project's GPL-3.0-only license remains otherwise unchanged, and Eclipse dependencies retain EPL-2.0. The exception must be included in release artifacts alongside the unchanged GPL license and third-party notices.
+
 The embedded engine runs at `process-classes` with the existing `check` goal.
 It calls the genuine Eclipse `VariableDeclarationFixCore` visitor to identify
 safe `final` modifiers; it does not rewrite source files or require an Eclipse

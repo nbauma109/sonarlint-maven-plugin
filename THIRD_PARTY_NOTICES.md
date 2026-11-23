@@ -1,6 +1,6 @@
 # Third-party components
 
-Our own code is licensed GPL-3.0-only. The components below are not relicensed by this project.
+Our own code remains GPL-3.0-only with a GPLv3 section 7 linking exception for specified Eclipse JDT dependencies. The components below are not relicensed by this project.
 
 | Component | Selected version or role | Licence | Distribution notes |
 | --- | --- | --- | --- |
@@ -12,7 +12,11 @@ Our own code is licensed GPL-3.0-only. The components below are not relicensed b
 
 Before publishing a binary, generate and review an actual resolved dependency inventory and the individual third-party license files, including any shaded or transitive packages. This list is a design-time inventory and not a representation that all runtime component notices have been audited.
 
-**Eclipse Public License 2.0 compatibility gate:** The Eclipse JDT repositories inspected declare Eclipse Public License 2.0. That license does **not** automatically grant compatibility with GNU General Public License 3.0; compatibility through the optional secondary-license mechanism must be explicitly designated by the upstream copyright holders. No such designation has been verified for these selected JDT artifacts. Our plugin declares GNU General Public License 3.0 only, so legal compatibility and redistribution requirements must be resolved before merging or publishing the bundled-engine change. The [Free Software Foundation's license guidance](https://www.gnu.org/licenses/license-list.html) explains the secondary-license requirement.
+**Eclipse JDT linking exception:** The Eclipse JDT libraries are licensed under EPL-2.0 and have not been treated as GPL-relicensed libraries. Instead, our own original GPL-3.0-only code has a specifically scoped [additional linking permission under GPLv3 section 7](ECLIPSE-JDT-LINKING-EXCEPTION.md) for JDT Core, JDT Core Manipulation and the EPL-2.0-covered Eclipse Platform dependencies needed by those libraries.
+
+The [Eclipse Foundation](https://blogs.eclipse.org/post/mike-milinkovich/eplgpl-commentary) and the [Free Software Foundation](https://www.gnu.org/licenses/gpl-faq.html#GPLIncompatibleLibs) identify a copyright-holder-granted GPL linking exception as a path for this combination. This exception does not remove or modify the EPL-2.0 obligations of the JDT dependencies. It does not apply to unrelated GPL code without copyright-holder permission.
+
+**Publication requirements:** Verify copyright authorization from every holder of copyrightable GPL code included in the Maven plugin; audit the complete resolved runtime dependency set, including indirect dependencies and source/notice obligations; retain the exception with source and binary artifacts; and confirm all applicable terms before release. The exception is a substantive legal permission, not a declaration that a scanner has certified the entire binary.
 
 - [SonarLint Core](https://github.com/SonarSource/sonarlint-core)
 - [SonarJava](https://github.com/SonarSource/sonar-java/tree/8.6.0.37351)

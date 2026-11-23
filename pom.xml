@@ -11,8 +11,8 @@
 
     <licenses>
         <license>
-            <name>GNU General Public License, Version 3</name>
-            <url>https://www.gnu.org/licenses/gpl-3.0.html</url>
+            <name>GNU General Public License, Version 3 only, with Eclipse JDT linking exception</name>
+            <url>https://github.com/nbauma109/static-analysis-maven-plugin/blob/master/ECLIPSE-JDT-LINKING-EXCEPTION.md</url>
         </license>
     </licenses>
     <developers>
@@ -116,6 +116,7 @@
                 <includes>
                     <include>LICENSE</include>
                     <include>COPYRIGHT.md</include>
+                    <include>ECLIPSE-JDT-LINKING-EXCEPTION.md</include>
                     <include>THIRD_PARTY_NOTICES.md</include>
                 </includes>
             </resource>

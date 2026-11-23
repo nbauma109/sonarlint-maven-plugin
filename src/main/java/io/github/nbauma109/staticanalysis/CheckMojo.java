@@ -1,3 +1,5 @@
+// Additional GPLv3 section 7 permission for Eclipse JDT linking:
+// See ECLIPSE-JDT-LINKING-EXCEPTION.md in the distribution.
 package io.github.nbauma109.staticanalysis;
 
 import java.io.File;
