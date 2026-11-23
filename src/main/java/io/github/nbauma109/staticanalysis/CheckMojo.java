@@ -121,9 +121,10 @@ public final class CheckMojo extends AbstractMojo {
         reportIssues(analysis.sonarIssues());
         reportSupplementalIssues(supplementalIssues);
         reportEclipseIssues(eclipse);
-        new CheckTestsMojo().runFromCheck(project, profile, enabledRules, disabledRules, release, source);
+        int testIssues = new CheckTestsMojo().runFromCheck(
+                project, profile, enabledRules, disabledRules, release, source);
         int total = analysis.sonarIssues().size() + supplementalIssues.size()
-                + eclipse.findings().size();
+                + eclipse.findings().size() + testIssues;
         if (failOnViolation && total > 0) {
             if (eclipseEnabled) {
                 throw new MojoFailureException("Static analysis found " + total + " violation(s).");
