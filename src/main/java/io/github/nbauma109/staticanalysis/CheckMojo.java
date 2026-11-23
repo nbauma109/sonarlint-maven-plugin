@@ -70,11 +70,11 @@ public final class CheckMojo extends AbstractMojo {
     @Parameter
     private List<RuleParameters> ruleParameters;
 
-    /** Enable the separately installed Eclipse cleanup analyzer. */
+    /** Enable bundled JDT cleanup analysis or an explicitly configured external Eclipse runner. */
     @Parameter(property = "staticAnalysis.eclipseEnabled", defaultValue = "false")
     private boolean eclipseEnabled;
 
-    /** Executable or wrapper that launches the Eclipse application. */
+    /** Optional executable or wrapper for the legacy external Eclipse application. */
     @Parameter(property = "staticAnalysis.eclipseExecutable")
     private File eclipseExecutable;
 
@@ -168,8 +168,30 @@ public final class CheckMojo extends AbstractMojo {
         if (!eclipseEnabled) {
             return new EclipseCleanupRunner.Result(List.of(), 0);
         }
-        if (eclipseExecutable == null || eclipseCleanupProfile == null) {
-            throw new MojoExecutionException("Eclipse analysis requires eclipseExecutable and eclipseCleanupProfile.");
+        if (eclipseExecutable == null) {
+            try {
+                Path baseDirectory = project.getBasedir().toPath().toAbsolutePath().normalize();
+                String javaSource = Optional.ofNullable(release).filter(value -> !value.isBlank())
+                        .or(() -> Optional.ofNullable(source).filter(value -> !value.isBlank()))
+                        .orElse("17");
+                java.nio.charset.Charset sourceEncoding = Optional.ofNullable(encoding)
+                        .filter(value -> !value.isBlank() && !value.startsWith("${"))
+                        .map(java.nio.charset.Charset::forName)
+                        .orElse(java.nio.charset.StandardCharsets.UTF_8);
+                EclipseCleanupRunner.Result result = EmbeddedEclipseCleanupRunner.run(baseDirectory,
+                        project.getCompileSourceRoots(), project.getCompileClasspathElements(),
+                        javaSource, sourceEncoding,
+                        Optional.ofNullable(eclipseCleanupProfile).map(File::toPath).orElse(null),
+                        eclipseDuplicatePolicy);
+                getLog().info("Running embedded Eclipse JDT cleanup analysis without an IDE.");
+                return result;
+            } catch (IOException | DependencyResolutionRequiredException | RuntimeException exception) {
+                throw new MojoExecutionException("Embedded Eclipse cleanup analysis failed: "
+                        + exception.getMessage(), exception);
+            }
+        }
+        if (eclipseCleanupProfile == null) {
+            throw new MojoExecutionException("External Eclipse analysis requires eclipseCleanupProfile.");
         }
         if (eclipseTimeoutSeconds <= 0) {
             throw new MojoExecutionException("The Eclipse analysis timeout must be positive.");
