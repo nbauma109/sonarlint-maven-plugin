@@ -35,8 +35,8 @@ import org.sonarsource.sonarlint.core.commons.api.TextRange;
 /**
  * Performs local Java static analysis after compilation.
  */
-@Mojo(name = "check", defaultPhase = LifecyclePhase.PROCESS_CLASSES,
-        requiresDependencyResolution = ResolutionScope.COMPILE)
+@Mojo(name = "check", defaultPhase = LifecyclePhase.PROCESS_TEST_CLASSES,
+        requiresDependencyResolution = ResolutionScope.TEST)
 public final class CheckMojo extends AbstractMojo {
 
     @Parameter(defaultValue = "${project}", readonly = true, required = true)
@@ -121,6 +121,7 @@ public final class CheckMojo extends AbstractMojo {
         reportIssues(analysis.sonarIssues());
         reportSupplementalIssues(supplementalIssues);
         reportEclipseIssues(eclipse);
+        new CheckTestsMojo().runFromCheck(project, profile, enabledRules, disabledRules, release, source);
         int total = analysis.sonarIssues().size() + supplementalIssues.size()
                 + eclipse.findings().size();
         if (failOnViolation && total > 0) {
