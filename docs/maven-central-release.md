@@ -39,7 +39,7 @@ or passphrases.
    releases cannot be overwritten.
 6. Review the [Eclipse JDT licensing requirements](eclipse-jdt-licensing.md),
    including copyright-holder authorization and third-party obligations.
-   Release workflows do not require a separate licensing approval variable.
+   Release workflows do not require a separate licensing approval variable. They independently run the Eclipse dependency-license audit and verify the packaged GPLv3 linking exception and notices before publishing.
 
 ## Validate release artifacts without publishing
 
