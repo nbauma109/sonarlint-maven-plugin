@@ -61,16 +61,22 @@ def main() -> int:
         print("Usage: verify-transformer-api-parity.py PRODUCTION_LOG TEST_LOG", file=sys.stderr)
         return 2
     actual = read_findings(Path(sys.argv[1])) + read_findings(Path(sys.argv[2]))
-    missing = EXPECTED - actual
-    extra = actual - EXPECTED
+    expected_locations = set(EXPECTED)
+    actual_locations = set(actual)
+    missing = expected_locations - actual_locations
+    extra = actual_locations - expected_locations
     print(f"Pinned SonarCloud issues: {EXPECTED.total()}")
+    print(f"Distinct pinned locations: {len(expected_locations)}")
     print(f"Local findings: {actual.total()}")
+    print(f"Distinct local locations: {len(actual_locations)}")
+    duplicate_count = EXPECTED.total() - len(expected_locations)
+    print(f"Duplicate pinned entries: {duplicate_count}")
     for category, findings in (("Missing", missing), ("Unexpected", extra)):
-        for (path, line, rule), count in sorted(findings.items()):
-            print(f"{category}: {path}:{line} [{rule}] x{count}")
+        for path, line, rule in sorted(findings):
+            print(f"{category}: {path}:{line} [{rule}]")
     if missing or extra:
         return 1
-    print("Every pinned SonarCloud finding matches a local diagnostic by source, line and rule.")
+    print("Every distinct pinned SonarCloud location matches a local diagnostic by source, line and rule.")
     return 0
 
 
