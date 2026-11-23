@@ -33,10 +33,17 @@ def verify_project_metadata() -> None:
 
     root = ElementTree.parse(ROOT / "pom.xml").getroot()
     namespace = {"m": "http://maven.apache.org/POM/4.0.0"}
-    licenses = root.findall("./m:licenses/m:license/m:name", namespace)
-    require(any("Eclipse JDT linking exception" in (license_entry.text or "")
-                for license_entry in licenses),
-            "Maven project license metadata must identify the linking permission")
+    licenses = root.findall("./m:licenses/m:license", namespace)
+    require(any(
+        "GNU General Public License" in license_entry.findtext(
+            "m:name", default="", namespaces=namespace)
+        and license_entry.findtext(
+            "m:url", default="", namespaces=namespace
+        ) == "https://www.gnu.org/licenses/gpl-3.0.html"
+        and EXCEPTION in license_entry.findtext(
+            "m:comments", default="", namespaces=namespace)
+        for license_entry in licenses
+    ), "Maven license metadata must link to GPLv3 and identify the JDT exception")
     resources = [
         entry.text
         for entry in root.findall(".//m:resources/m:resource/m:includes/m:include", namespace)
