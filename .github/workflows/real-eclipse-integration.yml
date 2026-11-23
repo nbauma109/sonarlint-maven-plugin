@@ -71,6 +71,14 @@ jobs:
           exec xvfb-run -a "$RUNNER_TEMP/eclipse/eclipse" "$@"
           SH
           chmod +x "$RUNNER_TEMP/eclipse-check.sh"
+      - name: Checkout pinned transformer-api for Eclipse rule comparison
+        uses: actions/checkout@v4
+        with:
+          repository: nbauma109/transformer-api
+          ref: fdc55663e6c9d5836db57e6369fd08d6bc4651cd
+          path: transformer-api-eclipse-source
+      - name: Compare Eclipse private-field cleanup with Sonar S9438
+        run: bash scripts/real-eclipse-modern-sonar-comparison.sh
       - name: Assert real engine warnings appear only once
         run: bash scripts/real-eclipse-integration-test.sh
       - name: Set up Gradle
@@ -101,6 +109,7 @@ jobs:
             target/real-eclipse-broad/
             target/high-signal-comparison/
             target/private-overlap-comparison/
+            target/eclipse-modern-rule-comparison/
             src/it/real-eclipse/target/static-analysis/eclipse/
             src/it/real-eclipse/build/static-analysis/eclipse/
             src/it/complementary-eclipse/target/static-analysis/eclipse/

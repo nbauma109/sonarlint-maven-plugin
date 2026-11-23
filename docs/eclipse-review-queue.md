@@ -1,15 +1,15 @@
 # Eclipse review queue — pending validation, not automatic enablement
 
 The [machine-checkable queue](eclipse-pending-review-queue.csv) tracks all
-**101 unresolved Eclipse options**, without implying that they have been tested
+**100 unresolved Eclipse options**, without implying that they have been tested
 or are safe to enable. It is generated from our pinned 147-option catalog and
-the twelve real-engine-verified duplicate mappings.
+twelve pinned-engine duplicate mappings and one verified supplemental rule overlap.
 
 | Backlog | Count | Current policy |
 | --- | ---: | --- |
 | Potential overlaps without exact-once verification | 22 | Do not add a duplicate mapping yet |
-| Unclassified Eclipse options | 79 | Do not enable as recommended warnings yet |
-| **Total needing evidence** | **101** | Preserve current profiles |
+| Unclassified Eclipse options | 78 | Do not enable as recommended warnings yet |
+| **Total needing evidence** | **100** | Preserve current profiles |
 
 ## Review sequencing
 
@@ -18,9 +18,9 @@ the twelve real-engine-verified duplicate mappings.
 | P1 | 14 | Highest-value correctness, lifecycle or substantive replacement candidates |
 | P2 | 34 | Useful modernization, performance or maintainability candidates |
 | P3 | 25 | Needs scope research or is lower impact |
-| P4 | 28 | Aesthetics, parent toggles and convention-sensitive overlaps |
+| P4 | 27 | Aesthetics, parent toggles and convention-sensitive overlaps |
 
-The queue contains **25**
+The queue contains **24**
 convention-sensitive items. This is *not* a hard exclusion: those options
 remain available for the independently opt-in aesthetics profile after their
 actual Eclipse behavior and conflicts are verified.

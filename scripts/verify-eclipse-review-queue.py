@@ -9,6 +9,7 @@ ROOT = Path(__file__).resolve().parent.parent
 CATALOG = ROOT / "docs/eclipse-cleanup-catalog.csv"
 QUEUE = ROOT / "docs/eclipse-pending-review-queue.csv"
 FILTER = ROOT / "src/main/java/io/github/nbauma109/staticanalysis/EclipseDuplicateFilter.java"
+SUPPLEMENTAL = ROOT / "src/main/java/io/github/nbauma109/staticanalysis/CheckMojo.java"
 SNAPSHOT = (
     ROOT / "src/main/resources/io/github/nbauma109/staticanalysis/"
     "sonar-way-java-8.6.0.37351.rules"
@@ -35,7 +36,13 @@ def read_csv(path):
 
 def verified_mappings():
     source = FILTER.read_text(encoding="utf-8")
-    return set(re.findall(r'"(cleanup\.[a-z_]+)",\s*"java:S\d+"', source))
+    verified = set(re.findall(r'"(cleanup\.[a-z_]+)",\s*"java:S\d+"', source))
+    supplemental = SUPPLEMENTAL.read_text(encoding="utf-8")
+    if ('"cleanup.make_private_fields_final"' in supplemental
+            and '"VariableDeclarationCleanUpCore"' in supplemental
+            and '"java:S9438"' in supplemental):
+        verified.add("cleanup.make_private_fields_final")
+    return verified
 
 
 def snapshot_membership(sonar_candidates, snapshot):
@@ -89,7 +96,7 @@ def validate_queue(catalog, queue):
             raise ValueError("Unknown snapshot membership: " + row["eclipse_option"])
         if row["snapshot_membership"] != expected:
             raise ValueError("Pinned Sonar Way membership changed: " + row["eclipse_option"])
-    if counts != {"SONAR_OVERLAP": 22, "REVIEW": 79}:
+    if counts != {"SONAR_OVERLAP": 22, "REVIEW": 78}:
         raise ValueError(f"Unexpected pending classification totals: {counts}")
     return counts
 

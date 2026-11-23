@@ -14,9 +14,9 @@ was corrected: `cleanup.boolean_literal` converts `Boolean.TRUE` and
 
 | Classification | Options | Verification status |
 | --- | ---: | --- |
-| Potential Sonar overlap | 34 | Real combined-engine comparison still needed for most |
+| Potential Sonar overlap | 35 | Real combined-engine comparison still needed for most |
 | Eclipse candidate | 14 | Distinct on selected fixtures, not a universal exclusivity guarantee |
-| Review | 79 | Actual overlap, usefulness or transformation scope not settled |
+| Review | 78 | Actual overlap, usefulness or transformation scope not settled |
 | Aesthetics | 2 | Available only through the separate opt-in aesthetics profile |
 | Style policy | 18 | Preferences disabled unless selected explicitly |
 | **Total** | **147** | |
@@ -32,6 +32,22 @@ regression in both Maven and Gradle: `S1128` (unused imports), `S1905`
 Each is suppressed only when a matching active Sonar finding overlaps the
 original source edit. Integration includes disabling deduplication and
 removing corresponding Sonar rules to verify the negative controls.
+
+A **separate supplemental-rule overlap** is now verified for
+`S9438`: with both `cleanup.make_variable_declarations_final` and
+`cleanup.make_private_fields_final` enabled, real Eclipse 2026-09
+reported the exact eight private-field finality findings in the pinned
+`transformer-api` revision, including constructor initialization, with
+no extra findings. This does not change the 12 pinned SonarJava mappings
+above. The Eclipse cleanup currently identifies its diagnostics as
+`VariableDeclarationCleanUpCore`. The Maven goal prefers those matching
+Eclipse findings over duplicate supplemental `S9438` messages; without
+Eclipse, or when the cleanup does not report a particular field, the
+compiler-backed supplemental detector remains active. This preference
+requires the same file, line and finality edit kind. The
+[real comparison](../scripts/real-eclipse-modern-sonar-comparison.sh)
+tests the Eclipse-only, combined and local-only paths without rewriting
+sources.
 
 Some other potential overlaps are supported by individual fixtures
 but not a combined exact-once guarantee. The `S818` numeric-suffix
@@ -87,7 +103,7 @@ not necessarily to the complete SonarJava rule inventory.
 
 All unresolved candidates have now been assigned a **review priority and test
 type**, without enabling or suppressing anything. The
-[104-option review queue](eclipse-pending-review-queue.csv) and
+[100-option review queue](eclipse-pending-review-queue.csv) and
 [validation guide](eclipse-review-queue.md) are enforced by the integration
 suite. Priority is a screening decision, not a statement that a cleanup
 is safe or a Sonar duplicate.
@@ -95,7 +111,7 @@ is safe or a Sonar duplicate.
 ## What remains
 
 **22 candidate overlap classifications** lack a fully verified
-combined-engine deduplication mapping. An additional **79 options**
+combined-engine deduplication mapping. An additional **78 options**
 remain under review. These are review work items, not confirmed duplicates.
 
 Our opt-in Eclipse profiles separately provide **3 maintainability**, **13 broad

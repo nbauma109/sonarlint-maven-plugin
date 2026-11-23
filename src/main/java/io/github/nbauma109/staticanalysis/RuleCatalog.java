@@ -34,6 +34,8 @@ final class RuleCatalog {
             "java:S1192", "java:S1066", "java:S1128", "java:S1481", "java:S112");
     private static final Set<String> TEMPLATES = Set.of("java:S124", "java:S2253",
             "java:S3688", "java:S4011");
+    private static final Set<String> SUPPLEMENTAL_ONLY = Set.of("java:S9438", "java:S9398", "java:S7467", "java:S8786");
+    private static final String RECORD_METHOD_PLACEMENT = "java:S3398";
     private static final Gson GSON = new Gson();
 
     private final Map<String, RuleMetadata> metadata;
@@ -143,12 +145,14 @@ final class RuleCatalog {
         Set<String> disabled = parseKeys(disabledRules);
         for (String key : enabled) {
             if (!disabled.contains(key)) {
-                requireEligible(key);
-                selected.add(key);
+                if (!SUPPLEMENTAL_ONLY.contains(key)) {
+                    requireEligible(key);
+                    selected.add(key);
+                }
             }
         }
         for (String key : disabled) {
-            if (!metadata.containsKey(key)) {
+            if (!metadata.containsKey(key) && !SUPPLEMENTAL_ONLY.contains(key)) {
                 throw new IllegalArgumentException("Unknown local Java rule: " + key);
             }
         }
@@ -160,6 +164,22 @@ final class RuleCatalog {
             result.add(activeRule(key, threshold, overrides.getOrDefault(key, Map.of())));
         }
         return result;
+    }
+
+    Set<String> supplementalRules(String profile, String enabledRules, String disabledRules) {
+        Set<String> selected = new TreeSet<>();
+        if ("sonar-way".equals(profile) || "sonar-way-reliability".equals(profile)) {
+            selected.addAll(SUPPLEMENTAL_ONLY);
+            selected.add(RECORD_METHOD_PLACEMENT);
+            selected.add("java:S2259");
+        }
+        for (String key : parseKeys(enabledRules)) {
+            if (SUPPLEMENTAL_ONLY.contains(key) || RECORD_METHOD_PLACEMENT.equals(key)) {
+                selected.add(key);
+            }
+        }
+        selected.removeAll(parseKeys(disabledRules));
+        return Set.copyOf(selected);
     }
 
     private Set<String> profileRules(String profile) {

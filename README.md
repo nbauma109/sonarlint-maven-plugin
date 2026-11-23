@@ -97,6 +97,71 @@ release workflow. The [release procedure](docs/maven-central-release.md)
 documents publishing. The separate Gradle adapter is not published by this
 Maven release.
 
+### Development preview: detect more SonarCloud findings
+
+The unreleased `0.1.1-SNAPSHOT` development version includes independent
+Java compiler-tree checks for cases missed by the pinned SonarJava engine.
+Install that version locally from this repository using `mvn clean install`,
+then use the following configuration in a consuming project's
+`<build><plugins>` section:
+
+```xml
+<plugin>
+    <groupId>io.github.nbauma109</groupId>
+    <artifactId>static-analysis-maven-plugin</artifactId>
+    <version>0.1.1-SNAPSHOT</version>
+    <configuration>
+        <profile>sonar-way</profile>
+        <failOnViolation>true</failOnViolation>
+    </configuration>
+    <executions>
+        <execution>
+            <goals>
+                <goal>check</goal>
+            </goals>
+        </execution>
+        <execution>
+            <goals>
+                <goal>check-tests</goal>
+            </goals>
+        </execution>
+    </executions>
+</plugin>
+```
+
+No explicit phase is needed: `check` runs at `process-classes`, and
+`check-tests` runs at `process-test-classes`, after test compilation and
+before tests execute. For production-only feedback, run
+`mvn process-classes`. For both production and test-source feedback,
+run `mvn process-test-classes`; both goals fail at their respective
+phases if findings remain. Do not replace the published `0.1.0` version
+with this development version unless it has been installed locally.
+
+The supplemental production checks cover selected `S3398` record
+method-placement cases, `S9398` interface-nested classes, `S9438`
+private fields eligible for `final`, `S7467` unused catch variables,
+`S8786` high-cost unanchored whitespace regular-expression replacements,
+and a conservative `S2259` null dereference pattern involving
+null-tolerant helper methods. The test goal currently checks **`S7467`
+and `S8786`**, not the entire standard SonarJava profile against tests.
+
+If the optional Eclipse cleanup engine is configured with
+`cleanup.make_variable_declarations_final` and
+`cleanup.make_private_fields_final`, matching Eclipse finality
+suggestions are preferred over duplicate supplemental `S9438`
+warnings. The local `S9438` detector stays enabled for ordinary Maven
+builds with no Eclipse installation and for fields Eclipse does not flag.
+The [real Eclipse comparison](scripts/real-eclipse-modern-sonar-comparison.sh)
+covers all eight pinned `S9438` cases.
+
+A [pinned parity regression](.github/workflows/transformer-api-parity.yml)
+verifies that the local engine reproduces the exact 26 open SonarCloud
+findings from `transformer-api` master at commit
+`fdc55663e6c9d5836db57e6369fd08d6bc4651cd`, without a SonarCloud
+service connection. The additional checks are purposefully conservative
+and **do not promise complete rule-by-rule parity** with the current
+SonarCloud analyzer. See the [rule coverage policy](docs/sonar-way-versioning-and-value.md).
+
 ### Optional configuration
 
 | Property | Default | Purpose |
@@ -197,9 +262,50 @@ Our original project code is licensed under the [GNU General Public License vers
 
 The descriptive name **Static Analysis Maven Plugin** refers to this independent project, not an official SonarSource or Eclipse Foundation product. Our rule implementation still uses the pinned SonarJava and SonarLint Core upstream libraries. We use their names only to describe compatibility and dependencies.
 
-## Eclipse cleanup warnings (experimental)
+## Bundled Eclipse JDT cleanup analysis (experimental)
 
-An opt-in second analysis engine reports Eclipse Java Development Tools cleanup opportunities **without changing source files**. This requires an Eclipse installation with a version of [refactoring-cli](https://github.com/nbauma109/refactoring-cli) supporting `--report` and `--source-root`; the previously released 2.0.0 CLI cannot produce these reports. No automatic runtime downloads occur inside the goal.
+Maven now includes Eclipse JDT Core and Core Manipulation dependencies. **No Eclipse IDE,
+separate CLI installation, graphical display or `xvfb-run` is required** for the
+embedded private-field finality check. Enable it inside the normal plugin
+configuration:
+
+```xml
+<configuration>
+    <profile>sonar-way</profile>
+    <failOnViolation>true</failOnViolation>
+    <eclipseEnabled>true</eclipseEnabled>
+</configuration>
+```
+
+The bundled integration is covered by a narrowly scoped [GPLv3 section 7 Eclipse JDT linking exception](ECLIPSE-JDT-LINKING-EXCEPTION.md). The project's GPL-3.0-only license remains otherwise unchanged, and Eclipse dependencies retain EPL-2.0. The exception must be included in release artifacts alongside the unchanged GPL license and third-party notices.
+
+The embedded engine runs at `process-classes` with the existing `check` goal.
+It calls the genuine Eclipse `VariableDeclarationFixCore` visitor to identify
+safe `final` modifiers; it does not rewrite source files or require an Eclipse
+workspace. The default embedded cleanup currently implements **only private-field
+finality**. With a supplied `eclipseCleanupProfile`, both
+`cleanup.make_variable_declarations_final` and
+`cleanup.make_private_fields_final` must be enabled. Other enabled cleanup
+options are rejected explicitly rather than silently ignored.
+
+The embedded backend runs on our supported Java 17 baseline. It uses
+`org.eclipse.jdt.core:3.47.0` and
+`org.eclipse.jdt.core.manipulation:1.21.0`, with their resolved transitive
+dependencies. It is new in unreleased `0.1.1-SNAPSHOT`, and requires
+third-party licensing review before publication. When Eclipse and the local
+supplemental analyzer report the same `S9438` location, the warning appears
+once; without Eclipse enabled, the local `S9438` check still works.
+
+## External Eclipse cleanup warnings (legacy, broader coverage)
+
+For the broader collection of Eclipse cleanups that need workspace-backed
+refactoring services, the existing external executable option remains available.
+It requires an Eclipse installation with a version of
+[refactoring-cli](https://github.com/nbauma109/refactoring-cli) supporting
+`--report` and `--source-root`. The previously released 2.0.0 CLI cannot
+produce these reports. The external process is used only when
+`eclipseExecutable` is explicitly configured; otherwise the embedded backend
+is selected.
 
 ```xml
 <configuration>
@@ -210,7 +316,12 @@ An opt-in second analysis engine reports Eclipse Java Development Tools cleanup 
 </configuration>
 ```
 
-On Linux build agents without a graphical display, configure `eclipseExecutable` to an executable wrapper that starts Eclipse through `xvfb-run` and forwards all arguments. The Eclipse runtime and its refactoring CLI plugin must be installed separately. Eclipse analysis runs in a separate process, and the application writes structured diagnostics under `target/static-analysis/eclipse`. A nonzero exit code, missing profile, missing executable or malformed report fails analysis instead of silently succeeding.
+For the external mode on Linux build agents without a display, configure
+`eclipseExecutable` to an executable wrapper using `xvfb-run`. That
+mode requires a separately installed Eclipse runtime and compatible refactoring
+CLI. Its separate process writes structured diagnostics under
+`target/static-analysis/eclipse`. Invalid profiles and failed external
+processes fail the Maven build instead of silently succeeding.
 
 Duplicate suppression is conservative and source-range aware. Five mappings are enabled for exact Eclipse cleanup identifiers: unused imports (`S1128`), unnecessary casts (`S1905`), unused local variables (`S1481`), missing `@Override` (`S1161`) and try-with-resources (`S2093`). Real Eclipse and Sonar integration tests verify the latter two using a concrete overridden method and a `java.io.Closeable` resource. The Eclipse CLI groups related refactoring text edits so one cleanup opportunity produces one warning. We retain Eclipse findings when no matching Sonar issue is reported, and ambiguous cleanup modules remain visible. Other potential overlaps require rule-by-rule verification.
 

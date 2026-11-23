@@ -57,8 +57,10 @@ capability gaps include:
   is not proof that all 99 could emit valid local findings.
 - **18 symbolic rules** from the pinned 21-rule symbolic snapshot
   that have not been reviewed or enabled locally.
-- **Test-source rules**, because the current Maven goal analyzes
-  production sources only.
+- **Test-source coverage**: the original `check` goal analyzes only
+  production sources. The separate unreleased `check-tests` goal supports
+  the specific `S7467` and `S8786` patterns described below, not the
+  entire SonarJava quality profile for tests.
 - **Server-dependent security analysis**, and newly added or changed
   rules in SonarCloud that are not implemented by the pinned analyzer.
 
@@ -70,6 +72,84 @@ under `process-classes`, checking both a positive case and a
 non-triggering control. Do not treat a count of activated rule keys
 as evidence that every rule will produce identical findings across
 engines or analyzer versions.
+
+## Pinned transformer-api SonarCloud parity regression
+
+The public SonarCloud issue API returned **26 open issues** for
+`nbauma109/transformer-api` on `master` as of 22 November 2026.
+The analyzer comparison fixes the target at
+[`fdc55663`](https://github.com/nbauma109/transformer-api/commit/fdc55663e6c9d5836db57e6369fd08d6bc4651cd)
+and verifies both production and test-source findings against that
+source revision, rather than relying on the changing SonarCloud
+dashboard or the number of activated rules.
+
+| Rule | Issue count | Local detection |
+| --- | ---: | --- |
+| `java:S106` | 2 | Pinned SonarJava analyzer |
+| `java:S1452` | 2 | Pinned SonarJava analyzer |
+| `java:S3398` | 9 | Supplemental nested-record method-use check |
+| `java:S9438` | 8 | Supplemental compiler-tree detection, or verified Eclipse private-field finality cleanup when enabled |
+| `java:S9398` | 1 | Supplemental interface-nested concrete class check |
+| `javabugs:S2259` | 1 | Supplemental local `java:S2259` check for null-tolerant helper arguments later dereferenced |
+| `java:S8786` | 2 | Supplemental test-source unanchored whitespace replacement check |
+| `java:S7467` | 1 | Supplemental test-source unused catch identifier check |
+| **Total** | **26** | **All 26 matched by rule number, source path and line** |
+
+The [parity workflow](../.github/workflows/transformer-api-parity.yml)
+checks out the pinned project revision, compiles it using the matching
+Java toolchains, and invokes the locally installed development plugin.
+The [comparison script](../scripts/verify-transformer-api-parity.py)
+asserts exact diagnostics, including both regex findings at the
+same source line. Source-located regression fixtures also cover
+the new checks in isolation with non-triggering controls.
+
+### Eclipse reuse for newer-rule coverage
+
+Real Eclipse 2026-09 with
+[`cleanup.make_private_fields_final`](../src/it/modern-production-rules/eclipse-private-fields-final.xml)
+and its parent finality option enabled reported **exactly eight** edits
+for the eight pinned `S9438` findings, including fields initialized
+in constructors. No additional source locations were reported. Its
+report currently uses the module label
+`VariableDeclarationCleanUpCore` rather than the specific option key.
+
+When Eclipse is configured, matching finality edits take precedence
+over supplemental `S9438` warnings so each finding is reported once.
+The supplemental check remains available locally without a separately
+installed Eclipse runtime, and remains active for fields that Eclipse
+does not flag. This matching is limited to the `S9438` rule and the
+confirmed field declaration location; it does not enable Eclipse or
+other optional cleanup rules by default. The
+[real-engine comparison](../scripts/real-eclipse-modern-sonar-comparison.sh)
+checks the alternative paths and verifies original source preservation.
+
+Eclipse's Java compiler also has an unused-exception-parameter
+warning, related to `S7467`, but our current Eclipse integration
+imports *cleanup changes*, not general compiler warnings, and only
+collects production source roots. The existing compiler-tree `S7467`
+test-source check therefore remains necessary. Eclipse
+`cleanup.precompile_regex` addresses repeated pattern compilation,
+not the excessive-backtracking behavior of `S8786`.
+
+The additional detectors use the Java compiler's parse trees and
+resolved symbols; they **do not load a newer SonarJava artifact**
+or require SonarCloud credentials or network access during normal
+analysis. They deliberately support confirmed patterns instead of
+claiming full implementations of the server-side rules. In
+particular, `S8786` checks unanchored greedy whitespace
+replacements, and the `S2259` addition follows evidence that a
+callee accepts null before its caller dereferences the same
+argument. Other regular-expression and null-flow cases remain
+potential coverage gaps.
+
+Use `mvn process-classes` locally for production issues, and
+`mvn process-test-classes` with both goals configured to analyze
+tests as well. Neither goal waits for Maven's `verify` phase.
+The new `check-tests` goal runs only after test compilation and
+requires an explicit execution in the consuming project's
+`pom.xml`. The code is currently in development version
+`0.1.1-SNAPSHOT`; published `0.1.0` does not yet include
+these new detectors or the test-source goal.
 
 ## Missing local coverage worth pursuing
 
