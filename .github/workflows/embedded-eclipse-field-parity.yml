@@ -1,0 +1,74 @@
+name: Embedded Eclipse field finality parity
+
+on:
+  pull_request:
+    paths:
+      - pom.xml
+      - src/main/java/**
+      - src/it/embedded-eclipse/**
+      - .github/workflows/embedded-eclipse-field-parity.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+      - name: Install local Maven plugin
+        run: mvn -B -ntp -DskipTests install
+      - uses: actions/checkout@v4
+        with:
+          repository: nbauma109/transformer-api
+          ref: fdc55663e6c9d5836db57e6369fd08d6bc4651cd
+          path: transformer-api
+      - name: Compile pinned transformer-api
+        run: mvn -B -ntp -f transformer-api/pom.xml compile
+      - name: Analyze with embedded JDT Core
+        shell: bash
+        run: |
+          set -euo pipefail
+          mvn -B -ntp -f transformer-api/pom.xml \
+            io.github.nbauma109:static-analysis-maven-plugin:0.1.1-SNAPSHOT:check \
+            -DstaticAnalysis.profile=none \
+            -DstaticAnalysis.eclipseEnabled=true \
+            -DstaticAnalysis.failOnViolation=false \
+            | tee embedded-eclipse-transformer.log
+      - name: Check expected finality findings and false positives
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          text = Path("embedded-eclipse-transformer.log").read_text(encoding="utf-8")
+          pattern = re.compile(
+              r"\[WARNING\] (?P<file>src/main/java/[^:]+\.java):(?P<line>\d+):\d+ "
+              r"\[eclipse:VariableDeclarationCleanUpCore\]"
+          )
+          actual = {(match.group("file"), int(match.group("line")))
+                    for match in pattern.finditer(text)}
+          base = "src/main/java/com/heliosdecompiler/transformerapi/decompilers/"
+          expected = {
+              (base + "cfr/CFRDataSource.java", 30),
+              (base + "cfr/CFRDataSource.java", 31),
+              (base + "cfr/CFRDataSource.java", 32),
+              (base + "cfr/CFROutputStreamFactory.java", 32),
+              (base + "cfr/CFROutputStreamFactory.java", 33),
+              (base + "cfr/CFRSettings.java", 29),
+              (base + "fernflower/FernflowerSettings.java", 34),
+              (base + "vineflower/VineflowerSettings.java", 35),
+          }
+          print("EXPECTED_EMBEDDED_FINALITY", len(expected))
+          print("ACTUAL_EMBEDDED_FINALITY", len(actual))
+          print("MISSED_EMBEDDED_FINALITY", sorted(expected - actual))
+          print("UNEXPECTED_EMBEDDED_FINALITY", sorted(actual - expected))
+          assert actual == expected
+          PY
