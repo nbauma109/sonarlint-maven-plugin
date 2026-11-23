@@ -9,6 +9,7 @@
     <properties>
         <maven.compiler.release>17</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <staticAnalysis.eclipseEnabled>true</staticAnalysis.eclipseEnabled>
     </properties>
     <build>
         <plugins>
@@ -23,7 +24,7 @@
                 <version>0.1.1-SNAPSHOT</version>
                 <configuration>
                     <profile>none</profile>
-                    <eclipseEnabled>true</eclipseEnabled>
+                    <eclipseEnabled>${staticAnalysis.eclipseEnabled}</eclipseEnabled>
                     <failOnViolation>true</failOnViolation>
                 </configuration>
                 <executions>
