@@ -159,8 +159,7 @@ final class EmbeddedEclipseCleanupRunner {
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
             factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
             factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
-            factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
-            factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
+            factory.setExpandEntityReferences(false);
             Document document = factory.newDocumentBuilder().parse(profile.toFile());
             NodeList settings = document.getElementsByTagName("setting");
             boolean finalDeclarations = false;
