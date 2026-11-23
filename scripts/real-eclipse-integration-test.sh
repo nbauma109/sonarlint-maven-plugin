@@ -17,7 +17,7 @@ common=(
     "-DstaticAnalysis.eclipseExecutable=$executable"
     "-DstaticAnalysis.eclipseCleanupProfile=$profile"
 )
-mvn -B -ntp -f "$fixture/pom.xml" process-classes \
+mvn -B -ntp -f "$fixture/pom.xml" process-test-classes \
     "${common[@]}" \
     -DstaticAnalysis.enabledRules=java:S1128,java:S1161,java:S2093 \
     | tee "$output/combined.log"
@@ -48,7 +48,7 @@ for rule, cleanup in [
     assert eclipse_count == 0, f"Duplicate cleanup {cleanup} reached the console"
 PY
 
-mvn -B -ntp -f "$fixture/pom.xml" process-classes \
+mvn -B -ntp -f "$fixture/pom.xml" process-test-classes \
     "${common[@]}" \
     -DstaticAnalysis.eclipseDuplicatePolicy=none \
     -DstaticAnalysis.enabledRules=java:S1128,java:S1161,java:S2093 \
@@ -73,7 +73,7 @@ for rule, cleanup in [
     assert eclipse == 1, f"Expected exactly one Eclipse warning for {cleanup}"
 PY
 
-mvn -B -ntp -f "$fixture/pom.xml" process-classes \
+mvn -B -ntp -f "$fixture/pom.xml" process-test-classes \
     "${common[@]}" \
     -DstaticAnalysis.enabledRules=java:S1128 \
     | tee "$output/sonar-disabled.log"
