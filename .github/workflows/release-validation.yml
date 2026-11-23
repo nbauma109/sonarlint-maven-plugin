@@ -44,8 +44,12 @@ jobs:
           mvn -B -ntp org.apache.maven.plugins:maven-dependency-plugin:3.8.1:tree \
             -Dscope=runtime -DoutputFile=target/eclipse-jdt-runtime-dependencies.txt
           cat target/eclipse-jdt-runtime-dependencies.txt
+      - name: Audit resolved Eclipse JDT and Platform license metadata
+        run: python3 scripts/verify-eclipse-jdt-dependency-licenses.py
       - name: Upload JDT dependency inventory
         uses: actions/upload-artifact@v4
         with:
           name: eclipse-jdt-runtime-license-inventory
-          path: target/eclipse-jdt-runtime-dependencies.txt
+          path: |
+            target/eclipse-jdt-runtime-dependencies.txt
+            target/eclipse-jdt-license-inventory.txt
