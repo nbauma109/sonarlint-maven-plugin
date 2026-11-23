@@ -52,6 +52,23 @@ mvn -B -ntp -o -f "$logger_fixture" process-classes \
 grep -F 'Activated 394 local Java rule(s).' "$logs/logger-category-disabled.log"
 grep -F 'Sonar analysis: 0 violation(s).' "$logs/logger-category-disabled.log"
 
+embedded_fixture=src/it/embedded-eclipse/pom.xml
+if mvn -B -ntp -f "$embedded_fixture" process-classes > "$logs/embedded-eclipse-strict.log" 2>&1; then
+    cat "$logs/embedded-eclipse-strict.log"
+    echo "Expected bundled JDT Core finality cleanup to fail the Maven build." >&2
+    exit 1
+fi
+grep -F 'Running embedded Eclipse JDT cleanup analysis without an IDE.' \
+    "$logs/embedded-eclipse-strict.log"
+grep -E '\[WARNING\].*EmbeddedJdtFinality\.java:[0-9]+:[0-9]+ \[eclipse:VariableDeclarationCleanUpCore\]' \
+    "$logs/embedded-eclipse-strict.log"
+grep -F 'Eclipse cleanup analysis: 1 violation(s).' "$logs/embedded-eclipse-strict.log"
+grep -F 'Sonar found 1 violation(s).' "$logs/embedded-eclipse-strict.log"
+
+mvn -B -ntp -o -f "$embedded_fixture" process-classes \
+    -DstaticAnalysis.eclipseEnabled=false | tee "$logs/embedded-eclipse-disabled.log"
+grep -F 'Sonar analysis: 0 violation(s).' "$logs/embedded-eclipse-disabled.log"
+
 production_fixture=src/it/modern-production-rules/pom.xml
 if mvn -B -ntp -o -f "$production_fixture" process-classes \
     > "$logs/modern-production-strict.log" 2>&1; then
