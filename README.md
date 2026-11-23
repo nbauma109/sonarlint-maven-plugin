@@ -241,7 +241,7 @@ Property names are case-sensitive. Explicit property overrides take precedence o
 
 ## Limitations
 
-Only production Java sources are analyzed. Three reviewed symbolic execution rules are available through `sonar-way`, `reliability` and the compatibility alias `sonar-way-reliability`. Test-source analysis, security review reporting, complete rule parameter validation, reactor tests, modern language compatibility, and XML reporting are not yet implemented. The older analyzer and engine still warrant a security and compatibility review before being treated as substitutes for current Sonar analysis.
+The `check` goal analyzes production and test Java sources using the selected SonarJava profile after test compilation. Three reviewed symbolic execution rules are available through `sonar-way`, `reliability` and the compatibility alias `sonar-way-reliability`. Test-source analysis, security review reporting, complete rule parameter validation, reactor tests, modern language compatibility, and XML reporting are not yet implemented. The older analyzer and engine still warrant a security and compatibility review before being treated as substitutes for current Sonar analysis.
 
 See [the design](docs/design.md) and [licensing considerations](docs/licensing.md).
 
