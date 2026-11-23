@@ -15,6 +15,16 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      - name: Require Eclipse JDT licensing clearance
+        shell: bash
+        env:
+          ECLIPSE_JDT_LICENSE_APPROVED: ${{ vars.ECLIPSE_JDT_LICENSE_APPROVED }}
+        run: |
+          if [ "$ECLIPSE_JDT_LICENSE_APPROVED" != "true" ]; then
+            echo "::error::Eclipse JDT license clearance is required before release; see docs/eclipse-jdt-licensing.md"
+            exit 1
+          fi
+
       - name: Set up Java 17
         uses: actions/setup-java@v6
         with:
