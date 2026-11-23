@@ -59,6 +59,18 @@ public final class CheckTestsMojo extends AbstractMojo {
     @Parameter(defaultValue = "${maven.compiler.source}")
     private String source;
 
+    void runFromCheck(MavenProject currentProject, String selectedProfile,
+            String enabled, String disabled, String javaRelease, String javaSource)
+            throws MojoExecutionException, MojoFailureException {
+        project = currentProject;
+        profile = selectedProfile;
+        enabledRules = enabled;
+        disabledRules = disabled;
+        release = javaRelease;
+        source = javaSource;
+        execute();
+    }
+
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
         if (skip || "pom".equals(project.getPackaging())) {
