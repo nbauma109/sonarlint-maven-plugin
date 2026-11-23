@@ -14,11 +14,20 @@ final class JavaSourceFile implements ClientInputFile {
     private final Path path;
     private final String relativePath;
     private final Charset charset;
+    private final boolean test;
 
     JavaSourceFile(Path baseDirectory, Path path, Charset charset) {
         this.path = path;
         this.relativePath = baseDirectory.relativize(path).toString().replace('\\', '/');
         this.charset = charset;
+        this.test = false;
+    }
+
+    JavaSourceFile(Path baseDirectory, Path path, Charset charset, boolean test) {
+        this.path = path;
+        this.relativePath = baseDirectory.relativize(path).toString().replace('\\\\', '/');
+        this.charset = charset;
+        this.test = test;
     }
 
     @Override
@@ -29,7 +38,7 @@ final class JavaSourceFile implements ClientInputFile {
 
     @Override
     public boolean isTest() {
-        return false;
+        return test;
     }
 
     @Override
