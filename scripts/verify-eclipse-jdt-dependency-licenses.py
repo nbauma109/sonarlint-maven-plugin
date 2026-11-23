@@ -63,6 +63,8 @@ def permitted_license(name: str) -> bool:
         for expected in (
             "eclipse public license 2.0",
             "eclipse public license v2.0",
+            "eclipse public license v 2.0",
+            "eclipse public license version 2.0",
             "epl 2.0",
             "epl v2.0",
             "epl v 2.0",
