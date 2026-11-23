@@ -57,13 +57,15 @@ def declared_licenses(group: str, artifact: str, version: str,
 
 
 def permitted_license(name: str) -> bool:
-    normalized = name.lower().replace("-", " ").replace("_", " ")
+    normalized = " ".join(name.lower().replace("-", " ").replace("_", " ").split())
     return any(
         expected in normalized
         for expected in (
             "eclipse public license 2.0",
             "eclipse public license v2.0",
             "epl 2.0",
+            "epl v2.0",
+            "epl v 2.0",
             "eclipse distribution license",
             "apache license version 2.0",
             "apache software license 2.0",
