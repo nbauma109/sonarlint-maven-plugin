@@ -12,6 +12,8 @@ Our own code is licensed GPL-3.0-only. The components below are not relicensed b
 
 Before publishing a binary, generate and review an actual resolved dependency inventory and the individual third-party license files, including any shaded or transitive packages. This list is a design-time inventory and not a representation that all runtime component notices have been audited.
 
+**Eclipse Public License 2.0 compatibility gate:** The Eclipse JDT repositories inspected declare Eclipse Public License 2.0. That license does **not** automatically grant compatibility with GNU General Public License 3.0; compatibility through the optional secondary-license mechanism must be explicitly designated by the upstream copyright holders. No such designation has been verified for these selected JDT artifacts. Our plugin declares GNU General Public License 3.0 only, so legal compatibility and redistribution requirements must be resolved before merging or publishing the bundled-engine change. The [Free Software Foundation's license guidance](https://www.gnu.org/licenses/license-list.html) explains the secondary-license requirement.
+
 - [SonarLint Core](https://github.com/SonarSource/sonarlint-core)
 - [SonarJava](https://github.com/SonarSource/sonar-java/tree/8.6.0.37351)
 - [Eclipse Public License, version 2.0](https://www.eclipse.org/legal/epl/epl-v20.html)
