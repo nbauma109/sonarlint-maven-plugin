@@ -56,25 +56,25 @@ def declared_licenses(group: str, artifact: str, version: str,
     )
 
 
+PERMITTED_LICENSES = frozenset({
+    "eclipse public license 2.0",
+    "eclipse public license v2.0",
+    "eclipse public license v 2.0",
+    "eclipse public license version 2.0",
+    "epl 2.0",
+    "epl v2.0",
+    "epl v 2.0",
+    "eclipse distribution license 1.0",
+    "apache license version 2.0",
+    "apache software license 2.0",
+    "mit license",
+    "bsd license",
+})
+
+
 def permitted_license(name: str) -> bool:
     normalized = " ".join(name.lower().replace("-", " ").replace("_", " ").split())
-    return any(
-        expected in normalized
-        for expected in (
-            "eclipse public license 2.0",
-            "eclipse public license v2.0",
-            "eclipse public license v 2.0",
-            "eclipse public license version 2.0",
-            "epl 2.0",
-            "epl v2.0",
-            "epl v 2.0",
-            "eclipse distribution license",
-            "apache license version 2.0",
-            "apache software license 2.0",
-            "mit license",
-            "bsd license",
-        )
-    )
+    return normalized in PERMITTED_LICENSES
 
 
 def main() -> int:
@@ -88,8 +88,14 @@ def main() -> int:
         if match:
             found.add((match.group(1), match.group(2), match.group(3)))
 
-    if not found:
-        print("No Eclipse JDT or Eclipse Platform dependencies were resolved", file=sys.stderr)
+    required = {
+        ("org.eclipse.jdt", "org.eclipse.jdt.core"),
+        ("org.eclipse.jdt", "org.eclipse.jdt.core.manipulation"),
+    }
+    missing = required - {(group, artifact) for group, artifact, _ in found}
+    if missing:
+        print(f"Required Eclipse JDT dependencies missing: {sorted(missing)}",
+              file=sys.stderr)
         return 1
 
     results = []
