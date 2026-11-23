@@ -29,9 +29,10 @@ jobs:
       - name: Verify Eclipse licensing and resolved dependency metadata
         run: |
           python3 -m unittest discover -s scripts -p 'test_*.py'
-          python3 scripts/verify-eclipse-jdt-license-exception.py
           mvn -B -ntp org.apache.maven.plugins:maven-dependency-plugin:3.8.1:tree -Dscope=runtime -DoutputFile=target/eclipse-jdt-runtime-dependencies.txt
           python3 scripts/verify-eclipse-jdt-dependency-licenses.py
+          mvn -B -ntp clean verify
+          python3 scripts/verify-eclipse-jdt-license-exception.py
 
       - name: Configure Git SSH credentials
         shell: bash
