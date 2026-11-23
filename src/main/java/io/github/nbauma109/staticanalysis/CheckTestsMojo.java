@@ -3,6 +3,8 @@ package io.github.nbauma109.staticanalysis;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.FileSystems;
+import java.nio.file.PathMatcher;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -10,6 +12,9 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Stream;
 import org.apache.maven.artifact.DependencyResolutionRequiredException;
+import org.apache.maven.model.Plugin;
+import org.apache.maven.model.PluginExecution;
+import org.codehaus.plexus.util.xml.Xpp3Dom;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
@@ -91,6 +96,7 @@ public final class CheckTestsMojo extends AbstractMojo {
             List<SupplementalAnalyzer.Finding> findings = SupplementalAnalyzer.analyze(
                     baseDirectory, javaSources, project.getTestClasspathElements(),
                     sourceLevel(), selected);
+            findings = filterLanguageDependentFindings(findings, baseDirectory);
             report(findings);
             return findings.size();
         } catch (IOException | DependencyResolutionRequiredException exception) {
@@ -157,6 +163,64 @@ public final class CheckTestsMojo extends AbstractMojo {
             }
         }
         return Integer.toString(Runtime.version().feature());
+    }
+
+    private List<SupplementalAnalyzer.Finding> filterLanguageDependentFindings(
+            List<SupplementalAnalyzer.Finding> findings, Path baseDirectory) {
+        Plugin compiler = project.getPlugin("org.apache.maven.plugins:maven-compiler-plugin");
+        if (compiler == null) {
+            return findings;
+        }
+        List<SupplementalAnalyzer.Finding> retained = new ArrayList<>();
+        for (SupplementalAnalyzer.Finding finding : findings) {
+            if (!"java:S7467".equals(finding.rule())
+                    || effectiveTestRelease(compiler, baseDirectory, finding.file()) >= 22) {
+                retained.add(finding);
+            }
+        }
+        return retained;
+    }
+
+    private int effectiveTestRelease(Plugin compiler, Path baseDirectory, String file) {
+        int version = parseVersion(sourceLevel());
+        Path relative = baseDirectory.relativize(baseDirectory.resolve(file).normalize());
+        for (PluginExecution execution : compiler.getExecutions()) {
+            if (!execution.getGoals().contains("testCompile")
+                    || !(execution.getConfiguration() instanceof Xpp3Dom configuration)) {
+                continue;
+            }
+            Xpp3Dom includes = configuration.getChild("testIncludes");
+            if (includes == null || !matchesAny(relative, includes, "testInclude")) {
+                continue;
+            }
+            Xpp3Dom excludes = configuration.getChild("testExcludes");
+            if (excludes != null && matchesAny(relative, excludes, "testExclude")) {
+                continue;
+            }
+            Xpp3Dom releaseElement = configuration.getChild("release");
+            if (releaseElement != null && releaseElement.getValue() != null) {
+                version = parseVersion(releaseElement.getValue());
+            }
+        }
+        return version;
+    }
+
+    private static boolean matchesAny(Path relative, Xpp3Dom patterns, String childName) {
+        for (Xpp3Dom child : patterns.getChildren(childName)) {
+            String pattern = child.getValue();
+            if (pattern != null) {
+                PathMatcher matcher = FileSystems.getDefault().getPathMatcher("glob:" + pattern);
+                if (matcher.matches(relative) || matcher.matches(relative.getFileName())) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private static int parseVersion(String version) {
+        String normalized = version.startsWith("1.") ? version.substring(2) : version;
+        return Integer.parseInt(normalized);
     }
 
     private void report(List<SupplementalAnalyzer.Finding> findings) {
