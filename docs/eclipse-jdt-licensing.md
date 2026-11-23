@@ -66,6 +66,19 @@ The publishing workflow should not be used until these obligations and
 copyright permissions have been confirmed. Neither a successful build nor
 a dependency license report constitutes a formal legal opinion.
 
+## Release clearance gate
+
+The manual Maven release workflow, tag-triggered GitHub Release workflow, and
+Maven Central publishing workflow refuse to proceed unless the repository
+Actions variable `ECLIPSE_JDT_LICENSE_APPROVED` is exactly `true`. The variable
+is intentionally unset by default. The project copyright holder or an
+authorized release maintainer must set it in the repository's Actions
+variables only after completing all release requirements above and retaining
+evidence of the permissions and third-party notice review. Setting this
+variable is a documented release decision, not proof of copyright ownership
+or a substitute for legal review. Ordinary pull-request validation does not
+require the variable.
+
 ## Why this option
 
 This avoids changing the entire project to EPL-2.0, preserves existing
