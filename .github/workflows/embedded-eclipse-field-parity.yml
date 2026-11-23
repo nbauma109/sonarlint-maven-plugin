@@ -36,7 +36,7 @@ jobs:
         run: |
           set -euo pipefail
           mvn -B -ntp -f transformer-api/pom.xml \
-            io.github.nbauma109:static-analysis-maven-plugin:0.1.1-SNAPSHOT:check \
+            io.github.nbauma109:static-analysis-maven-plugin:0.1.2-SNAPSHOT:check \
             -DstaticAnalysis.profile=none \
             -DstaticAnalysis.eclipseEnabled=true \
             -DstaticAnalysis.failOnViolation=false \
@@ -46,13 +46,13 @@ jobs:
         run: |
           set -euo pipefail
           mvn -B -ntp -f transformer-api/pom.xml \
-            io.github.nbauma109:static-analysis-maven-plugin:0.1.1-SNAPSHOT:check \
+            io.github.nbauma109:static-analysis-maven-plugin:0.1.2-SNAPSHOT:check \
             -DstaticAnalysis.profile=sonar-way \
             -DstaticAnalysis.eclipseEnabled=true \
             -DstaticAnalysis.failOnViolation=false \
             | tee combined-eclipse-transformer.log
           mvn -B -ntp -f transformer-api/pom.xml \
-            io.github.nbauma109:static-analysis-maven-plugin:0.1.1-SNAPSHOT:check \
+            io.github.nbauma109:static-analysis-maven-plugin:0.1.2-SNAPSHOT:check \
             -DstaticAnalysis.profile=sonar-way \
             -DstaticAnalysis.eclipseEnabled=false \
             -DstaticAnalysis.failOnViolation=false \
