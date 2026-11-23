@@ -1,0 +1,21 @@
+name: Embedded Eclipse manipulation feasibility
+
+on:
+  push:
+    branches:
+      - experiment/embedded-eclipse-cleanups
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Resolve and execute JDT core-manipulation probe
+        run: mvn -B -ntp -f src/it/headless-eclipse-manipulation/pom.xml compile exec:java
