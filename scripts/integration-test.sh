@@ -63,7 +63,7 @@ grep -F 'Running embedded Eclipse JDT cleanup analysis without an IDE.' \
 grep -E '\[WARNING\].*EmbeddedJdtFinality\.java:[0-9]+:[0-9]+ \[eclipse:VariableDeclarationCleanUpCore\]' \
     "$logs/embedded-eclipse-strict.log"
 grep -F 'Eclipse cleanup analysis: 1 violation(s).' "$logs/embedded-eclipse-strict.log"
-grep -F 'Sonar found 1 violation(s).' "$logs/embedded-eclipse-strict.log"
+grep -F 'Static analysis found 1 violation(s).' "$logs/embedded-eclipse-strict.log"
 
 mvn -B -ntp -o -f "$embedded_fixture" process-classes \
     -DstaticAnalysis.eclipseEnabled=false | tee "$logs/embedded-eclipse-disabled.log"
