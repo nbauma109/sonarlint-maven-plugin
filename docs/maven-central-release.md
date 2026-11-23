@@ -46,6 +46,15 @@ mvn -B -ntp release:prepare -DdryRun=true
 mvn -B -ntp release:clean
 ```
 
+The same validation now also checks the GPLv3 section 7
+[Eclipse JDT linking exception](../ECLIPSE-JDT-LINKING-EXCEPTION.md)
+in the Maven artifact and resolves an inventory of Eclipse JDT and
+Eclipse Platform runtime dependencies with their declared license
+metadata. Review the uploaded `eclipse-jdt-runtime-license-inventory`
+artifact and [license evidence](eclipse-jdt-licensing.md) before release.
+An exception cannot authorize original code owned by unrelated copyright
+holders; verify project contributor authorization before publication.
+
 The first command verifies the main Maven plugin, sources, Javadoc, plugin
 descriptor, license and third-party notices without requiring secrets.
 The other commands check release preparation without pushing a tag.

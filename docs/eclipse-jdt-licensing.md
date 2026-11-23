@@ -46,11 +46,12 @@ Do not assume the repository's exception applies to all incoming GPL code.
 
 1. Confirm that the persons or organizations owning GPL-covered original
    program code authorize this section 7 exception.
-2. Inspect the complete runtime dependency inventory, generated as
-   `eclipse-jdt-runtime-license-inventory` by the release-validation
-   workflow. Check the resolved JDT Core and Core Manipulation artifacts
-   and any additional Eclipse Platform dependencies against their actual
-   source notices and Maven license metadata.
+2. Inspect the complete runtime dependency inventory and per-module
+   Maven license audit, generated as `eclipse-jdt-runtime-license-inventory`
+   by the release-validation workflow. The audit rejects missing license
+   declarations and unrecognized license names for Eclipse JDT and Platform
+   artifacts; a passing report still needs review of actual source notices
+   and license obligations.
 3. Preserve the original Eclipse copyright and EPL-2.0 license notices,
    and provide corresponding source under the terms of the libraries.
    The GPL exception is **not** a relicensing of Eclipse components.
