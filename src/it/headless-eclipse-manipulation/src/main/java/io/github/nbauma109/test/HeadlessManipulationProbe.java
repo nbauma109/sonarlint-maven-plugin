@@ -3,13 +3,12 @@ package io.github.nbauma109.test;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.FieldDeclaration;
 import org.eclipse.jdt.core.dom.IBinding;
-import org.eclipse.jdt.core.dom.Name;
+import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 import org.eclipse.jdt.internal.corext.fix.VariableDeclarationFixCore.ModifierChangeOperation;
 import org.eclipse.jdt.internal.corext.fix.VariableDeclarationFixCore.VariableDeclarationFinder;
@@ -59,18 +58,15 @@ public final class HeadlessManipulationProbe {
             throw new IllegalStateException("Expected Eclipse final-field cleanup");
         }
 
-        Map<IBinding, List<Name>> writes = new HashMap<>();
-        HashSet<String> unresolved = new HashSet<>();
-        unit.accept(new WrittenNamesFinder(new HashMap<>(writes), unresolved));
-        HashMap<IBinding, List<Name>> recordedWrites = new HashMap<>();
-        unit.accept(new WrittenNamesFinder(recordedWrites, unresolved));
+        HashMap<IBinding, List<SimpleName>> recordedWrites = new HashMap<>();
+        unit.accept(new WrittenNamesFinder(recordedWrites));
         List<Integer> fixLines = new ArrayList<>();
         unit.accept(new ASTVisitor() {
             @Override
             public boolean visit(FieldDeclaration declaration) {
                 List<ModifierChangeOperation> operations = new ArrayList<>();
                 VariableDeclarationFinder finder = new VariableDeclarationFinder(
-                        true, false, false, operations, recordedWrites, unresolved);
+                        true, false, false, operations, recordedWrites);
                 declaration.accept(finder);
                 if (!operations.isEmpty()) {
                     for (Object fragment : declaration.fragments()) {
