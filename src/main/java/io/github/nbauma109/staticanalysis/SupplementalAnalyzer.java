@@ -551,7 +551,7 @@ final class SupplementalAnalyzer {
 
         @Override
         public Void visitCatch(CatchTree tree, Void unused) {
-            if (enabledRules.contains("java:S7467") && languageVersion >= 21) {
+            if (enabledRules.contains("java:S7467") && languageVersion >= 22) {
                 TreePath variablePath = new TreePath(getCurrentPath(), tree.getParameter());
                 Element variable = trees.getElement(variablePath);
                 if (variable != null && !"_".equals(tree.getParameter().getName().toString())) {
