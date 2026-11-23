@@ -37,11 +37,9 @@ or passphrases.
    push commits and tags. All build and integration workflows must pass.
 5. Confirm the candidate version is not already published. Maven Central
    releases cannot be overwritten.
-6. Complete the [Eclipse JDT licensing review](eclipse-jdt-licensing.md)
-   and record the copyright-holder authorization and third-party obligations.
-   Only after clearance, set the repository Actions variable
-   `ECLIPSE_JDT_LICENSE_APPROVED` to `true`. Maven tag creation, the GitHub
-   Release workflow, and Maven Central publishing reject missing clearance.
+6. Review the [Eclipse JDT licensing requirements](eclipse-jdt-licensing.md),
+   including copyright-holder authorization and third-party obligations.
+   Release workflows do not require a separate licensing approval variable.
 
 ## Validate release artifacts without publishing
 
