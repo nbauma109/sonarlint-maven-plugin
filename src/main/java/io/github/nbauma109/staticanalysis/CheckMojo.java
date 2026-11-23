@@ -121,10 +121,8 @@ public final class CheckMojo extends AbstractMojo {
         reportIssues(analysis.sonarIssues());
         reportSupplementalIssues(supplementalIssues);
         reportEclipseIssues(eclipse);
-        int testIssues = new CheckTestsMojo().runFromCheck(
-                project, profile, enabledRules, disabledRules, release, source);
         int total = analysis.sonarIssues().size() + supplementalIssues.size()
-                + eclipse.findings().size() + testIssues;
+                + eclipse.findings().size();
         if (failOnViolation && total > 0) {
             if (eclipseEnabled) {
                 throw new MojoFailureException("Static analysis found " + total + " violation(s).");
@@ -305,7 +303,7 @@ public final class CheckMojo extends AbstractMojo {
                         .or(() -> Optional.ofNullable(source).filter(value -> !value.isBlank()))
                         .orElse("");
                 additionalIssues = SupplementalAnalyzer.analyze(baseDirectory, sourcePaths,
-                        project.getCompileClasspathElements(), sourceVersion, supplementalRules);
+                        project.getTestClasspathElements(), sourceVersion, supplementalRules);
             }
             return new ProjectAnalysis(sonarIssues, removeDuplicateIssues(sonarIssues, additionalIssues));
         } catch (IOException | DependencyResolutionRequiredException | RuntimeException exception) {
@@ -332,37 +330,51 @@ public final class CheckMojo extends AbstractMojo {
     private List<JavaSourceFile> collectSources(Path baseDirectory) throws IOException {
         Charset charset = Charset.forName(Optional.ofNullable(encoding)
                 .filter(value -> !value.isBlank()).orElse("UTF-8"));
-        Set<Path> paths = new LinkedHashSet<>();
-        for (String root : project.getCompileSourceRoots()) {
+        Map<Path, Boolean> paths = new TreeMap<>();
+        collectSourceRoots(baseDirectory, project.getCompileSourceRoots(), false, paths);
+        collectSourceRoots(baseDirectory, project.getTestCompileSourceRoots(), true, paths);
+        List<JavaSourceFile> files = new ArrayList<>();
+        for (Map.Entry<Path, Boolean> entry : paths.entrySet()) {
+            files.add(new JavaSourceFile(baseDirectory, entry.getKey(), charset, entry.getValue()));
+        }
+        return files;
+    }
+
+    private static void collectSourceRoots(Path baseDirectory, List<String> roots,
+            boolean test, Map<Path, Boolean> paths) throws IOException {
+        for (String root : roots) {
             Path directory = baseDirectory.resolve(root).normalize();
             if (Files.isDirectory(directory)) {
                 try (Stream<Path> entries = Files.walk(directory)) {
-                    paths.addAll(entries.filter(Files::isRegularFile)
-                            .filter(path -> path.toString().endsWith(".java"))
-                            .sorted().toList());
+                    for (Path path : entries.filter(Files::isRegularFile)
+                            .filter(file -> file.toString().endsWith(".java")).sorted().toList()) {
+                        paths.putIfAbsent(path, test);
+                    }
                 }
             }
         }
-        List<JavaSourceFile> files = new ArrayList<>();
-        for (Path path : paths) {
-            files.add(new JavaSourceFile(baseDirectory, path, charset));
-        }
-        return files;
     }
 
     private Map<String, String> analysisProperties(Path binaries)
             throws DependencyResolutionRequiredException {
         Map<String, String> properties = new TreeMap<>();
         properties.put("sonar.java.binaries", binaries.toString());
+        Path testBinaries = Path.of(project.getBuild().getTestOutputDirectory())
+                .toAbsolutePath().normalize();
+        if (Files.isDirectory(testBinaries)) {
+            properties.put("sonar.java.test.binaries", testBinaries.toString());
+        }
         List<String> libraries = new ArrayList<>();
-        for (String element : project.getCompileClasspathElements()) {
+        for (String element : project.getTestClasspathElements()) {
             Path path = Path.of(element).toAbsolutePath().normalize();
-            if (!path.equals(binaries) && Files.exists(path)) {
+            if (!path.equals(binaries) && !path.equals(testBinaries) && Files.exists(path)) {
                 libraries.add(path.toString());
             }
         }
         if (!libraries.isEmpty()) {
-            properties.put("sonar.java.libraries", String.join(",", libraries));
+            String classpath = String.join(",", libraries);
+            properties.put("sonar.java.libraries", classpath);
+            properties.put("sonar.java.test.libraries", classpath);
         }
         Optional.ofNullable(release).filter(value -> !value.isBlank())
                 .or(() -> Optional.ofNullable(source).filter(value -> !value.isBlank()))
