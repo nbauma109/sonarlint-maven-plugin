@@ -38,10 +38,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          mvn -B -ntp -f transformer-api/pom.xml \\
-            io.github.nbauma109:static-analysis-maven-plugin:0.1.1-SNAPSHOT:check \\
-            -DstaticAnalysis.profile=sonar-way \\
-            -DstaticAnalysis.failOnViolation=false \\
+          mvn -B -ntp -f transformer-api/pom.xml \
+            io.github.nbauma109:static-analysis-maven-plugin:0.1.2-SNAPSHOT:check \
+            -DstaticAnalysis.profile=sonar-way \
+            -DstaticAnalysis.failOnViolation=false \
             | tee transformer-api-analysis.log
           touch transformer-api-test-analysis.log
       - name: Verify all 26 issue locations and rule identifiers
