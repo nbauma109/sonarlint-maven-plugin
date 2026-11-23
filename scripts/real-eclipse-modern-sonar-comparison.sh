@@ -11,7 +11,7 @@ mkdir -p "$output"
 
 mvn -B -ntp -f "$project/pom.xml" compile
 mvn -B -ntp -f "$project/pom.xml" \
-    io.github.nbauma109:static-analysis-maven-plugin:0.1.1-SNAPSHOT:check \
+    io.github.nbauma109:static-analysis-maven-plugin:0.1.2-SNAPSHOT:check \
     -DstaticAnalysis.profile=none \
     -DstaticAnalysis.failOnViolation=false \
     -DstaticAnalysis.eclipseEnabled=true \
@@ -65,7 +65,7 @@ assert actual_locations == expected_locations, (actual_locations, expected_locat
 PY
 
 mvn -B -ntp -f "$project/pom.xml" \
-    io.github.nbauma109:static-analysis-maven-plugin:0.1.1-SNAPSHOT:check \
+    io.github.nbauma109:static-analysis-maven-plugin:0.1.2-SNAPSHOT:check \
     -DstaticAnalysis.profile=sonar-way \
     -DstaticAnalysis.failOnViolation=false \
     -DstaticAnalysis.eclipseEnabled=true \
@@ -74,7 +74,7 @@ mvn -B -ntp -f "$project/pom.xml" \
     | tee "$output/maven-combined.log"
 
 mvn -B -ntp -f "$project/pom.xml" \
-    io.github.nbauma109:static-analysis-maven-plugin:0.1.1-SNAPSHOT:check \
+    io.github.nbauma109:static-analysis-maven-plugin:0.1.2-SNAPSHOT:check \
     -DstaticAnalysis.profile=sonar-way \
     -DstaticAnalysis.failOnViolation=false \
     -DstaticAnalysis.eclipseEnabled=false \

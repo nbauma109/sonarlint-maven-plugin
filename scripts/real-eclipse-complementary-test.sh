@@ -10,7 +10,7 @@ output="$PWD/target/real-eclipse-complementary"
 mkdir -p "$output"
 
 source_hash="$(sha256sum "$source_file")"
-mvn -B -ntp -f "$fixture/pom.xml" process-classes \
+mvn -B -ntp -f "$fixture/pom.xml" process-test-classes \
     -DstaticAnalysis.profile=sonar-way \
     -DstaticAnalysis.eclipseEnabled=true \
     "-DstaticAnalysis.eclipseExecutable=$RUNNER_TEMP/eclipse-check.sh" \

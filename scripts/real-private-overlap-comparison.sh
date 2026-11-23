@@ -12,7 +12,7 @@ original_hash="$(sha256sum "$source_file")"
 for option in remove_unused_private_fields remove_unused_private_methods; do
     profile="$fixture/eclipse-$option.xml"
 
-    mvn -B -ntp -f "$fixture/pom.xml" process-classes \
+    mvn -B -ntp -f "$fixture/pom.xml" process-test-classes \
         -DstaticAnalysis.profile=none \
         -DstaticAnalysis.enabledRules=java:S1068,java:S1144 \
         -DstaticAnalysis.eclipseEnabled=true \
@@ -34,7 +34,7 @@ for option in remove_unused_private_fields remove_unused_private_methods; do
         fallback_rule="java:S1144"
     fi
 
-    mvn -B -ntp -f "$fixture/pom.xml" process-classes \
+    mvn -B -ntp -f "$fixture/pom.xml" process-test-classes \
         -DstaticAnalysis.profile=none \
         -DstaticAnalysis.enabledRules=java:S1068,java:S1144 \
         -DstaticAnalysis.eclipseEnabled=true \
@@ -48,7 +48,7 @@ for option in remove_unused_private_fields remove_unused_private_methods; do
         "-PcleanupProfile=eclipse-$option.xml" -PduplicatePolicy=none \
         | tee "$output/gradle-$option-unfiltered.log"
 
-    mvn -B -ntp -f "$fixture/pom.xml" process-classes \
+    mvn -B -ntp -f "$fixture/pom.xml" process-test-classes \
         -DstaticAnalysis.profile=none \
         "-DstaticAnalysis.enabledRules=$fallback_rule" \
         -DstaticAnalysis.eclipseEnabled=true \

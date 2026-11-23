@@ -11,7 +11,7 @@ original_sha="$(sha256sum "$source_file")"
 module_file="$fixture/src/main/java/module-info.java"
 module_sha="$(sha256sum "$module_file")"
 
-mvn -B -ntp -f "$fixture/pom.xml" process-classes \
+mvn -B -ntp -f "$fixture/pom.xml" process-test-classes \
     -DstaticAnalysis.profile=sonar-way \
     -DstaticAnalysis.eclipseEnabled=true \
     "-DstaticAnalysis.eclipseExecutable=$RUNNER_TEMP/eclipse-check.sh" \
@@ -91,7 +91,7 @@ PY
 
 recommended="$fixture/eclipse-cleanups-recommended.xml"
 
-mvn -B -ntp -f "$fixture/pom.xml" process-classes \
+mvn -B -ntp -f "$fixture/pom.xml" process-test-classes \
     -DstaticAnalysis.profile=sonar-way \
     -DstaticAnalysis.eclipseEnabled=true \
     "-DstaticAnalysis.eclipseExecutable=$RUNNER_TEMP/eclipse-check.sh" \
@@ -136,7 +136,7 @@ PY
 
 aesthetics="$fixture/eclipse-cleanups-aesthetics.xml"
 
-mvn -B -ntp -f "$fixture/pom.xml" process-classes \
+mvn -B -ntp -f "$fixture/pom.xml" process-test-classes \
     -DstaticAnalysis.profile=sonar-way \
     -DstaticAnalysis.eclipseEnabled=true \
     "-DstaticAnalysis.eclipseExecutable=$RUNNER_TEMP/eclipse-check.sh" \

@@ -61,21 +61,28 @@ public final class CheckTestsMojo extends AbstractMojo {
 
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
+        int count = analyzeTests();
+        if (failOnViolation && count > 0) {
+            throw new MojoFailureException("Test-source analysis found " + count + " violation(s).");
+        }
+    }
+
+    private int analyzeTests() throws MojoExecutionException {
         if (skip || "pom".equals(project.getPackaging())) {
             getLog().info("Skipping test-source static analysis.");
-            return;
+            return 0;
         }
         Set<String> selected = selectedTestRules();
         if (selected.isEmpty()) {
             getLog().info("No supported test-source Java rules selected.");
-            return;
+            return 0;
         }
         try {
             Path baseDirectory = project.getBasedir().toPath().toAbsolutePath().normalize();
             List<Path> javaSources = collectTestSources(baseDirectory);
             if (javaSources.isEmpty()) {
                 getLog().info("No test Java sources to analyze.");
-                return;
+                return 0;
             }
             Path testOutput = Path.of(project.getBuild().getTestOutputDirectory());
             if (!Files.isDirectory(testOutput)) {
@@ -85,9 +92,7 @@ public final class CheckTestsMojo extends AbstractMojo {
                     baseDirectory, javaSources, project.getTestClasspathElements(),
                     sourceLevel(), selected);
             report(findings);
-            if (failOnViolation && !findings.isEmpty()) {
-                throw new MojoFailureException("Test-source analysis found " + findings.size() + " violation(s).");
-            }
+            return findings.size();
         } catch (IOException | DependencyResolutionRequiredException exception) {
             throw new MojoExecutionException("Test-source Java analysis failed: "
                     + exception.getMessage(), exception);
