@@ -344,18 +344,11 @@ public final class CheckMojo extends AbstractMojo {
 
     private static List<SupplementalAnalyzer.Finding> removeDuplicateIssues(
             List<Issue> sonarIssues, List<SupplementalAnalyzer.Finding> additionalIssues) {
-        Set<String> reported = new LinkedHashSet<>();
+        List<String> reported = new ArrayList<>();
         for (Issue issue : sonarIssues) {
             reported.add(location(issue) + ":" + issue.getRuleKey());
         }
-        List<SupplementalAnalyzer.Finding> distinct = new ArrayList<>();
-        for (SupplementalAnalyzer.Finding issue : additionalIssues) {
-            String key = issue.file() + ":" + issue.line() + ":" + issue.rule();
-            if (reported.add(key)) {
-                distinct.add(issue);
-            }
-        }
-        return distinct;
+        return SupplementalAnalyzer.withoutNativeDuplicates(additionalIssues, reported);
     }
 
     private List<JavaSourceFile> collectSources(Path baseDirectory) throws IOException {
