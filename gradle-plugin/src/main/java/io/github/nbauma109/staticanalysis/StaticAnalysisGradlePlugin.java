@@ -49,7 +49,15 @@ public final class StaticAnalysisGradlePlugin implements Plugin<Project> {
                         task.setSymbolicAnalyzerConfiguration(symbolicAnalyzer);
                         task.dependsOn(project.getTasks().named("classes"));
                     });
-            project.getTasks().named("check").configure(task -> task.dependsOn(analysis));
+            SourceSet tests = project.getExtensions().getByType(SourceSetContainer.class)
+                    .getByName(SourceSet.TEST_SOURCE_SET_NAME);
+            TaskProvider<StaticAnalysisTestsTask> testAnalysis = project.getTasks()
+                    .register("staticAnalysisTests", StaticAnalysisTestsTask.class, task -> {
+                        task.setAnalysisExtension(extension);
+                        task.setSourceSet(tests);
+                        task.dependsOn(project.getTasks().named("testClasses"));
+                    });
+            project.getTasks().named("check").configure(task -> task.dependsOn(analysis, testAnalysis));
         });
     }
 }

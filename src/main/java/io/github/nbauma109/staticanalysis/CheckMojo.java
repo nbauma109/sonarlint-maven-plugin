@@ -27,6 +27,7 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
+import org.sonarsource.sonarlint.core.analysis.api.ActiveRule;
 import org.sonarsource.sonarlint.core.analysis.api.AnalysisConfiguration;
 import org.sonarsource.sonarlint.core.analysis.api.ClientInputFile;
 import org.sonarsource.sonarlint.core.analysis.api.Issue;
@@ -104,6 +105,12 @@ public final class CheckMojo extends AbstractMojo {
     /** Java source level if the compiler release is not specified. */
     @Parameter(defaultValue = "${maven.compiler.source}")
     private String source;
+
+    @Parameter(defaultValue = "${maven.compiler.testRelease}")
+    private String testRelease;
+
+    @Parameter(defaultValue = "${maven.compiler.testSource}")
+    private String testSource;
 
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
@@ -270,45 +277,69 @@ public final class CheckMojo extends AbstractMojo {
             }
             var activeRules = catalog.select(profile, enabledRules, disabledRules,
                     cognitiveComplexityThreshold, Optional.ofNullable(ruleParameters).orElse(List.of()));
-            Set<String> supplementalRules = catalog.supplementalRules(profile, enabledRules, disabledRules);
+            Set<String> supplementalRules = RuleCatalog.supplementalRules(profile, enabledRules, disabledRules);
             if (activeRules.isEmpty() && supplementalRules.isEmpty()) {
                 getLog().info("No local Java rules selected.");
                 return new ProjectAnalysis(List.of(), List.of());
             }
-            List<Issue> sonarIssues = List.of();
-            if (!activeRules.isEmpty()) {
-                getLog().info("Activated " + activeRules.size() + " local Java rule(s).");
-                AnalysisConfiguration configuration = AnalysisConfiguration.builder()
-                        .setBaseDir(baseDirectory)
-                        .addInputFiles(files)
-                        .putAllExtraProperties(analysisProperties(binaries))
-                        .addActiveRules(activeRules)
-                        .build();
-                getLog().info("Analyzing " + files.size() + " Java source file(s) locally.");
-                if (useSymbolicAnalyzer) {
-                    sonarIssues = new StandaloneAnalyzer(analyzer, symbolicAnalyzer, workDirectory,
-                            new MavenLogOutput(getLog())).analyze(configuration);
-                } else {
-                    sonarIssues = new StandaloneAnalyzer(analyzer, workDirectory,
-                            new MavenLogOutput(getLog())).analyze(configuration);
+            Map<Integer, List<JavaSourceFile>> groups = groupByRelease(files);
+            List<Issue> sonarIssues = analyzeSonar(baseDirectory, workDirectory, binaries,
+                    analyzer, symbolicAnalyzer, activeRules, groups);
+            Map<Integer, List<Path>> sourcePaths = new TreeMap<>();
+            for (Map.Entry<Integer, List<JavaSourceFile>> group : groups.entrySet()) {
+                List<Path> paths = new ArrayList<>();
+                for (JavaSourceFile file : group.getValue()) {
+                    paths.add(Path.of(file.getPath()));
                 }
+                sourcePaths.put(group.getKey(), paths);
             }
-            List<SupplementalAnalyzer.Finding> additionalIssues = List.of();
-            if (!supplementalRules.isEmpty()) {
-                List<Path> sourcePaths = new ArrayList<>();
-                for (JavaSourceFile file : files) {
-                    sourcePaths.add(Path.of(file.getPath()));
-                }
-                String sourceVersion = Optional.ofNullable(release).filter(value -> !value.isBlank())
-                        .or(() -> Optional.ofNullable(source).filter(value -> !value.isBlank()))
-                        .orElse("");
-                additionalIssues = SupplementalAnalyzer.analyze(baseDirectory, sourcePaths,
-                        project.getTestClasspathElements(), sourceVersion, supplementalRules);
-            }
+            List<SupplementalAnalyzer.Finding> additionalIssues = SupplementalAnalyzer.analyzeByRelease(
+                    baseDirectory, sourcePaths, project.getTestClasspathElements(), supplementalRules);
             return new ProjectAnalysis(sonarIssues, removeDuplicateIssues(sonarIssues, additionalIssues));
         } catch (IOException | DependencyResolutionRequiredException | RuntimeException exception) {
             throw new MojoExecutionException("Local Sonar analysis could not complete: " + exception.getMessage(), exception);
         }
+    }
+
+    private Map<Integer, List<JavaSourceFile>> groupByRelease(List<JavaSourceFile> files) {
+        MavenSourceVersion versions = new MavenSourceVersion(project, release, source,
+                testRelease, testSource);
+        Map<Integer, List<JavaSourceFile>> groups = new TreeMap<>();
+        for (JavaSourceFile file : files) {
+            int version = versions.release(Path.of(file.getPath()), file.isTest());
+            groups.computeIfAbsent(version, ignored -> new ArrayList<>()).add(file);
+        }
+        return groups;
+    }
+
+    private List<Issue> analyzeSonar(Path baseDirectory, Path workDirectory, Path binaries,
+            Path analyzer, Path symbolicAnalyzer, List<ActiveRule> activeRules,
+            Map<Integer, List<JavaSourceFile>> groups)
+            throws IOException, DependencyResolutionRequiredException {
+        if (activeRules.isEmpty()) {
+            return List.of();
+        }
+        getLog().info("Activated " + activeRules.size() + " local Java rule(s).");
+        List<Issue> issues = new ArrayList<>();
+        for (Map.Entry<Integer, List<JavaSourceFile>> group : groups.entrySet()) {
+            Map<String, String> properties = analysisProperties(binaries);
+            properties.put("sonar.java.source", Integer.toString(group.getKey()));
+            AnalysisConfiguration configuration = AnalysisConfiguration.builder()
+                    .setBaseDir(baseDirectory)
+                    .addInputFiles(group.getValue())
+                    .putAllExtraProperties(properties)
+                    .addActiveRules(activeRules)
+                    .build();
+            getLog().info("Analyzing " + group.getValue().size()
+                    + " Java source file(s) locally at release " + group.getKey() + ".");
+            Path work = workDirectory.resolve("java-" + group.getKey());
+            StandaloneAnalyzer engine = new StandaloneAnalyzer(analyzer, work, new MavenLogOutput(getLog()));
+            if (symbolicAnalyzer != null) {
+                engine = new StandaloneAnalyzer(analyzer, symbolicAnalyzer, work, new MavenLogOutput(getLog()));
+            }
+            issues.addAll(engine.analyze(configuration));
+        }
+        return List.copyOf(issues);
     }
 
     private static List<SupplementalAnalyzer.Finding> removeDuplicateIssues(

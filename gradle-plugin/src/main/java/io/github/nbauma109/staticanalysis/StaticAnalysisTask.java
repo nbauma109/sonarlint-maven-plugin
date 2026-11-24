@@ -11,6 +11,8 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.TreeMap;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.GradleException;
@@ -18,7 +20,6 @@ import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.tasks.Internal;
 import org.gradle.api.tasks.SourceSet;
 import org.gradle.api.tasks.TaskAction;
-import org.gradle.api.tasks.compile.JavaCompile;
 import org.gradle.work.DisableCachingByDefault;
 import org.sonarsource.sonarlint.core.analysis.api.ActiveRule;
 import org.sonarsource.sonarlint.core.analysis.api.AnalysisConfiguration;
@@ -93,12 +94,14 @@ public abstract class StaticAnalysisTask extends DefaultTask {
             }
             List<Issue> sonar = runSonar(project, work, files);
             EclipseCleanupRunner.Result eclipse = runEclipse(project, work, sonar);
+            List<SupplementalAnalyzer.Finding> supplemental = runSupplemental(project, files, sonar);
             report(sonar, eclipse);
-            int violations = sonar.size() + eclipse.findings().size();
+            GradleSupplementalAnalysis.report(getLogger(), supplemental);
+            int violations = sonar.size() + eclipse.findings().size() + supplemental.size();
             if (extension.isFailOnViolation() && violations > 0) {
                 throw new GradleException("Static analysis found " + violations + " violation(s).");
             }
-        } catch (IOException exception) {
+        } catch (IOException | IllegalArgumentException exception) {
             throw new GradleException("Local static analysis failed: " + exception.getMessage(), exception);
         } catch (InterruptedException exception) {
             Thread.currentThread().interrupt();
@@ -167,6 +170,29 @@ public abstract class StaticAnalysisTask extends DefaultTask {
                 new GradleLogOutput(getLogger())).analyze(configuration);
     }
 
+    private List<SupplementalAnalyzer.Finding> runSupplemental(Path project,
+            List<JavaSourceFile> files, List<Issue> sonar) throws IOException {
+        Set<String> selected = RuleCatalog.supplementalRules(extension.getProfile(),
+                extension.getEnabledRules(), extension.getDisabledRules());
+        List<Path> paths = new ArrayList<>();
+        for (JavaSourceFile file : files) {
+            paths.add(Path.of(file.getPath()));
+        }
+        List<SupplementalAnalyzer.Finding> findings = GradleSupplementalAnalysis.analyze(
+                getProject(), sourceSet, project, paths, selected);
+        Set<String> reported = new HashSet<>();
+        for (Issue issue : sonar) {
+            reported.add(location(issue) + ":" + issue.getRuleKey());
+        }
+        List<SupplementalAnalyzer.Finding> distinct = new ArrayList<>();
+        for (SupplementalAnalyzer.Finding finding : findings) {
+            if (reported.add(finding.file() + ":" + finding.line() + ":" + finding.rule())) {
+                distinct.add(finding);
+            }
+        }
+        return List.copyOf(distinct);
+    }
+
     private Map<String, String> analysisProperties() throws IOException {
         Map<String, String> properties = new TreeMap<>();
         List<String> binaries = paths(sourceSet.getOutput().getClassesDirs().getFiles(), true);
@@ -179,10 +205,7 @@ public abstract class StaticAnalysisTask extends DefaultTask {
         if (!libraries.isEmpty()) {
             properties.put("sonar.java.libraries", String.join(",", libraries));
         }
-        JavaCompile compiler = (JavaCompile) getProject().getTasks().getByName("compileJava");
-        String release = Optional.ofNullable(compiler.getOptions().getRelease().getOrNull())
-                .map(Object::toString).orElse(compiler.getSourceCompatibility());
-        properties.put("sonar.java.source", release);
+        properties.put("sonar.java.source", GradleSourceVersion.release(getProject(), sourceSet));
         return properties;
     }
 

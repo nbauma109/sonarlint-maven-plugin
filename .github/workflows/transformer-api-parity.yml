@@ -1,13 +1,6 @@
 name: Transformer API pinned SonarCloud parity
 
 on:
-  pull_request:
-    paths:
-      - pom.xml
-      - src/main/java/**
-      - src/it/**
-      - scripts/verify-transformer-api-parity.py
-      - .github/workflows/transformer-api-parity.yml
   workflow_dispatch:
 
 permissions:
@@ -39,7 +32,7 @@ jobs:
         run: |
           set -euo pipefail
           mvn -B -ntp -f transformer-api/pom.xml \
-            io.github.nbauma109:static-analysis-maven-plugin:0.1.2-SNAPSHOT:check \
+            io.github.nbauma109:static-analysis-maven-plugin:0.1.3-SNAPSHOT:check \
             -DstaticAnalysis.profile=sonar-way \
             -DstaticAnalysis.failOnViolation=false \
             | tee transformer-api-analysis.log

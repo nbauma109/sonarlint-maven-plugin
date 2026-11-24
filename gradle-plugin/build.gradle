@@ -20,7 +20,7 @@ sourceSets {
     main {
         java {
             srcDir '../src/main/java'
-            exclude '**/CheckMojo.java', '**/CheckTestsMojo.java', '**/EmbeddedEclipseCleanupRunner.java', '**/MavenLogOutput.java'
+            exclude '**/CheckMojo.java', '**/CheckTestsMojo.java', '**/MavenSourceVersion.java', '**/EmbeddedEclipseCleanupRunner.java', '**/MavenLogOutput.java'
         }
         resources {
             srcDir '../src/main/resources'
@@ -49,12 +49,16 @@ gradlePlugin {
 }
 
 tasks.named('test') {
+    javaLauncher = javaToolchains.launcherFor {
+        languageVersion = JavaLanguageVersion.of(JavaVersion.current().majorVersion.toInteger())
+    }
     useJUnitPlatform()
     testLogging {
         events 'failed'
         exceptionFormat 'full'
         showStandardStreams = true
     }
+    systemProperty 'staticAnalysis.versionFixtureDirectory', file('../src/it').absolutePath
     systemProperty 'staticAnalysis.fixtureDirectory', file('../src/it/cognitive-complexity/src/main/java').absolutePath
     systemProperty 'staticAnalysis.reliabilityFixtureDirectory', file('../src/it/reliability/src/main/java').absolutePath
 }
