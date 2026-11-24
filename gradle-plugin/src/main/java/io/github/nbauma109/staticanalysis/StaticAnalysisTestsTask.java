@@ -46,12 +46,17 @@ public abstract class StaticAnalysisTestsTask extends DefaultTask {
         try {
             Set<String> rules = RuleCatalog.testRules(extension.getProfile(),
                     extension.getEnabledRules(), extension.getDisabledRules());
+            Path project = getProject().getProjectDir().toPath().toAbsolutePath().normalize();
+            SourceAnalysisScope scope = new SourceAnalysisScope(project,
+                    getProject().getLayout().getBuildDirectory().get().getAsFile().toPath());
             List<Path> sources = new ArrayList<>();
             for (File file : sourceSet.getAllJava().getFiles()) {
-                sources.add(file.toPath().toAbsolutePath().normalize());
+                Path path = file.toPath().toAbsolutePath().normalize();
+                if (scope.includes(path)) {
+                    sources.add(path);
+                }
             }
             sources.sort(Path::compareTo);
-            Path project = getProject().getProjectDir().toPath().toAbsolutePath().normalize();
             List<SupplementalAnalyzer.Finding> findings = GradleSupplementalAnalysis.analyze(
                     getProject(), sourceSet, project, sources, rules);
             GradleSupplementalAnalysis.report(getLogger(), findings);

@@ -16,7 +16,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.stream.Stream;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.DependencyResolutionRequiredException;
 import org.apache.maven.plugin.AbstractMojo;
@@ -188,13 +187,18 @@ public final class CheckMojo extends AbstractMojo {
                         .filter(value -> !value.isBlank() && !value.startsWith("${"))
                         .map(Charset::forName)
                         .orElse(StandardCharsets.UTF_8);
+                SourceAnalysisScope scope = sourceScope(baseDirectory);
+                List<String> roots = scope.sourceRoots(project.getCompileSourceRoots());
+                if (roots.isEmpty()) {
+                    return new EclipseCleanupRunner.Result(List.of(), 0);
+                }
                 EclipseCleanupRunner.Result result = EmbeddedEclipseCleanupRunner.run(baseDirectory,
-                        project.getCompileSourceRoots(), project.getCompileClasspathElements(),
+                        roots, project.getCompileClasspathElements(),
                         javaSource, sourceEncoding,
                         Optional.ofNullable(eclipseCleanupProfile).map(File::toPath).orElse(null),
                         eclipseDuplicatePolicy);
                 getLog().info("Running embedded Eclipse JDT cleanup analysis without an IDE.");
-                return result;
+                return scope.retainFindings(result);
             } catch (IOException | DependencyResolutionRequiredException | RuntimeException exception) {
                 throw new MojoExecutionException("Embedded Eclipse cleanup analysis failed: "
                         + exception.getMessage(), exception);
@@ -213,10 +217,16 @@ public final class CheckMojo extends AbstractMojo {
             String javaSource = Optional.ofNullable(release).filter(value -> !value.isBlank())
                     .or(() -> Optional.ofNullable(source).filter(value -> !value.isBlank()))
                     .orElse("17");
-            return EclipseCleanupRunner.run(eclipseExecutable.toPath(), eclipseCleanupProfile.toPath(),
-                    baseDirectory, workDirectory, javaSource, project.getCompileSourceRoots(),
+            SourceAnalysisScope scope = sourceScope(baseDirectory);
+            List<String> roots = scope.sourceRoots(project.getCompileSourceRoots());
+            if (roots.isEmpty()) {
+                return new EclipseCleanupRunner.Result(List.of(), 0);
+            }
+            return scope.retainFindings(EclipseCleanupRunner.run(
+                    eclipseExecutable.toPath(), eclipseCleanupProfile.toPath(),
+                    baseDirectory, workDirectory, javaSource, roots,
                     project.getCompileClasspathElements(), eclipseTimeoutSeconds,
-                    eclipseDuplicatePolicy, sonarIssues, getLog()::info);
+                    eclipseDuplicatePolicy, sonarIssues, getLog()::info));
         } catch (IOException | DependencyResolutionRequiredException | RuntimeException exception) {
             throw new MojoExecutionException("Eclipse cleanup analysis failed: " + exception.getMessage(), exception);
         } catch (InterruptedException exception) {
@@ -355,8 +365,13 @@ public final class CheckMojo extends AbstractMojo {
         Charset charset = Charset.forName(Optional.ofNullable(encoding)
                 .filter(value -> !value.isBlank()).orElse("UTF-8"));
         Map<Path, Boolean> paths = new TreeMap<>();
-        collectSourceRoots(baseDirectory, project.getCompileSourceRoots(), false, paths);
-        collectSourceRoots(baseDirectory, project.getTestCompileSourceRoots(), true, paths);
+        SourceAnalysisScope scope = sourceScope(baseDirectory);
+        for (Path file : scope.javaFiles(project.getCompileSourceRoots())) {
+            paths.putIfAbsent(file, false);
+        }
+        for (Path file : scope.javaFiles(project.getTestCompileSourceRoots())) {
+            paths.putIfAbsent(file, true);
+        }
         List<JavaSourceFile> files = new ArrayList<>();
         for (Map.Entry<Path, Boolean> entry : paths.entrySet()) {
             files.add(new JavaSourceFile(baseDirectory, entry.getKey(), charset, entry.getValue()));
@@ -364,19 +379,8 @@ public final class CheckMojo extends AbstractMojo {
         return files;
     }
 
-    private static void collectSourceRoots(Path baseDirectory, List<String> roots,
-            boolean test, Map<Path, Boolean> paths) throws IOException {
-        for (String root : roots) {
-            Path directory = baseDirectory.resolve(root).normalize();
-            if (Files.isDirectory(directory)) {
-                try (Stream<Path> entries = Files.walk(directory)) {
-                    for (Path path : entries.filter(Files::isRegularFile)
-                            .filter(file -> file.toString().endsWith(".java")).sorted().toList()) {
-                        paths.putIfAbsent(path, test);
-                    }
-                }
-            }
-        }
+    private SourceAnalysisScope sourceScope(Path baseDirectory) {
+        return new SourceAnalysisScope(baseDirectory, Path.of(project.getBuild().getDirectory()));
     }
 
     private Map<String, String> analysisProperties(Path binaries)

@@ -6,10 +6,10 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.Set;
-import java.util.stream.Stream;
 import org.apache.maven.artifact.DependencyResolutionRequiredException;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -104,19 +104,10 @@ public final class CheckTestsMojo extends AbstractMojo {
     }
 
     private List<Path> collectTestSources(Path baseDirectory) throws IOException {
-        List<Path> files = new ArrayList<>();
-        for (String sourceRoot : project.getTestCompileSourceRoots()) {
-            Path root = baseDirectory.resolve(sourceRoot).normalize();
-            if (Files.isDirectory(root)) {
-                try (Stream<Path> paths = Files.walk(root)) {
-                    for (Path path : paths.toList()) {
-                        if (Files.isRegularFile(path) && path.toString().endsWith(".java")) {
-                            files.add(path);
-                        }
-                    }
-                }
-            }
-        }
+        SourceAnalysisScope scope = new SourceAnalysisScope(baseDirectory,
+                Path.of(project.getBuild().getDirectory()));
+        List<Path> files = new ArrayList<>(new LinkedHashSet<>(
+                scope.javaFiles(project.getTestCompileSourceRoots())));
         files.sort(Comparator.naturalOrder());
         return files;
     }
