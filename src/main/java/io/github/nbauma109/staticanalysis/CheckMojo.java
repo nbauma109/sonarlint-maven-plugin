@@ -420,9 +420,15 @@ public final class CheckMojo extends AbstractMojo {
             }
         }
         if (!libraries.isEmpty()) {
-            String classpath = String.join(",", libraries);
-            properties.put("sonar.java.libraries", classpath);
-            properties.put("sonar.java.test.libraries", classpath);
+            properties.put("sonar.java.libraries", String.join(",", libraries));
+        }
+        List<String> testLibraries = new ArrayList<>();
+        if (Files.isDirectory(binaries)) {
+            testLibraries.add(binaries.toString());
+        }
+        testLibraries.addAll(libraries);
+        if (!testLibraries.isEmpty()) {
+            properties.put("sonar.java.test.libraries", String.join(",", testLibraries));
         }
         Optional.ofNullable(release).filter(value -> !value.isBlank())
                 .or(() -> Optional.ofNullable(source).filter(value -> !value.isBlank()))
