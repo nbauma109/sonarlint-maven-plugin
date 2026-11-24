@@ -2,6 +2,7 @@
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
+source scripts/fixture-maven.sh
 : "${RUNNER_TEMP:?An Eclipse runtime directory is required}"
 
 project="$PWD/src/it/field-finality-parity"
@@ -9,9 +10,9 @@ profile="$PWD/src/it/modern-production-rules/eclipse-private-fields-final.xml"
 output="$PWD/target/eclipse-modern-rule-comparison"
 mkdir -p "$output"
 
-mvn -B -ntp -f "$project/pom.xml" compile
-mvn -B -ntp -f "$project/pom.xml" \
-    io.github.nbauma109:static-analysis-maven-plugin:0.1.3-SNAPSHOT:check \
+fixture_maven -B -ntp -f "$project/pom.xml" compile
+fixture_maven -B -ntp -f "$project/pom.xml" \
+    io.github.nbauma109:static-analysis-maven-plugin:"$plugin_version":check \
     -DstaticAnalysis.profile=none \
     -DstaticAnalysis.failOnViolation=false \
     -DstaticAnalysis.eclipseEnabled=true \
@@ -58,8 +59,8 @@ assert len(issues) == len(expected_locations), issues
 assert actual_locations == expected_locations, (actual_locations, expected_locations)
 PY
 
-mvn -B -ntp -f "$project/pom.xml" \
-    io.github.nbauma109:static-analysis-maven-plugin:0.1.3-SNAPSHOT:check \
+fixture_maven -B -ntp -f "$project/pom.xml" \
+    io.github.nbauma109:static-analysis-maven-plugin:"$plugin_version":check \
     -DstaticAnalysis.profile=sonar-way \
     -DstaticAnalysis.failOnViolation=false \
     -DstaticAnalysis.eclipseEnabled=true \
@@ -67,8 +68,8 @@ mvn -B -ntp -f "$project/pom.xml" \
     "-DstaticAnalysis.eclipseCleanupProfile=$profile" \
     | tee "$output/maven-combined.log"
 
-mvn -B -ntp -f "$project/pom.xml" \
-    io.github.nbauma109:static-analysis-maven-plugin:0.1.3-SNAPSHOT:check \
+fixture_maven -B -ntp -f "$project/pom.xml" \
+    io.github.nbauma109:static-analysis-maven-plugin:"$plugin_version":check \
     -DstaticAnalysis.profile=sonar-way \
     -DstaticAnalysis.failOnViolation=false \
     -DstaticAnalysis.eclipseEnabled=false \

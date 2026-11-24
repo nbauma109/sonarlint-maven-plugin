@@ -25,7 +25,9 @@ jobs:
         if: matrix.java == '17'
         run: mvn -B -ntp -Pcentral-release -Dgpg.skip=true clean verify
       - name: Verify standalone analysis
-        run: bash scripts/integration-test.sh
+        run: |
+          bash scripts/fixture-maven-test.sh
+          bash scripts/integration-test.sh
       - name: Upload integration logs
         if: always()
         uses: actions/upload-artifact@v4

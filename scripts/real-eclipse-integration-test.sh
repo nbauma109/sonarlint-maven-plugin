@@ -2,6 +2,7 @@
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
+source scripts/fixture-maven.sh
 : "${RUNNER_TEMP:?The integration requires a temporary runtime directory}"
 fixture="$PWD/src/it/real-eclipse"
 java_file="$fixture/src/main/java/example/OverlapChecks.java"
@@ -17,7 +18,7 @@ common=(
     "-DstaticAnalysis.eclipseExecutable=$executable"
     "-DstaticAnalysis.eclipseCleanupProfile=$profile"
 )
-mvn -B -ntp -f "$fixture/pom.xml" process-test-classes \
+fixture_maven -B -ntp -f "$fixture/pom.xml" process-test-classes \
     "${common[@]}" \
     -DstaticAnalysis.enabledRules=java:S1128,java:S1161,java:S2093 \
     | tee "$output/combined.log"
@@ -48,7 +49,7 @@ for rule, cleanup in [
     assert eclipse_count == 0, f"Duplicate cleanup {cleanup} reached the console"
 PY
 
-mvn -B -ntp -f "$fixture/pom.xml" process-test-classes \
+fixture_maven -B -ntp -f "$fixture/pom.xml" process-test-classes \
     "${common[@]}" \
     -DstaticAnalysis.eclipseDuplicatePolicy=none \
     -DstaticAnalysis.enabledRules=java:S1128,java:S1161,java:S2093 \
@@ -73,7 +74,7 @@ for rule, cleanup in [
     assert eclipse == 1, f"Expected exactly one Eclipse warning for {cleanup}"
 PY
 
-mvn -B -ntp -f "$fixture/pom.xml" process-test-classes \
+fixture_maven -B -ntp -f "$fixture/pom.xml" process-test-classes \
     "${common[@]}" \
     -DstaticAnalysis.enabledRules=java:S1128 \
     | tee "$output/sonar-disabled.log"

@@ -20,7 +20,7 @@
             <plugin>
                 <groupId>io.github.nbauma109</groupId>
                 <artifactId>static-analysis-maven-plugin</artifactId>
-                <version>0.1.3-SNAPSHOT</version>
+                <version>${staticAnalysis.pluginVersion}</version>
                 <configuration>
                     <profile>sonar-way</profile>
                     <failOnViolation>true</failOnViolation>
