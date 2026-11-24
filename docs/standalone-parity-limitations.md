@@ -45,3 +45,19 @@ can move within the same contiguous block when the detector changes. A nearby
 line alone is insufficient evidence of a match. Record confirmed location
 differences separately from true missing detections and independently valid
 local findings.
+
+Use `scripts/compare-sonar-inventories.py` with a complete SonarCloud JSON
+inventory and a single local analysis log (or a normalized JSON inventory
+containing source ranges). Supply the same analyzed source revision for both
+inputs. The script rejects incomplete paginated inventories and mismatched
+revisions, preserves same-line counts, and reports potential relocated issues
+for manual review rather than automatically counting them as matches.
+
+```sh
+python3 scripts/compare-sonar-inventories.py \
+  --local local.log --cloud cloud.json --source-root . \
+  --local-revision "$revision" --cloud-revision "$revision"
+```
+
+Run `python3 scripts/test-compare-sonar-inventories.py` to exercise duplicate
+locations, distinct columns, and contiguous commented-out blocks.
