@@ -307,12 +307,12 @@ fi
 test "$(sha256sum "$reliability_source")" = "$reliability_checksum"
 
 /usr/bin/time -f '%e %M' -o "$logs/standard-sonar-way-timing.txt" \
-    fixture_maven -B -ntp -o -f "$reliability_fixture" process-test-classes \
+    mvn "-DstaticAnalysis.pluginVersion=$plugin_version" -B -ntp -o -f "$reliability_fixture" process-test-classes \
         -DstaticAnalysis.profile=sonar-way-standard > "$logs/standard-sonar-way.log" 2>&1
 grep -F 'Activated 392 local Java rule(s).' "$logs/standard-sonar-way.log"
 
 /usr/bin/time -f '%e %M' -o "$logs/sonar-way-reliability-timing.txt" \
-    fixture_maven -B -ntp -o -f "$reliability_fixture" process-test-classes \
+    mvn "-DstaticAnalysis.pluginVersion=$plugin_version" -B -ntp -o -f "$reliability_fixture" process-test-classes \
         -DstaticAnalysis.profile=sonar-way | tee "$logs/sonar-way-reliability.log"
 grep -F 'Activated 395 local Java rule(s).' "$logs/sonar-way-reliability.log"
 for rule in S2095 S2259 S3655; do
