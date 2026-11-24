@@ -139,6 +139,17 @@ fixture_maven -B -ntp -o -f "$null_fixture" process-test-classes -DstaticAnalysi
     | tee "$logs/null-safety-disabled.log"
 grep -F 'Sonar analysis: 0 violation(s).' "$logs/null-safety-disabled.log"
 
+predicate_fixture=src/it/null-predicate/pom.xml
+fixture_maven -B -ntp -f "$predicate_fixture" compile \
+    io.github.nbauma109:static-analysis-maven-plugin:"$plugin_version":check \
+    | tee "$logs/null-predicate.log"
+grep -E '\[WARNING\].*PredicateCases\.java:42 \[java:S2259\]' "$logs/null-predicate.log"
+grep -E '\[WARNING\].*PredicateCases\.java:57 \[java:S2259\]' "$logs/null-predicate.log"
+if grep -E '\[WARNING\].*PredicateCases\.java:(18|26|36) \[java:S2259\]' "$logs/null-predicate.log"; then
+    echo "A proven predicate guard must not report a null dereference." >&2
+    exit 1
+fi
+
 test_fixture=src/it/modern-test-rules/pom.xml
 java_major="$(java -XshowSettings:properties -version 2>&1 \
     | sed -n 's/^ *java.specification.version = \([0-9]*\).*$/\1/p' | head -1)"
