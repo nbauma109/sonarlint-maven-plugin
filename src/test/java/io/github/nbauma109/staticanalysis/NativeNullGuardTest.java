@@ -33,7 +33,7 @@ public class NativeNullGuardTest {
             if (start >= 0) {
                 int line = index + 1;
                 TextRange range = new TextRange(line, start, line, start + "value.length".length());
-                issues.add(new Issue("java:S2259", "Nullable receiver", Map.of(), range,
+                issues.add(new Issue("java:S2259", "A \"NullPointerException\" could be thrown; \"value\" is nullable here.", Map.of(), range,
                         input, List.of(), List.of(), Optional.empty()));
             }
         }

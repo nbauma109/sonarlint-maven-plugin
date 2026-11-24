@@ -96,7 +96,14 @@ final class NativeNullGuard {
         if (!RULE.equals(issue.getRuleKey()) || file == null || range == null) {
             return Optional.empty();
         }
-        return Optional.of(new Location(Path.of(file.uri()), range));
+        String message = issue.getMessage();
+        if (message == null || !message.startsWith("A \"NullPointerException\" could be thrown; \"")
+                || !message.endsWith("\" is nullable here.")) {
+            return Optional.empty();
+        }
+        String receiver = message.substring("A \"NullPointerException\" could be thrown; \"".length(),
+                message.length() - "\" is nullable here.".length());
+        return Optional.of(new Location(Path.of(file.uri()), range, receiver));
     }
 
     private static Set<Location> prove(AnalysisConfiguration configuration, Set<Location> candidates)
@@ -174,7 +181,7 @@ final class NativeNullGuard {
         return options;
     }
 
-    private record Location(Path file, TextRange range) {
+    private record Location(Path file, TextRange range, String receiver) {
     }
 
     private static final class GuardScanner extends TreePathScanner<Void, Void> {
@@ -197,8 +204,9 @@ final class NativeNullGuard {
         @Override
         public Void visitMemberSelect(MemberSelectTree tree, Void unused) {
             if (tree.getExpression() instanceof IdentifierTree receiver) {
-                Location selection = location(tree);
-                Location identifier = location(receiver);
+                String name = receiver.getName().toString();
+                Location selection = location(tree, name);
+                Location identifier = location(receiver, name);
                 if ((candidates.contains(selection) || candidates.contains(identifier))
                         && trees.getElement(new TreePath(getCurrentPath(), receiver)) instanceof VariableElement variable
                         && isLocal(variable) && guarded(variable)) {
@@ -209,17 +217,17 @@ final class NativeNullGuard {
             return super.visitMemberSelect(tree, unused);
         }
 
-        private Location location(Tree tree) {
+        private Location location(Tree tree, String receiver) {
             long start = trees.getSourcePositions().getStartPosition(unit, tree);
             long end = trees.getSourcePositions().getEndPosition(unit, tree);
             if (start < 0 || end < start) {
-                return new Location(file, new TextRange(0, 0, 0, 0));
+                return new Location(file, new TextRange(0, 0, 0, 0), receiver);
             }
             return new Location(file, new TextRange(
                     (int) unit.getLineMap().getLineNumber(start),
                     (int) unit.getLineMap().getColumnNumber(start) - 1,
                     (int) unit.getLineMap().getLineNumber(end),
-                    (int) unit.getLineMap().getColumnNumber(end) - 1));
+                    (int) unit.getLineMap().getColumnNumber(end) - 1), receiver);
         }
 
         private static boolean isLocal(VariableElement variable) {
