@@ -2,6 +2,7 @@
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
+source scripts/fixture-maven.sh
 : "${RUNNER_TEMP:?A temporary runtime directory is required}"
 fixture="$PWD/src/it/complementary-eclipse"
 source_file="$fixture/src/main/java/example/ComplementarySystemProperties.java"
@@ -10,7 +11,7 @@ output="$PWD/target/real-eclipse-complementary"
 mkdir -p "$output"
 
 source_hash="$(sha256sum "$source_file")"
-mvn -B -ntp -f "$fixture/pom.xml" process-test-classes \
+fixture_maven -B -ntp -f "$fixture/pom.xml" process-test-classes \
     -DstaticAnalysis.profile=sonar-way \
     -DstaticAnalysis.eclipseEnabled=true \
     "-DstaticAnalysis.eclipseExecutable=$RUNNER_TEMP/eclipse-check.sh" \

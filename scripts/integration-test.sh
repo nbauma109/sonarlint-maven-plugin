@@ -2,6 +2,7 @@
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
+source scripts/fixture-maven.sh
 mkdir -p target/integration-tests
 fixture=src/it/cognitive-complexity/pom.xml
 logs=target/integration-tests
@@ -12,14 +13,14 @@ python3 scripts/verify-eclipse-review-queue.py
 mvn -B -ntp clean install
 mkdir -p "$logs"
 
-mvn -B -ntp -f "$fixture" process-test-classes -DstaticAnalysis.profile=complexity | tee "$logs/warnings.log"
+fixture_maven -B -ntp -f "$fixture" process-test-classes -DstaticAnalysis.profile=complexity | tee "$logs/warnings.log"
 grep -E '\[WARNING\].*ComplexMethod\.java:[0-9]+.*\[java:S3776\]' "$logs/warnings.log"
 grep -F 'Sonar analysis: 1 violation(s).' "$logs/warnings.log"
 
-mvn -B -ntp -o -f "$fixture" process-test-classes -DstaticAnalysis.profile=complexity | tee "$logs/offline.log"
+fixture_maven -B -ntp -o -f "$fixture" process-test-classes -DstaticAnalysis.profile=complexity | tee "$logs/offline.log"
 grep -E '\[WARNING\].*ComplexMethod\.java:[0-9]+.*\[java:S3776\]' "$logs/offline.log"
 
-if mvn -B -ntp -o -f "$fixture" process-test-classes -DstaticAnalysis.profile=complexity -DstaticAnalysis.failOnViolation=true > "$logs/failure.log" 2>&1; then
+if fixture_maven -B -ntp -o -f "$fixture" process-test-classes -DstaticAnalysis.profile=complexity -DstaticAnalysis.failOnViolation=true > "$logs/failure.log" 2>&1; then
     cat "$logs/failure.log"
     echo "Expected the build to fail for a cognitive complexity violation." >&2
     exit 1
@@ -27,11 +28,11 @@ fi
 cat "$logs/failure.log"
 grep -F 'Sonar found 1 violation(s).' "$logs/failure.log"
 
-mvn -B -ntp -o -f "$fixture" process-test-classes -DstaticAnalysis.profile=complexity -DstaticAnalysis.cognitiveComplexityThreshold=100 | tee "$logs/clean.log"
+fixture_maven -B -ntp -o -f "$fixture" process-test-classes -DstaticAnalysis.profile=complexity -DstaticAnalysis.cognitiveComplexityThreshold=100 | tee "$logs/clean.log"
 grep -F 'Sonar analysis: 0 violation(s).' "$logs/clean.log"
 
 logger_fixture=src/it/logger-categories/pom.xml
-if mvn -B -ntp -f "$logger_fixture" package > "$logs/logger-category-strict.log" 2>&1; then
+if fixture_maven -B -ntp -f "$logger_fixture" package > "$logs/logger-category-strict.log" 2>&1; then
     cat "$logs/logger-category-strict.log"
     echo "Expected the normal Maven build to fail at process-test-classes for an incorrect logger category." >&2
     exit 1
@@ -47,13 +48,13 @@ if [ "$logger_issues" -ne 1 ]; then
 fi
 grep -F 'Sonar found 1 violation(s).' "$logs/logger-category-strict.log"
 
-mvn -B -ntp -o -f "$logger_fixture" process-test-classes \
+fixture_maven -B -ntp -o -f "$logger_fixture" process-test-classes \
     -DstaticAnalysis.disabledRules=java:S3416 | tee "$logs/logger-category-disabled.log"
 grep -F 'Activated 394 local Java rule(s).' "$logs/logger-category-disabled.log"
 grep -F 'Sonar analysis: 0 violation(s).' "$logs/logger-category-disabled.log"
 
 embedded_fixture=src/it/embedded-eclipse/pom.xml
-if mvn -B -ntp -f "$embedded_fixture" process-test-classes > "$logs/embedded-eclipse-strict.log" 2>&1; then
+if fixture_maven -B -ntp -f "$embedded_fixture" process-test-classes > "$logs/embedded-eclipse-strict.log" 2>&1; then
     cat "$logs/embedded-eclipse-strict.log"
     echo "Expected bundled JDT Core finality cleanup to fail the Maven build." >&2
     exit 1
@@ -66,14 +67,14 @@ grep -F 'Eclipse cleanup analysis: 1 violation(s).' "$logs/embedded-eclipse-stri
 grep -F 'Static analysis found 1 violation(s).' "$logs/embedded-eclipse-strict.log"
 
 embedded_profile="$(pwd)/src/it/embedded-eclipse/eclipse-private-fields-final.xml"
-mvn -B -ntp -f "$embedded_fixture" process-test-classes \
+fixture_maven -B -ntp -f "$embedded_fixture" process-test-classes \
     -DstaticAnalysis.failOnViolation=false \
     "-DstaticAnalysis.eclipseCleanupProfile=$embedded_profile" \
     | tee "$logs/embedded-eclipse-profile.log"
 grep -F 'Eclipse cleanup analysis: 1 violation(s).' "$logs/embedded-eclipse-profile.log"
 
 unsupported_profile="$(pwd)/src/it/embedded-eclipse/eclipse-unsupported-cleanup.xml"
-if mvn -B -ntp -f "$embedded_fixture" process-test-classes \
+if fixture_maven -B -ntp -f "$embedded_fixture" process-test-classes \
     "-DstaticAnalysis.eclipseCleanupProfile=$unsupported_profile" \
     > "$logs/embedded-eclipse-unsupported.log" 2>&1; then
     cat "$logs/embedded-eclipse-unsupported.log"
@@ -83,12 +84,12 @@ fi
 grep -F 'The embedded Eclipse engine does not support cleanup: cleanup.make_parameters_final' \
     "$logs/embedded-eclipse-unsupported.log"
 
-mvn -B -ntp -o -f "$embedded_fixture" process-test-classes \
+fixture_maven -B -ntp -o -f "$embedded_fixture" process-test-classes \
     -DstaticAnalysis.eclipseEnabled=false | tee "$logs/embedded-eclipse-disabled.log"
 grep -F 'Sonar analysis: 0 violation(s).' "$logs/embedded-eclipse-disabled.log"
 
 production_fixture=src/it/modern-production-rules/pom.xml
-if mvn -B -ntp -o -f "$production_fixture" process-test-classes \
+if fixture_maven -B -ntp -o -f "$production_fixture" process-test-classes \
     > "$logs/modern-production-strict.log" 2>&1; then
     cat "$logs/modern-production-strict.log"
     echo "Expected supplemental production checks to fail the build." >&2
@@ -100,12 +101,12 @@ for rule in S3398 S9398 S9438; do
 done
 grep -F 'Sonar found 4 violation(s).' "$logs/modern-production-strict.log"
 test "$(grep -Ec '\[WARNING\].*\[java:S9438\]' "$logs/modern-production-strict.log")" -eq 2
-mvn -B -ntp -o -f "$production_fixture" process-test-classes \
+fixture_maven -B -ntp -o -f "$production_fixture" process-test-classes \
     -DstaticAnalysis.disabledRules=java:S3398,java:S9398,java:S9438 \
     | tee "$logs/modern-production-disabled.log"
 
 null_fixture=src/it/null-safety/pom.xml
-if mvn -B -ntp -o -f "$null_fixture" process-test-classes > "$logs/null-safety-strict.log" 2>&1; then
+if fixture_maven -B -ntp -o -f "$null_fixture" process-test-classes > "$logs/null-safety-strict.log" 2>&1; then
     cat "$logs/null-safety-strict.log"
     echo "Expected unguarded null dereference to fail the build." >&2
     exit 1
@@ -114,7 +115,7 @@ grep -E '\[WARNING\].*NullSafetyIssues\.java:[0-9]+ \[java:S2259\]' \
     "$logs/null-safety-strict.log"
 test "$(grep -Ec '\[WARNING\].*\[java:S2259\]' "$logs/null-safety-strict.log")" -eq 1
 grep -F 'Sonar found 1 violation(s).' "$logs/null-safety-strict.log"
-mvn -B -ntp -o -f "$null_fixture" process-test-classes -DstaticAnalysis.disabledRules=java:S2259 \
+fixture_maven -B -ntp -o -f "$null_fixture" process-test-classes -DstaticAnalysis.disabledRules=java:S2259 \
     | tee "$logs/null-safety-disabled.log"
 grep -F 'Sonar analysis: 0 violation(s).' "$logs/null-safety-disabled.log"
 
@@ -130,7 +131,7 @@ for compiler_release in 17 21 22 25; do
         expected_test_issues=3
     fi
     log="$logs/modern-test-java-$compiler_release.log"
-    if mvn -B -ntp -o -f "$test_fixture" clean test -Dmaven.compiler.release="$compiler_release" \
+    if fixture_maven -B -ntp -o -f "$test_fixture" clean test -Dmaven.compiler.release="$compiler_release" \
         > "$log" 2>&1; then
         cat "$log"
         echo "Expected supplemental test checks to fail the build." >&2
@@ -143,7 +144,7 @@ for compiler_release in 17 21 22 25; do
     elif grep -F '[java:S7467]' "$log"; then
         exit 1
     fi
-    mvn -B -ntp -o -f "$test_fixture" test -Dmaven.compiler.release="$compiler_release" \
+    fixture_maven -B -ntp -o -f "$test_fixture" test -Dmaven.compiler.release="$compiler_release" \
         -DstaticAnalysis.disabledRules=java:S8786,java:S7467 \
         | tee "$logs/modern-test-disabled-java-$compiler_release.log"
 done
@@ -151,12 +152,12 @@ done
 bash scripts/java-version-test.sh "$java_major"
 
 priority_fixture=src/it/priority-rules/pom.xml
-mvn -B -ntp -o -f "$priority_fixture" process-test-classes | tee "$logs/priority.log"
+fixture_maven -B -ntp -o -f "$priority_fixture" process-test-classes | tee "$logs/priority.log"
 for rule in S100 S107 S112 S1128 S1192 S1066 S1481 S3776; do
     grep -E "\\[WARNING\\].*PriorityViolations\\.java:[0-9]+.*\\[java:$rule\\]" "$logs/priority.log"
 done
 
-mvn -B -ntp -o -f "$priority_fixture" process-test-classes \
+fixture_maven -B -ntp -o -f "$priority_fixture" process-test-classes \
     -DstaticAnalysis.profile=none -DstaticAnalysis.enabledRules=java:S100,java:S107 \
     -DstaticAnalysis.disabledRules=java:S107 | tee "$logs/selection.log"
 grep -F '[java:S100]' "$logs/selection.log"
@@ -165,14 +166,14 @@ if grep -F '[java:S107]' "$logs/selection.log"; then
     exit 1
 fi
 
-if mvn -B -ntp -o -f "$priority_fixture" process-test-classes \
+if fixture_maven -B -ntp -o -f "$priority_fixture" process-test-classes \
     -DstaticAnalysis.profile=none -DstaticAnalysis.enabledRules=javasecurity:S3649 > "$logs/unsupported.log" 2>&1; then
     echo "Expected unsupported rule selection to fail." >&2
     exit 1
 fi
 grep -F 'Rule javasecurity:S3649 is not an eligible standard production Java rule' "$logs/unsupported.log"
 
-mvn -B -ntp -o -f "$priority_fixture" process-test-classes \
+fixture_maven -B -ntp -o -f "$priority_fixture" process-test-classes \
     -DstaticAnalysis.profile=sonar-way | tee "$logs/sonar-way.log"
 grep -F 'Activated 395 local Java rule(s).' "$logs/sonar-way.log"
 grep -F '[java:S3776]' "$logs/sonar-way.log"
@@ -183,7 +184,7 @@ done
 
 aesthetic_source=src/it/priority-rules/src/main/java/example/AestheticPreferences.java
 aesthetic_checksum="$(sha256sum "$aesthetic_source")"
-mvn -B -ntp -o -f "$priority_fixture" process-test-classes \
+fixture_maven -B -ntp -o -f "$priority_fixture" process-test-classes \
     -DstaticAnalysis.profile=none \
     -DstaticAnalysis.enabledRules=java:S1124,java:S1155 \
     | tee "$logs/aesthetic-conventions.log"
@@ -203,7 +204,7 @@ eclipse_profile="$(pwd)/src/it/priority-rules/eclipse-cleanup-profile.xml"
 source_file="src/it/priority-rules/src/main/java/example/PriorityViolations.java"
 source_checksum="$(sha256sum "$source_file")"
 
-mvn -B -ntp -o -f "$priority_fixture" process-test-classes \
+fixture_maven -B -ntp -o -f "$priority_fixture" process-test-classes \
     -DstaticAnalysis.eclipseEnabled=true \
     -DstaticAnalysis.eclipseExecutable="$eclipse_executable" \
     -DstaticAnalysis.eclipseCleanupProfile="$eclipse_profile" | tee "$logs/eclipse.log"
@@ -215,7 +216,7 @@ if grep -F '[eclipse:cleanup.remove_unused_imports]' "$logs/eclipse.log"; then
     exit 1
 fi
 
-mvn -B -ntp -o -f "$priority_fixture" process-test-classes \
+fixture_maven -B -ntp -o -f "$priority_fixture" process-test-classes \
     -DstaticAnalysis.eclipseEnabled=true \
     -DstaticAnalysis.eclipseExecutable="$eclipse_executable" \
     -DstaticAnalysis.eclipseCleanupProfile="$eclipse_profile" \
@@ -230,7 +231,7 @@ if grep -F 'Remove unnecessary cast' "$logs/eclipse-mapped.log"         || grep 
     exit 1
 fi
 
-mvn -B -ntp -o -f "$priority_fixture" process-test-classes \
+fixture_maven -B -ntp -o -f "$priority_fixture" process-test-classes \
     -DstaticAnalysis.eclipseEnabled=true \
     -DstaticAnalysis.eclipseExecutable="$eclipse_executable" \
     -DstaticAnalysis.eclipseCleanupProfile="$eclipse_profile" \
@@ -240,7 +241,7 @@ grep -F 'Remove unnecessary cast' "$logs/eclipse-mapped-disabled.log"
 grep -F 'Remove unused local variable' "$logs/eclipse-mapped-disabled.log"
 grep -F 'Duplicate Eclipse findings suppressed: 1.' "$logs/eclipse-mapped-disabled.log"
 
-mvn -B -ntp -o -f "$priority_fixture" process-test-classes \
+fixture_maven -B -ntp -o -f "$priority_fixture" process-test-classes \
     -DstaticAnalysis.eclipseEnabled=true \
     -DstaticAnalysis.eclipseExecutable="$eclipse_executable" \
     -DstaticAnalysis.eclipseCleanupProfile="$eclipse_profile" \
@@ -248,7 +249,7 @@ mvn -B -ntp -o -f "$priority_fixture" process-test-classes \
 grep -F '[eclipse:cleanup.remove_unused_imports]' "$logs/eclipse-without-deduplication.log"
 grep -F 'Duplicate Eclipse findings suppressed: 0.' "$logs/eclipse-without-deduplication.log"
 
-mvn -B -ntp -o -f "$priority_fixture" process-test-classes \
+fixture_maven -B -ntp -o -f "$priority_fixture" process-test-classes \
     -DstaticAnalysis.eclipseEnabled=true \
     -DstaticAnalysis.eclipseExecutable="$eclipse_executable" \
     -DstaticAnalysis.eclipseCleanupProfile="$eclipse_profile" \
@@ -257,7 +258,7 @@ grep -F '[eclipse:cleanup.remove_unused_imports]' "$logs/eclipse-without-sonar-i
 grep -F 'Eclipse cleanup analysis: 4 violation(s).' "$logs/eclipse-without-sonar-import.log"
 grep -F 'Duplicate Eclipse findings suppressed: 1.' "$logs/eclipse-without-sonar-import.log"
 
-if mvn -B -ntp -o -f "$priority_fixture" process-test-classes \
+if fixture_maven -B -ntp -o -f "$priority_fixture" process-test-classes \
     -DstaticAnalysis.eclipseEnabled=true \
     -DstaticAnalysis.eclipseExecutable="$eclipse_executable" \
     -DstaticAnalysis.eclipseCleanupProfile="$eclipse_profile" \
@@ -267,7 +268,7 @@ if mvn -B -ntp -o -f "$priority_fixture" process-test-classes \
 fi
 grep -F 'Static analysis found' "$logs/eclipse-fail.log"
 
-if mvn -B -ntp -o -f "$priority_fixture" process-test-classes \
+if fixture_maven -B -ntp -o -f "$priority_fixture" process-test-classes \
     -DstaticAnalysis.eclipseEnabled=true \
     -DstaticAnalysis.eclipseExecutable="$eclipse_executable" \
     -DstaticAnalysis.eclipseCleanupProfile="$(pwd)/src/it/priority-rules/missing-profile.xml" \
@@ -283,7 +284,7 @@ reliability_fixture=src/it/reliability/pom.xml
 reliability_source=src/it/reliability/src/main/java/example/ReliabilityIssues.java
 reliability_checksum="$(sha256sum "$reliability_source")"
 
-mvn -B -ntp -o -f "$reliability_fixture" process-test-classes \
+fixture_maven -B -ntp -o -f "$reliability_fixture" process-test-classes \
     -DstaticAnalysis.profile=reliability | tee "$logs/reliability.log"
 grep -F 'Activated 3 local Java rule(s).' "$logs/reliability.log"
 grep -F 'Sonar analysis: 3 violation(s).' "$logs/reliability.log"
@@ -295,7 +296,7 @@ for rule in S2095 S2259 S3655; do
     fi
 done
 
-mvn -B -ntp -o -f "$reliability_fixture" process-test-classes \
+fixture_maven -B -ntp -o -f "$reliability_fixture" process-test-classes \
     -DstaticAnalysis.profile=reliability \
     -DstaticAnalysis.disabledRules=java:S2259 | tee "$logs/reliability-disabled.log"
 grep -F 'Sonar analysis: 2 violation(s).' "$logs/reliability-disabled.log"
@@ -306,12 +307,12 @@ fi
 test "$(sha256sum "$reliability_source")" = "$reliability_checksum"
 
 /usr/bin/time -f '%e %M' -o "$logs/standard-sonar-way-timing.txt" \
-    mvn -B -ntp -o -f "$reliability_fixture" process-test-classes \
+    mvn "-DstaticAnalysis.pluginVersion=$plugin_version" -B -ntp -o -f "$reliability_fixture" process-test-classes \
         -DstaticAnalysis.profile=sonar-way-standard > "$logs/standard-sonar-way.log" 2>&1
 grep -F 'Activated 392 local Java rule(s).' "$logs/standard-sonar-way.log"
 
 /usr/bin/time -f '%e %M' -o "$logs/sonar-way-reliability-timing.txt" \
-    mvn -B -ntp -o -f "$reliability_fixture" process-test-classes \
+    mvn "-DstaticAnalysis.pluginVersion=$plugin_version" -B -ntp -o -f "$reliability_fixture" process-test-classes \
         -DstaticAnalysis.profile=sonar-way | tee "$logs/sonar-way-reliability.log"
 grep -F 'Activated 395 local Java rule(s).' "$logs/sonar-way-reliability.log"
 for rule in S2095 S2259 S3655; do

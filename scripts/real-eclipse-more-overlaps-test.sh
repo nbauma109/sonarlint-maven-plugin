@@ -2,6 +2,7 @@
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
+source scripts/fixture-maven.sh
 : "${RUNNER_TEMP:?A temporary runner directory is required}"
 fixture="$PWD/src/it/verified-overlaps"
 file="$fixture/src/main/java/example/MoreOverlapChecks.java"
@@ -18,17 +19,17 @@ common=(
 )
 all_rules="java:S2129,java:S2293,java:S3878,java:S3626"
 
-mvn -B -ntp -f "$fixture/pom.xml" process-test-classes \
+fixture_maven -B -ntp -f "$fixture/pom.xml" process-test-classes \
     "${common[@]}" "-DstaticAnalysis.enabledRules=$all_rules" \
     | tee "$output/maven-combined.log"
 cp "$fixture/target/static-analysis/eclipse/diagnostics.json" "$output/maven.json"
 
-mvn -B -ntp -f "$fixture/pom.xml" process-test-classes \
+fixture_maven -B -ntp -f "$fixture/pom.xml" process-test-classes \
     "${common[@]}" "-DstaticAnalysis.enabledRules=$all_rules" \
     -DstaticAnalysis.eclipseDuplicatePolicy=none \
     | tee "$output/maven-unfiltered.log"
 
-mvn -B -ntp -f "$fixture/pom.xml" process-test-classes \
+fixture_maven -B -ntp -f "$fixture/pom.xml" process-test-classes \
     "${common[@]}" -DstaticAnalysis.enabledRules=java:S2129 \
     | tee "$output/maven-fallback.log"
 

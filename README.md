@@ -17,6 +17,12 @@ mvn clean install
 bash scripts/integration-test.sh
 ```
 
+The integration scripts resolve the plugin version from the root `pom.xml` so
+that release builds and development snapshots test the artifact built from the
+current checkout. To run an individual Maven fixture, source
+`scripts/fixture-maven.sh` from the repository root and use `fixture_maven`
+in place of `mvn` after installing the plugin locally.
+
 The script verifies source-located findings on Java 8 fixtures, offline execution, optional build failure, configurable complexity threshold, the priority and Sonar Way profiles, rule selection and unsupported-rule rejection.
 
 ## Use in a Maven build

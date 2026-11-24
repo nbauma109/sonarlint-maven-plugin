@@ -2,6 +2,7 @@
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
+source scripts/fixture-maven.sh
 : "${RUNNER_TEMP:?The temporary runner directory is required}"
 fixture="$PWD/src/it/broad-complementary"
 source_file="$fixture/src/main/java/example/BroadComplementaryCleanups.java"
@@ -11,7 +12,7 @@ original_sha="$(sha256sum "$source_file")"
 module_file="$fixture/src/main/java/module-info.java"
 module_sha="$(sha256sum "$module_file")"
 
-mvn -B -ntp -f "$fixture/pom.xml" process-test-classes \
+fixture_maven -B -ntp -f "$fixture/pom.xml" process-test-classes \
     -DstaticAnalysis.profile=sonar-way \
     -DstaticAnalysis.eclipseEnabled=true \
     "-DstaticAnalysis.eclipseExecutable=$RUNNER_TEMP/eclipse-check.sh" \
@@ -91,7 +92,7 @@ PY
 
 recommended="$fixture/eclipse-cleanups-recommended.xml"
 
-mvn -B -ntp -f "$fixture/pom.xml" process-test-classes \
+fixture_maven -B -ntp -f "$fixture/pom.xml" process-test-classes \
     -DstaticAnalysis.profile=sonar-way \
     -DstaticAnalysis.eclipseEnabled=true \
     "-DstaticAnalysis.eclipseExecutable=$RUNNER_TEMP/eclipse-check.sh" \
@@ -136,7 +137,7 @@ PY
 
 aesthetics="$fixture/eclipse-cleanups-aesthetics.xml"
 
-mvn -B -ntp -f "$fixture/pom.xml" process-test-classes \
+fixture_maven -B -ntp -f "$fixture/pom.xml" process-test-classes \
     -DstaticAnalysis.profile=sonar-way \
     -DstaticAnalysis.eclipseEnabled=true \
     "-DstaticAnalysis.eclipseExecutable=$RUNNER_TEMP/eclipse-check.sh" \

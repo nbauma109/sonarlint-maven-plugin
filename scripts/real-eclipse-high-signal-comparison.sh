@@ -2,6 +2,7 @@
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
+source scripts/fixture-maven.sh
 : "${RUNNER_TEMP:?The runner temporary directory is required}"
 fixture="$PWD/src/it/high-signal-eclipse"
 source_file="$fixture/src/main/java/example/HighSignalCleanupCandidates.java"
@@ -11,7 +12,7 @@ original_checksum="$(sha256sum "$source_file")"
 
 for option in precompile_regex static_inner_class; do
     profile="$fixture/eclipse-$option.xml"
-    mvn -B -ntp -f "$fixture/pom.xml" process-test-classes \
+    fixture_maven -B -ntp -f "$fixture/pom.xml" process-test-classes \
         -DstaticAnalysis.profile=none \
         -DstaticAnalysis.enabledRules=java:S4248,java:S2694 \
         -DstaticAnalysis.eclipseEnabled=true \
@@ -77,7 +78,7 @@ PY
     if [ "$option" = "static_inner_class" ]; then
         for system in maven gradle; do
             if [ "$system" = "maven" ]; then
-                mvn -B -ntp -f "$fixture/pom.xml" process-test-classes \
+                fixture_maven -B -ntp -f "$fixture/pom.xml" process-test-classes \
                     -DstaticAnalysis.profile=none \
                     -DstaticAnalysis.enabledRules=java:S4248,java:S2694 \
                     -DstaticAnalysis.eclipseEnabled=true \
@@ -85,7 +86,7 @@ PY
                     "-DstaticAnalysis.eclipseCleanupProfile=$profile" \
                     -DstaticAnalysis.eclipseDuplicatePolicy=none \
                     | tee "$output/$system-static-unfiltered.log"
-                mvn -B -ntp -f "$fixture/pom.xml" process-test-classes \
+                fixture_maven -B -ntp -f "$fixture/pom.xml" process-test-classes \
                     -DstaticAnalysis.profile=none \
                     -DstaticAnalysis.enabledRules=java:S4248 \
                     -DstaticAnalysis.eclipseEnabled=true \
@@ -128,7 +129,7 @@ PY
 done
 high_signal_profile="$fixture/eclipse-cleanups-high-signal.xml"
 
-mvn -B -ntp -f "$fixture/pom.xml" process-test-classes \
+fixture_maven -B -ntp -f "$fixture/pom.xml" process-test-classes \
     -DstaticAnalysis.profile=sonar-way \
     -DstaticAnalysis.eclipseEnabled=true \
     "-DstaticAnalysis.eclipseExecutable=$RUNNER_TEMP/eclipse-check.sh" \
