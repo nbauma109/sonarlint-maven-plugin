@@ -138,7 +138,13 @@ public final class CheckTestsMojo extends AbstractMojo {
         Map<String, String> properties = new TreeMap<>();
         properties.put("sonar.java.binaries", project.getBuild().getOutputDirectory());
         properties.put("sonar.java.test.binaries", project.getBuild().getTestOutputDirectory());
-        String libraries = String.join(",", project.getTestClasspathElements());
+        List<String> classpath = new ArrayList<>();
+        for (String element : project.getTestClasspathElements()) {
+            if (Files.exists(Path.of(element))) {
+                classpath.add(element);
+            }
+        }
+        String libraries = String.join(",", classpath);
         properties.put("sonar.java.libraries", libraries);
         properties.put("sonar.java.test.libraries", libraries);
         Charset charset = Optional.ofNullable(encoding).filter(value -> !value.isBlank())

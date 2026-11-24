@@ -4,7 +4,7 @@ import java.io.IOException;
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 
-public class NativeTestIssues {
+public final class NativeTestIssues {
     @Test
     public void unnecessaryThrows() throws Exception {
         assertEquals(1, new Value().number());

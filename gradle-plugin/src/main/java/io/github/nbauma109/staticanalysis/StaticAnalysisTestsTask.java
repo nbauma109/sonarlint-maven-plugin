@@ -2,8 +2,9 @@ package io.github.nbauma109.staticanalysis;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Path;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -116,11 +117,15 @@ public abstract class StaticAnalysisTestsTask extends DefaultTask {
         Map<String, String> properties = new TreeMap<>();
         List<String> binaries = new ArrayList<>();
         for (File file : sourceSet.getOutput().getClassesDirs().getFiles()) {
-            binaries.add(file.getAbsolutePath());
+            if (file.isDirectory()) {
+                binaries.add(file.getAbsolutePath());
+            }
         }
         List<String> libraries = new ArrayList<>();
         for (File file : sourceSet.getCompileClasspath().getFiles()) {
-            libraries.add(file.getAbsolutePath());
+            if (Files.exists(file.toPath())) {
+                libraries.add(file.getAbsolutePath());
+            }
         }
         properties.put("sonar.java.binaries", String.join(",", binaries));
         properties.put("sonar.java.test.binaries", String.join(",", binaries));
