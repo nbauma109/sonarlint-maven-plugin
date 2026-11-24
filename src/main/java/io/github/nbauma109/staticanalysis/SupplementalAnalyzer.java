@@ -350,6 +350,9 @@ final class SupplementalAnalyzer {
             if (enabledRules.contains("java:S8786")) {
                 checkRegularExpression(tree);
             }
+            if (enabledRules.contains("java:S9412")) {
+                checkCollectionsSort(tree);
+            }
             if (enabledRules.contains("java:S2259")) {
                 inspectNullSafety(tree);
             }
@@ -495,6 +498,16 @@ final class SupplementalAnalyzer {
             return false;
         }
 
+        private void checkCollectionsSort(MethodInvocationTree tree) {
+            Element element = trees.getElement(getCurrentPath());
+            if (element instanceof ExecutableElement method
+                    && method.getEnclosingElement() instanceof TypeElement owner
+                    && "java.util.Collections".contentEquals(owner.getQualifiedName())
+                    && "sort".contentEquals(method.getSimpleName())) {
+                report(tree, "java:S9412", "Replace this \"Collections.sort()\" with \"List.sort()\".");
+            }
+        }
+
         private void checkRegularExpression(MethodInvocationTree tree) {
             if (!(tree.getMethodSelect() instanceof MemberSelectTree select)
                     || tree.getArguments().isEmpty()
@@ -529,7 +542,21 @@ final class SupplementalAnalyzer {
             }
             String remainder = normalized.substring(quantifier + 1);
             return remainder.equals("\r?\n") || remainder.equals("\n")
-                    || remainder.equals("\r\n");
+                    || remainder.equals("\r\n") || isRequiredEscapedDelimiter(remainder);
+        }
+
+        private static boolean isRequiredEscapedDelimiter(String remainder) {
+            if (remainder.length() < 2 || remainder.charAt(0) != '\\'
+                    || "{}[]().+*?|^$".indexOf(remainder.charAt(1)) < 0) {
+                return false;
+            }
+            String suffix = remainder.substring(2);
+            if (suffix.isEmpty()) {
+                return true;
+            }
+            int end = leadingWhitespaceEnd(suffix);
+            return end > 0 && end + 1 == suffix.length()
+                    && "*+".indexOf(suffix.charAt(end)) >= 0;
         }
 
         private static int leadingWhitespaceEnd(String pattern) {

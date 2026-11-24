@@ -24,6 +24,17 @@ public class SupplementalRegexTest {
         assertEquals(List.of(9L, 9L, 13L, 17L), lines);
     }
     @Test
+    public void detectsWhitespaceBeforeRequiredEscapedDelimiters() throws Exception {
+        Path fixture = Path.of("src/it/regex-delimiters").toAbsolutePath();
+        Path source = fixture.resolve("src/test/java/example/DelimiterRegexIssues.java");
+        List<SupplementalAnalyzer.Finding> findings = SupplementalAnalyzer.analyze(
+                fixture, List.of(source), List.of(), "17", Set.of("java:S8786"));
+        assertEquals(2, findings.size());
+        assertEquals(5L, findings.get(0).line());
+        assertEquals(9L, findings.get(1).line());
+    }
+
+    @Test
     public void preservesDistinctOccurrencesOnTheSameLine() {
         SupplementalAnalyzer.Finding first = new SupplementalAnalyzer.Finding(
                 "Example.java", 9, "java:S8786", "First occurrence");
