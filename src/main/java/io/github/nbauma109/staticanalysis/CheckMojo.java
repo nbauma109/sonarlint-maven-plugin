@@ -287,14 +287,16 @@ public final class CheckMojo extends AbstractMojo {
             }
             var activeRules = catalog.select(profile, enabledRules, disabledRules,
                     cognitiveComplexityThreshold, Optional.ofNullable(ruleParameters).orElse(List.of()));
+            List<ActiveRule> testRules = catalog.selectForTests(profile, enabledRules, disabledRules,
+                    cognitiveComplexityThreshold, Optional.ofNullable(ruleParameters).orElse(List.of()));
             Set<String> supplementalRules = RuleCatalog.supplementalRules(profile, enabledRules, disabledRules);
-            if (activeRules.isEmpty() && supplementalRules.isEmpty()) {
+            if (activeRules.isEmpty() && testRules.isEmpty() && supplementalRules.isEmpty()) {
                 getLog().info("No local Java rules selected.");
                 return new ProjectAnalysis(List.of(), List.of());
             }
             Map<Integer, List<JavaSourceFile>> groups = groupByRelease(files);
             List<Issue> sonarIssues = analyzeSonar(baseDirectory, workDirectory, binaries,
-                    analyzer, symbolicAnalyzer, activeRules, groups);
+                    analyzer, symbolicAnalyzer, activeRules, testRules, groups);
             Map<Integer, List<Path>> sourcePaths = new TreeMap<>();
             for (Map.Entry<Integer, List<JavaSourceFile>> group : groups.entrySet()) {
                 List<Path> paths = new ArrayList<>();
@@ -324,21 +326,39 @@ public final class CheckMojo extends AbstractMojo {
 
     private List<Issue> analyzeSonar(Path baseDirectory, Path workDirectory, Path binaries,
             Path analyzer, Path symbolicAnalyzer, List<ActiveRule> activeRules,
-            Map<Integer, List<JavaSourceFile>> groups)
+            List<ActiveRule> testRules, Map<Integer, List<JavaSourceFile>> groups)
             throws IOException, DependencyResolutionRequiredException {
-        if (activeRules.isEmpty()) {
+        if (activeRules.isEmpty() && testRules.isEmpty()) {
             return List.of();
         }
         getLog().info("Activated " + activeRules.size() + " local Java rule(s).");
+        if (!testRules.isEmpty()) {
+            getLog().info("Selected " + testRules.size() + " native test-source Java rule(s).");
+        }
         List<Issue> issues = new ArrayList<>();
         for (Map.Entry<Integer, List<JavaSourceFile>> group : groups.entrySet()) {
             Map<String, String> properties = analysisProperties(binaries);
             properties.put("sonar.java.source", Integer.toString(group.getKey()));
+            List<ActiveRule> selected = new ArrayList<>(activeRules);
+            if (group.getValue().stream().anyMatch(JavaSourceFile::isTest)) {
+                Set<String> keys = new LinkedHashSet<>();
+                for (ActiveRule rule : activeRules) {
+                    keys.add(rule.getRuleKey());
+                }
+                for (ActiveRule rule : testRules) {
+                    if (keys.add(rule.getRuleKey())) {
+                        selected.add(rule);
+                    }
+                }
+            }
+            if (selected.isEmpty()) {
+                continue;
+            }
             AnalysisConfiguration configuration = AnalysisConfiguration.builder()
                     .setBaseDir(baseDirectory)
                     .addInputFiles(group.getValue())
                     .putAllExtraProperties(properties)
-                    .addActiveRules(activeRules)
+                    .addActiveRules(selected)
                     .build();
             getLog().info("Analyzing " + group.getValue().size()
                     + " Java source file(s) locally at release " + group.getKey() + ".");
@@ -400,9 +420,15 @@ public final class CheckMojo extends AbstractMojo {
             }
         }
         if (!libraries.isEmpty()) {
-            String classpath = String.join(",", libraries);
-            properties.put("sonar.java.libraries", classpath);
-            properties.put("sonar.java.test.libraries", classpath);
+            properties.put("sonar.java.libraries", String.join(",", libraries));
+        }
+        List<String> testLibraries = new ArrayList<>();
+        if (Files.isDirectory(binaries)) {
+            testLibraries.add(binaries.toString());
+        }
+        testLibraries.addAll(libraries);
+        if (!testLibraries.isEmpty()) {
+            properties.put("sonar.java.test.libraries", String.join(",", testLibraries));
         }
         Optional.ofNullable(release).filter(value -> !value.isBlank())
                 .or(() -> Optional.ofNullable(source).filter(value -> !value.isBlank()))

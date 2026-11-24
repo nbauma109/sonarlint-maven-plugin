@@ -55,6 +55,7 @@ public final class StaticAnalysisGradlePlugin implements Plugin<Project> {
                     .register("staticAnalysisTests", StaticAnalysisTestsTask.class, task -> {
                         task.setAnalysisExtension(extension);
                         task.setSourceSet(tests);
+                        task.setAnalyzerConfiguration(analyzer);
                         task.dependsOn(project.getTasks().named("testClasses"));
                     });
             project.getTasks().named("check").configure(task -> task.dependsOn(analysis, testAnalysis));

@@ -146,8 +146,10 @@ final class RuleCatalog {
         for (String key : enabled) {
             if (!disabled.contains(key)) {
                 if (!SUPPLEMENTAL_ONLY.contains(key)) {
-                    requireEligible(key);
-                    selected.add(key);
+                    if (!testOnly(key)) {
+                        requireEligible(key);
+                        selected.add(key);
+                    }
                 }
             }
         }
@@ -157,13 +159,48 @@ final class RuleCatalog {
             }
         }
         selected.removeAll(disabled);
-        Map<String, Map<String, String>> overrides = parameterOverrides(configuration, selected);
+        Map<String, Map<String, String>> overrides = parameterOverrides(configuration, selected, true);
         List<ActiveRule> result = new ArrayList<>();
         for (String key : selected) {
             requireEligible(key);
             result.add(activeRule(key, threshold, overrides.getOrDefault(key, Map.of())));
         }
         return result;
+    }
+
+    List<ActiveRule> selectForTests(String profile, String enabledRules, String disabledRules,
+            int threshold, List<RuleParameters> configuration) {
+        Set<String> selected = new TreeSet<>();
+        Set<String> disabled = parseKeys(disabledRules);
+        Set<String> candidates = new TreeSet<>(profileRules(profile));
+        if ("sonar-way".equals(profile) || "sonar-way-reliability".equals(profile)
+                || "sonar-way-standard".equals(profile)) {
+            candidates.addAll(sonarWay);
+        }
+        candidates.addAll(parseKeys(enabledRules));
+        candidates.removeAll(disabled);
+        for (String key : candidates) {
+            if (testEligible(key, metadata.get(key))) {
+                selected.add(key);
+            }
+        }
+        Map<String, Map<String, String>> overrides = parameterOverrides(configuration, selected, false);
+        List<ActiveRule> result = new ArrayList<>();
+        for (String key : selected) {
+            result.add(activeRule(key, threshold, overrides.getOrDefault(key, Map.of())));
+        }
+        return result;
+    }
+
+    private boolean testOnly(String key) {
+        RuleMetadata rule = metadata.get(key);
+        return testEligible(key, rule) && "Tests".equals(rule.scope());
+    }
+
+    private static boolean testEligible(String key, RuleMetadata rule) {
+        return rule != null && !TEMPLATES.contains(key)
+                && "ready".equals(rule.status()) && !"Main".equals(rule.scope())
+                && !"SECURITY_HOTSPOT".equals(rule.type()) && !"VULNERABILITY".equals(rule.type());
     }
 
     static Set<String> supplementalRules(String profile, String enabledRules, String disabledRules) {
@@ -263,12 +300,15 @@ final class RuleCatalog {
         return keys;
     }
 
-    private static Map<String, Map<String, String>> parameterOverrides(
-            List<RuleParameters> configuration, Set<String> selected) {
+    private Map<String, Map<String, String>> parameterOverrides(
+            List<RuleParameters> configuration, Set<String> selected, boolean production) {
         Map<String, Map<String, String>> overrides = new LinkedHashMap<>();
         for (RuleParameters rule : configuration) {
             String key = rule.getKey();
             if (!selected.contains(key)) {
+                if (!production || testOnly(key)) {
+                    continue;
+                }
                 throw new IllegalArgumentException("Parameters configured for inactive rule: " + key);
             }
             if (overrides.putIfAbsent(key, rule.getProperties()) != null) {
