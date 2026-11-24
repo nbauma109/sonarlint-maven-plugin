@@ -251,6 +251,16 @@ The `check` goal analyzes production and test Java sources using the selected So
 
 See [the design](docs/design.md) and [licensing considerations](docs/licensing.md).
 
+## Generated sources
+
+Maven and Gradle exclude Java sources inside the configured build directory
+(`project.build.directory` or `layout.buildDirectory`) from local findings.
+This applies to both production and test sources, including sources registered
+by code generators. Additional source roots outside that directory are retained,
+even if their names contain "generated". Compiled generated classes remain on
+the classpath for semantic analysis. Generated files stored outside the build
+directory are not automatically recognized by this path-based policy.
+
 ## Gradle support (experimental)
 
 A separate Gradle binary plugin is maintained in [gradle-plugin](gradle-plugin/README.md),

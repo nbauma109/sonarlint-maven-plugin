@@ -13,6 +13,26 @@ python3 scripts/verify-eclipse-review-queue.py
 mvn -B -ntp clean install
 mkdir -p "$logs"
 
+generated_fixture=src/it/generated-sources
+generated_output="$generated_fixture/target/custom-output"
+rm -rf "$generated_output"
+mkdir -p "$generated_output/generated-sources/main" "$generated_output/generated-test-sources/test"
+cp -R "$generated_fixture/inputs/main/." "$generated_output/generated-sources/main/"
+cp -R "$generated_fixture/inputs/test/." "$generated_output/generated-test-sources/test/"
+fixture_maven -B -ntp -f "$generated_fixture/pom.xml" process-test-classes | tee "$logs/generated-sources.log"
+test -f "$generated_output/classes/example/GeneratedMain.class"
+test -f "$generated_output/test-classes/example/GeneratedTest.class"
+for name in HandwrittenMain AdditionalMain; do
+    grep -E "\\[WARNING\\].*${name}\\.java:[0-9]+ \\[java:S106\\]" "$logs/generated-sources.log"
+    grep -E "\\[WARNING\\].*${name}\\.java:[0-9]+ \\[java:S9438\\]" "$logs/generated-sources.log"
+done
+grep -E '\[WARNING\].*HandwrittenTest\.java:[0-9]+ \[java:S8786\]' "$logs/generated-sources.log"
+grep -F 'Test-source Java analysis: 1 violation(s).' "$logs/generated-sources.log"
+if grep -E '\[WARNING\].*Generated(Main|Test)\.java:[0-9]+ \[java:' "$logs/generated-sources.log"; then
+    echo "Generated sources must not produce analysis findings." >&2
+    exit 1
+fi
+
 fixture_maven -B -ntp -f "$fixture" process-test-classes -DstaticAnalysis.profile=complexity | tee "$logs/warnings.log"
 grep -E '\[WARNING\].*ComplexMethod\.java:[0-9]+.*\[java:S3776\]' "$logs/warnings.log"
 grep -F 'Sonar analysis: 1 violation(s).' "$logs/warnings.log"

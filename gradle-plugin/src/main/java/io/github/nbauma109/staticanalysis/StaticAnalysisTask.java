@@ -108,7 +108,13 @@ public abstract class StaticAnalysisTask extends DefaultTask {
         }
     }
 
+    private SourceAnalysisScope sourceScope(Path project) {
+        return new SourceAnalysisScope(project,
+                getProject().getLayout().getBuildDirectory().get().getAsFile().toPath());
+    }
+
     private List<JavaSourceFile> collectSources(Path project) throws IOException {
+        SourceAnalysisScope scope = sourceScope(project);
         Charset charset = StandardCharsets.UTF_8;
         List<JavaSourceFile> result = new ArrayList<>();
         List<File> candidates = sourceSet.getAllJava().getFiles().stream()
@@ -117,6 +123,9 @@ public abstract class StaticAnalysisTask extends DefaultTask {
                 .toList();
         for (File candidate : candidates) {
             Path sourceFile = candidate.toPath().toAbsolutePath().normalize();
+            if (!scope.includes(sourceFile)) {
+                continue;
+            }
             if (!sourceFile.startsWith(project)) {
                 throw new IOException("A Java source file is outside the project directory: " + sourceFile);
             }
@@ -225,13 +234,17 @@ public abstract class StaticAnalysisTask extends DefaultTask {
         if (extension.getEclipseTimeoutSeconds() <= 0) {
             throw new IOException("The Eclipse analysis timeout must be positive.");
         }
-        List<String> roots = paths(sourceSet.getJava().getSrcDirs(), true);
+        SourceAnalysisScope scope = sourceScope(project);
+        List<String> roots = scope.sourceRoots(paths(sourceSet.getJava().getSrcDirs(), true));
+        if (roots.isEmpty()) {
+            return new EclipseCleanupRunner.Result(List.of(), 0);
+        }
         List<String> libraries = paths(sourceSet.getCompileClasspath().getFiles(), false);
         String release = analysisProperties().get("sonar.java.source");
-        return EclipseCleanupRunner.run(extension.getEclipseExecutable().toPath(),
+        return scope.retainFindings(EclipseCleanupRunner.run(extension.getEclipseExecutable().toPath(),
                 extension.getEclipseCleanupProfile().toPath(), project, work.resolve("eclipse"),
                 release, roots, libraries, extension.getEclipseTimeoutSeconds(),
-                extension.getEclipseDuplicatePolicy(), sonar, getLogger()::lifecycle);
+                extension.getEclipseDuplicatePolicy(), sonar, getLogger()::lifecycle));
     }
 
     private void report(List<Issue> sonar, EclipseCleanupRunner.Result eclipse) {
