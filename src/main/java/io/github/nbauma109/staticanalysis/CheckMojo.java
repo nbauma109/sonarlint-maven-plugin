@@ -277,7 +277,7 @@ public final class CheckMojo extends AbstractMojo {
             }
             var activeRules = catalog.select(profile, enabledRules, disabledRules,
                     cognitiveComplexityThreshold, Optional.ofNullable(ruleParameters).orElse(List.of()));
-            Set<String> supplementalRules = catalog.supplementalRules(profile, enabledRules, disabledRules);
+            Set<String> supplementalRules = RuleCatalog.supplementalRules(profile, enabledRules, disabledRules);
             if (activeRules.isEmpty() && supplementalRules.isEmpty()) {
                 getLog().info("No local Java rules selected.");
                 return new ProjectAnalysis(List.of(), List.of());

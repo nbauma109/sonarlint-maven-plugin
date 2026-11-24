@@ -555,7 +555,8 @@ final class SupplementalAnalyzer {
             if (enabledRules.contains("java:S7467")) {
                 TreePath variablePath = new TreePath(getCurrentPath(), tree.getParameter());
                 Element variable = trees.getElement(variablePath);
-                if (variable != null && !"_".equals(tree.getParameter().getName().toString())) {
+                String name = tree.getParameter().getName().toString();
+                if (variable != null && !name.isEmpty() && !"_".equals(name)) {
                     int[] references = new int[1];
                     new TreePathScanner<Void, Void>() {
                         @Override
