@@ -119,36 +119,36 @@ mvn -B -ntp -o -f "$null_fixture" process-test-classes -DstaticAnalysis.disabled
 grep -F 'Sonar analysis: 0 violation(s).' "$logs/null-safety-disabled.log"
 
 test_fixture=src/it/modern-test-rules/pom.xml
-compiler_release=17
-expected_test_issues=2
 java_major="$(java -XshowSettings:properties -version 2>&1 \
     | sed -n 's/^ *java.specification.version = \([0-9]*\).*$/\1/p' | head -1)"
-if [ "$java_major" -ge 22 ]; then
-    compiler_release=22
-    expected_test_issues=3
-elif [ "$java_major" -ge 21 ]; then
-    compiler_release=21
-fi
-if mvn -B -ntp -o -f "$test_fixture" test -Dmaven.compiler.release="$compiler_release" \
-    > "$logs/modern-test-strict.log" 2>&1; then
-    cat "$logs/modern-test-strict.log"
-    echo "Expected supplemental test checks to fail the build." >&2
-    exit 1
-fi
-grep -F "Test-source analysis found $expected_test_issues violation(s)." \
-    "$logs/modern-test-strict.log"
-test "$(grep -Ec '\[WARNING\].*\[java:S8786\]' "$logs/modern-test-strict.log")" -eq 2
-if [ "$java_major" -ge 22 ]; then
-    grep -E '\[WARNING\].*ModernTestIssues\.java:[0-9]+ \[java:S7467\]' \
-        "$logs/modern-test-strict.log"
-else
-    if grep -F '[java:S7467]' "$logs/modern-test-strict.log"; then
+for compiler_release in 17 21 22 25; do
+    if [ "$compiler_release" -gt "$java_major" ]; then
+        continue
+    fi
+    expected_test_issues=2
+    if [ "$compiler_release" -ge 22 ]; then
+        expected_test_issues=3
+    fi
+    log="$logs/modern-test-java-$compiler_release.log"
+    if mvn -B -ntp -o -f "$test_fixture" clean test -Dmaven.compiler.release="$compiler_release" \
+        > "$log" 2>&1; then
+        cat "$log"
+        echo "Expected supplemental test checks to fail the build." >&2
         exit 1
     fi
-fi
-mvn -B -ntp -o -f "$test_fixture" test -Dmaven.compiler.release="$compiler_release" \
-    -DstaticAnalysis.disabledRules=java:S8786,java:S7467 \
-    | tee "$logs/modern-test-disabled.log"
+    grep -F "Test-source analysis found $expected_test_issues violation(s)." "$log"
+    test "$(grep -Ec '\[WARNING\].*\[java:S8786\]' "$log")" -eq 2
+    if [ "$compiler_release" -ge 22 ]; then
+        grep -E '\[WARNING\].*ModernTestIssues\.java:[0-9]+ \[java:S7467\]' "$log"
+    elif grep -F '[java:S7467]' "$log"; then
+        exit 1
+    fi
+    mvn -B -ntp -o -f "$test_fixture" test -Dmaven.compiler.release="$compiler_release" \
+        -DstaticAnalysis.disabledRules=java:S8786,java:S7467 \
+        | tee "$logs/modern-test-disabled-java-$compiler_release.log"
+done
+
+bash scripts/java-version-test.sh "$java_major"
 
 priority_fixture=src/it/priority-rules/pom.xml
 mvn -B -ntp -o -f "$priority_fixture" process-test-classes | tee "$logs/priority.log"
