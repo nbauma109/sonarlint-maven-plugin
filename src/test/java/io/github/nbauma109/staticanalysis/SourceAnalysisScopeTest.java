@@ -1,23 +1,25 @@
 package io.github.nbauma109.staticanalysis;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
-class SourceAnalysisScopeTest {
+public class SourceAnalysisScopeTest {
 
-    @TempDir
-    Path project;
+    @Rule
+    public final TemporaryFolder temporaryFolder = new TemporaryFolder();
 
     @Test
-    void excludesConfiguredOutputButKeepsSimilarlyNamedHandwrittenRoots() {
+    public void excludesConfiguredOutputButKeepsSimilarlyNamedHandwrittenRoots() {
+        Path project = temporaryFolder.getRoot().toPath();
         SourceAnalysisScope scope = new SourceAnalysisScope(project, Path.of("custom-output"));
         assertFalse(scope.includes(Path.of("custom-output/generated/Main.java")));
         assertFalse(scope.includes(project.resolve("custom-output/../custom-output/Test.java")));
@@ -28,7 +30,8 @@ class SourceAnalysisScopeTest {
     }
 
     @Test
-    void excludesNestedBuildOutputEvenWhenSourceRootContainsIt() throws IOException {
+    public void excludesNestedBuildOutputEvenWhenSourceRootContainsIt() throws IOException {
+        Path project = temporaryFolder.getRoot().toPath();
         Path handwritten = createSource("sources/example/Handwritten.java");
         createSource("sources/output/generated/Generated.java");
         SourceAnalysisScope scope = new SourceAnalysisScope(project, Path.of("sources/output"));
@@ -36,7 +39,7 @@ class SourceAnalysisScopeTest {
     }
 
     private Path createSource(String name) throws IOException {
-        Path path = project.resolve(name);
+        Path path = temporaryFolder.getRoot().toPath().resolve(name);
         Files.createDirectories(path.getParent());
         return Files.writeString(path, "package example;");
     }
