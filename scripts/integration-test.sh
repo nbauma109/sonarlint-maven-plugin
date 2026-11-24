@@ -170,6 +170,16 @@ for compiler_release in 17 21 22 25; do
         | tee "$logs/modern-test-disabled-java-$compiler_release.log"
 done
 
+native_test_fixture=src/it/native-test-rules/pom.xml
+for goal in check check-tests; do
+    log="$logs/native-test-rules-$goal.log"
+    fixture_maven -B -ntp -f "$native_test_fixture" test-compile \
+        io.github.nbauma109:static-analysis-maven-plugin:"$plugin_version":"$goal" | tee "$log"
+    for rule in S1130 S5961; do
+        test "$(grep -Ec "\\[WARNING\\].*NativeTestIssues\\.java:[0-9]+ \\[java:$rule\\]" "$log")" -eq 1
+    done
+done
+
 bash scripts/java-version-test.sh "$java_major"
 
 priority_fixture=src/it/priority-rules/pom.xml

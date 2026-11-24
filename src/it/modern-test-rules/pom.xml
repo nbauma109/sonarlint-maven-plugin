@@ -22,7 +22,8 @@
                 <artifactId>static-analysis-maven-plugin</artifactId>
                 <version>${staticAnalysis.pluginVersion}</version>
                 <configuration>
-                    <profile>sonar-way</profile>
+                    <profile>none</profile>
+                    <enabledRules>java:S7467,java:S8786</enabledRules>
                     <failOnViolation>true</failOnViolation>
                 </configuration>
                 <executions>
