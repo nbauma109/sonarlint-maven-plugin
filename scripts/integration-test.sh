@@ -126,9 +126,9 @@ for compiler_release in 17 21 22 25; do
     if [ "$compiler_release" -gt "$java_major" ]; then
         continue
     fi
-    expected_test_issues=2
+    expected_test_issues=6
     if [ "$compiler_release" -ge 22 ]; then
-        expected_test_issues=3
+        expected_test_issues=7
     fi
     log="$logs/modern-test-java-$compiler_release.log"
     if fixture_maven -B -ntp -o -f "$test_fixture" clean test -Dmaven.compiler.release="$compiler_release" \
@@ -138,7 +138,8 @@ for compiler_release in 17 21 22 25; do
         exit 1
     fi
     grep -F "Test-source analysis found $expected_test_issues violation(s)." "$log"
-    test "$(grep -Ec '\[WARNING\].*\[java:S8786\]' "$log")" -eq 2
+    test "$(grep -Ec '\[WARNING\].*\[java:S8786\]' "$log")" -eq 6
+    test "$(grep -Ec '\[WARNING\].*WhitespaceRegexIssues\.java:[0-9]+ \[java:S8786\]' "$log")" -eq 4
     if [ "$compiler_release" -ge 22 ]; then
         grep -E '\[WARNING\].*ModernTestIssues\.java:[0-9]+ \[java:S7467\]' "$log"
     elif grep -F '[java:S7467]' "$log"; then

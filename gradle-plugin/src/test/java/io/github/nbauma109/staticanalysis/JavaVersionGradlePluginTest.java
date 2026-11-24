@@ -28,11 +28,11 @@ class JavaVersionGradlePluginTest {
         assertTrue(result.getOutput().contains("[java:S8786]"), result.getOutput());
         if (release >= 22) {
             assertTrue(result.getOutput().contains("[java:S7467]"), result.getOutput());
-            assertTrue(result.getOutput().contains("Test-source Java analysis: 3 violation(s)."),
+            assertTrue(result.getOutput().contains("Test-source Java analysis: 7 violation(s)."),
                     result.getOutput());
         } else {
             assertFalse(result.getOutput().contains("[java:S7467]"), result.getOutput());
-            assertTrue(result.getOutput().contains("Test-source Java analysis: 2 violation(s)."),
+            assertTrue(result.getOutput().contains("Test-source Java analysis: 6 violation(s)."),
                     result.getOutput());
         }
     }
@@ -51,6 +51,8 @@ class JavaVersionGradlePluginTest {
         Path source = projectDirectory.resolve("src/test/java/example/ModernTestIssues.java");
         Files.createDirectories(source.getParent());
         Files.copy(fixture, source);
+        Files.copy(fixture.resolveSibling("WhitespaceRegexIssues.java"),
+                source.resolveSibling("WhitespaceRegexIssues.java"));
         Files.writeString(projectDirectory.resolve("settings.gradle"),
                 "rootProject.name = 'java-version-fixture'\n");
         Files.writeString(projectDirectory.resolve("build.gradle"), """

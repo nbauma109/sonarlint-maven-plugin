@@ -501,13 +501,43 @@ final class SupplementalAnalyzer {
         }
 
         private static boolean isUnanchoredGreedyWhitespacePattern(String pattern) {
-            boolean repeatedWhitespace = pattern.startsWith(" *")
-                    || pattern.startsWith("\\s*");
-            if (!repeatedWhitespace || pattern.startsWith("^")) {
+            String normalized = pattern.replace("\\t", "\t")
+                    .replace("\\h", " ").replace("\\s", " ")
+                    .replace("\\r", "\r").replace("\\n", "\n");
+            int quantifier = leadingWhitespaceEnd(normalized);
+            if (quantifier == 0 || quantifier >= normalized.length()
+                    || "*+".indexOf(normalized.charAt(quantifier)) < 0) {
                 return false;
             }
-            String remainder = pattern.substring(pattern.indexOf('*') + 1);
-            return remainder.equals("\r?\n") || remainder.equals("\\r?\\n");
+            String remainder = normalized.substring(quantifier + 1);
+            return remainder.equals("\r?\n") || remainder.equals("\n")
+                    || remainder.equals("\r\n");
+        }
+
+        private static int leadingWhitespaceEnd(String pattern) {
+            if (pattern.isEmpty()) {
+                return 0;
+            }
+            if (isHorizontalWhitespace(pattern.charAt(0))) {
+                return 1;
+            }
+            if (pattern.charAt(0) != '[') {
+                return 0;
+            }
+            int end = pattern.indexOf(']');
+            if (end <= 1) {
+                return 0;
+            }
+            for (int index = 1; index < end; index++) {
+                if (!isHorizontalWhitespace(pattern.charAt(index))) {
+                    return 0;
+                }
+            }
+            return end + 1;
+        }
+
+        private static boolean isHorizontalWhitespace(char value) {
+            return value == ' ' || value == '\t';
         }
 
         @Override
