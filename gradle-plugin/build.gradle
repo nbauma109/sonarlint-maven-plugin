@@ -49,6 +49,9 @@ gradlePlugin {
 }
 
 tasks.named('test') {
+    javaLauncher = javaToolchains.launcherFor {
+        languageVersion = JavaLanguageVersion.of(JavaVersion.current().majorVersion.toInteger())
+    }
     useJUnitPlatform()
     testLogging {
         events 'failed'

@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.stream.Stream;
 import org.apache.maven.artifact.DependencyResolutionRequiredException;
 import org.apache.maven.plugin.AbstractMojo;
@@ -27,9 +26,6 @@ import org.apache.maven.project.MavenProject;
 @Mojo(name = "check-tests", defaultPhase = LifecyclePhase.PROCESS_TEST_CLASSES,
         requiresDependencyResolution = ResolutionScope.TEST)
 public final class CheckTestsMojo extends AbstractMojo {
-
-    private static final Set<String> SUPPORTED_TEST_RULES =
-            Set.of("java:S7467", "java:S8786");
 
     @Parameter(defaultValue = "${project}", readonly = true, required = true)
     private MavenProject project;
@@ -74,7 +70,7 @@ public final class CheckTestsMojo extends AbstractMojo {
             getLog().info("Skipping test-source static analysis.");
             return 0;
         }
-        Set<String> selected = selectedTestRules();
+        Set<String> selected = RuleCatalog.testRules(profile, enabledRules, disabledRules);
         if (selected.isEmpty()) {
             getLog().info("No supported test-source Java rules selected.");
             return 0;
@@ -101,42 +97,10 @@ public final class CheckTestsMojo extends AbstractMojo {
                     baseDirectory, byRelease, project.getTestClasspathElements(), selected);
             report(findings);
             return findings.size();
-        } catch (IOException | DependencyResolutionRequiredException exception) {
+        } catch (IOException | DependencyResolutionRequiredException | IllegalArgumentException exception) {
             throw new MojoExecutionException("Test-source Java analysis failed: "
                     + exception.getMessage(), exception);
         }
-    }
-
-    private Set<String> selectedTestRules() throws MojoExecutionException {
-        Set<String> selected = new TreeSet<>();
-        if (isFullProfile()) {
-            selected.addAll(SUPPORTED_TEST_RULES);
-        }
-        for (String key : parseRuleKeys(enabledRules)) {
-            if (SUPPORTED_TEST_RULES.contains(key)) {
-                selected.add(key);
-            }
-        }
-        selected.removeAll(parseRuleKeys(disabledRules));
-        return selected;
-    }
-
-    private boolean isFullProfile() {
-        return "sonar-way".equals(profile) || "sonar-way-reliability".equals(profile);
-    }
-
-    private static Set<String> parseRuleKeys(String value) throws MojoExecutionException {
-        Set<String> keys = new TreeSet<>();
-        if (value != null && !value.isBlank()) {
-            for (String part : value.split(",", -1)) {
-                String key = part.trim();
-                if (key.isEmpty()) {
-                    throw new MojoExecutionException("Rule lists must not contain blank entries.");
-                }
-                keys.add(key);
-            }
-        }
-        return keys;
     }
 
     private List<Path> collectTestSources(Path baseDirectory) throws IOException {

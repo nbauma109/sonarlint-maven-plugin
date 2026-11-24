@@ -166,7 +166,7 @@ final class RuleCatalog {
         return result;
     }
 
-    Set<String> supplementalRules(String profile, String enabledRules, String disabledRules) {
+    static Set<String> supplementalRules(String profile, String enabledRules, String disabledRules) {
         Set<String> selected = new TreeSet<>();
         if ("sonar-way".equals(profile) || "sonar-way-reliability".equals(profile)) {
             selected.addAll(SUPPLEMENTAL_ONLY);
@@ -175,6 +175,21 @@ final class RuleCatalog {
         }
         for (String key : parseKeys(enabledRules)) {
             if (SUPPLEMENTAL_ONLY.contains(key) || RECORD_METHOD_PLACEMENT.equals(key)) {
+                selected.add(key);
+            }
+        }
+        selected.removeAll(parseKeys(disabledRules));
+        return Set.copyOf(selected);
+    }
+
+    static Set<String> testRules(String profile, String enabledRules, String disabledRules) {
+        Set<String> supported = Set.of("java:S7467", "java:S8786");
+        Set<String> selected = new TreeSet<>();
+        if ("sonar-way".equals(profile) || "sonar-way-reliability".equals(profile)) {
+            selected.addAll(supported);
+        }
+        for (String key : parseKeys(enabledRules)) {
+            if (supported.contains(key)) {
                 selected.add(key);
             }
         }
