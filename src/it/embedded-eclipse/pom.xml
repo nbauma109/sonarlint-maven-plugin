@@ -22,7 +22,7 @@
             <plugin>
                 <groupId>io.github.nbauma109</groupId>
                 <artifactId>static-analysis-maven-plugin</artifactId>
-                <version>0.1.2-SNAPSHOT</version>
+                <version>0.1.3-SNAPSHOT</version>
                 <configuration>
                     <profile>none</profile>
                     <eclipseEnabled>${staticAnalysis.eclipseEnabled}</eclipseEnabled>
