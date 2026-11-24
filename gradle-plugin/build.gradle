@@ -58,6 +58,7 @@ tasks.named('test') {
         exceptionFormat 'full'
         showStandardStreams = true
     }
+    systemProperty 'staticAnalysis.versionFixtureDirectory', file('../src/it').absolutePath
     systemProperty 'staticAnalysis.fixtureDirectory', file('../src/it/cognitive-complexity/src/main/java').absolutePath
     systemProperty 'staticAnalysis.reliabilityFixtureDirectory', file('../src/it/reliability/src/main/java').absolutePath
 }
