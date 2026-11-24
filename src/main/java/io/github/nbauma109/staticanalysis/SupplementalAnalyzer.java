@@ -103,6 +103,24 @@ final class SupplementalAnalyzer {
         return List.copyOf(findings);
     }
 
+    static List<Finding> withoutNativeDuplicates(List<Finding> supplemental, List<String> nativeLocations) {
+        Map<String, Integer> remaining = new HashMap<>();
+        for (String location : nativeLocations) {
+            remaining.merge(location, 1, Integer::sum);
+        }
+        List<Finding> distinct = new ArrayList<>();
+        for (Finding finding : supplemental) {
+            String location = finding.file() + ":" + finding.line() + ":" + finding.rule();
+            int count = remaining.getOrDefault(location, 0);
+            if (count == 0) {
+                distinct.add(finding);
+            } else {
+                remaining.put(location, count - 1);
+            }
+        }
+        return List.copyOf(distinct);
+    }
+
     private static List<String> compilerOptions(List<String> classpath, String sourceVersion) {
         List<String> options = new ArrayList<>(List.of("-proc:none", "-implicit:none"));
         if (!classpath.isEmpty()) {

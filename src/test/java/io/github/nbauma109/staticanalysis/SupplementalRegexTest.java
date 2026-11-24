@@ -23,4 +23,18 @@ public class SupplementalRegexTest {
         }
         assertEquals(List.of(9L, 9L, 13L, 17L), lines);
     }
+    @Test
+    public void preservesDistinctOccurrencesOnTheSameLine() {
+        SupplementalAnalyzer.Finding first = new SupplementalAnalyzer.Finding(
+                "Example.java", 9, "java:S8786", "First occurrence");
+        SupplementalAnalyzer.Finding second = new SupplementalAnalyzer.Finding(
+                "Example.java", 9, "java:S8786", "Second occurrence");
+        List<SupplementalAnalyzer.Finding> findings = List.of(first, second);
+        String nativeLocation = "Example.java:9:java:S8786";
+        assertEquals(findings, SupplementalAnalyzer.withoutNativeDuplicates(findings, List.of()));
+        assertEquals(List.of(second), SupplementalAnalyzer.withoutNativeDuplicates(
+                findings, List.of(nativeLocation)));
+        assertEquals(List.of(), SupplementalAnalyzer.withoutNativeDuplicates(
+                findings, List.of(nativeLocation, nativeLocation)));
+    }
 }

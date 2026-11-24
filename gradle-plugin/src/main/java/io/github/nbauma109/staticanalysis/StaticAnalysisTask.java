@@ -11,7 +11,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.HashSet;
 import java.util.Set;
 import java.util.TreeMap;
 import org.gradle.api.DefaultTask;
@@ -180,17 +179,11 @@ public abstract class StaticAnalysisTask extends DefaultTask {
         }
         List<SupplementalAnalyzer.Finding> findings = GradleSupplementalAnalysis.analyze(
                 getProject(), sourceSet, project, paths, selected);
-        Set<String> reported = new HashSet<>();
+        List<String> reported = new ArrayList<>();
         for (Issue issue : sonar) {
             reported.add(location(issue) + ":" + issue.getRuleKey());
         }
-        List<SupplementalAnalyzer.Finding> distinct = new ArrayList<>();
-        for (SupplementalAnalyzer.Finding finding : findings) {
-            if (reported.add(finding.file() + ":" + finding.line() + ":" + finding.rule())) {
-                distinct.add(finding);
-            }
-        }
-        return List.copyOf(distinct);
+        return SupplementalAnalyzer.withoutNativeDuplicates(findings, reported);
     }
 
     private Map<String, String> analysisProperties() throws IOException {
