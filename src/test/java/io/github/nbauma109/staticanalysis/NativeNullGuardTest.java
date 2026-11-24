@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.junit.Test;
+import org.apache.maven.plugin.logging.SystemStreamLog;
 import org.sonarsource.sonarlint.core.analysis.api.AnalysisConfiguration;
 import org.sonarsource.sonarlint.core.analysis.api.Issue;
 import org.sonarsource.sonarlint.core.commons.api.TextRange;
@@ -39,6 +40,6 @@ public class NativeNullGuardTest {
         }
         assertEquals(7, issues.size());
         assertEquals(issues.subList(3, 7), NativeNullGuard.retainUnproven(configuration, issues,
-                (message, level, stacktrace) -> { }));
+                new MavenLogOutput(new SystemStreamLog())));
     }
 }
