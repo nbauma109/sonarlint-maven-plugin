@@ -55,7 +55,9 @@ final class SupplementalAnalyzer {
 
     static List<Finding> analyze(Path baseDirectory, List<Path> sources, List<String> classpath,
             String sourceVersion, Set<String> enabledRules) throws IOException {
-        if (sources.isEmpty() || enabledRules.isEmpty()) {
+        int release = RuleJavaVersion.parse(sourceVersion);
+        Set<String> eligibleRules = RuleJavaVersion.eligibleRules(enabledRules, release);
+        if (sources.isEmpty() || eligibleRules.isEmpty()) {
             return List.of();
         }
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
@@ -63,7 +65,7 @@ final class SupplementalAnalyzer {
             throw new IOException("A Java Development Kit is required for supplemental source checks.");
         }
         DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
-        List<String> options = compilerOptions(classpath, sourceVersion);
+        List<String> options = compilerOptions(classpath, Integer.toString(release));
         try (StandardJavaFileManager files = compiler.getStandardFileManager(diagnostics, null, null)) {
             Iterable<? extends JavaFileObject> units = files.getJavaFileObjectsFromPaths(sources);
             JavacTask task = (JavacTask) compiler.getTask(null, files, diagnostics, options, null, units);
@@ -81,7 +83,7 @@ final class SupplementalAnalyzer {
             Trees trees = Trees.instance(task);
             List<Finding> findings = new ArrayList<>();
             for (CompilationUnitTree unit : parsed) {
-                Scanner scanner = new Scanner(trees, unit, baseDirectory, enabledRules, sourceVersion);
+                Scanner scanner = new Scanner(trees, unit, baseDirectory, eligibleRules);
                 scanner.scan(unit, null);
                 findings.addAll(scanner.finish());
             }
@@ -89,6 +91,16 @@ final class SupplementalAnalyzer {
         } catch (RuntimeException exception) {
             throw new IOException("Supplemental Java analysis failed: " + exception.getMessage(), exception);
         }
+    }
+
+    static List<Finding> analyzeByRelease(Path baseDirectory, Map<Integer, List<Path>> sources,
+            List<String> classpath, Set<String> enabledRules) throws IOException {
+        List<Finding> findings = new ArrayList<>();
+        for (Map.Entry<Integer, List<Path>> entry : sources.entrySet()) {
+            findings.addAll(analyze(baseDirectory, entry.getValue(), classpath,
+                    Integer.toString(entry.getKey()), enabledRules));
+        }
+        return List.copyOf(findings);
     }
 
     private static List<String> compilerOptions(List<String> classpath, String sourceVersion) {
@@ -109,7 +121,6 @@ final class SupplementalAnalyzer {
         private final CompilationUnitTree unit;
         private final Path baseDirectory;
         private final Set<String> enabledRules;
-        private final int languageVersion;
         private final List<Finding> findings = new ArrayList<>();
         private final Map<VariableElement, VariableTree> fields = new HashMap<>();
         private final Map<VariableElement, List<ExecutableElement>> mutations = new HashMap<>();
@@ -124,21 +135,11 @@ final class SupplementalAnalyzer {
         private final List<ValidationSite> validatedParameters = new ArrayList<>();
 
         Scanner(Trees trees, CompilationUnitTree unit, Path baseDirectory,
-                Set<String> enabledRules, String sourceVersion) {
+                Set<String> enabledRules) {
             this.trees = trees;
             this.unit = unit;
             this.baseDirectory = baseDirectory;
             this.enabledRules = enabledRules;
-            this.languageVersion = parseSourceVersion(sourceVersion);
-        }
-
-        private static int parseSourceVersion(String sourceVersion) {
-            if (sourceVersion == null || sourceVersion.isBlank()) {
-                return Runtime.version().feature();
-            }
-            String normalized = sourceVersion.startsWith("1.")
-                    ? sourceVersion.substring(2) : sourceVersion;
-            return Integer.parseInt(normalized);
         }
 
         @Override
@@ -551,7 +552,7 @@ final class SupplementalAnalyzer {
 
         @Override
         public Void visitCatch(CatchTree tree, Void unused) {
-            if (enabledRules.contains("java:S7467") && languageVersion >= 22) {
+            if (enabledRules.contains("java:S7467")) {
                 TreePath variablePath = new TreePath(getCurrentPath(), tree.getParameter());
                 Element variable = trees.getElement(variablePath);
                 if (variable != null && !"_".equals(tree.getParameter().getName().toString())) {
