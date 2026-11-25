@@ -78,5 +78,16 @@ length greater than zero. The supplemental check covers that specific pattern
 at Java 11 and above. Its message explicitly describes the difference between
 trim and Unicode whitespace semantics; it does not rewrite source code.
 
-The comparison retains cloud-only javabugs rules, normalizing only the known
-S2259 alias. S6466 is not treated as equivalent to an unrelated local rule.
+The comparison retains cloud-only javabugs rules and normalizes the known
+S2259 and S6466 aliases without discarding unmatched occurrences.
+
+## S6466: proven array bounds
+
+The cloud engine detects input-dependent and interprocedural array bounds
+defects that the pinned standalone symbolic engine cannot report. The local
+supplemental detector covers a deliberately conservative subset: integral
+constant indices and lengths of directly allocated arrays or final local
+references initialized by an array allocation. It does not infer bounds for
+unknown allocations, reassigned references, or arbitrary inputs. It is not a
+replacement for the cloud engine and does not claim to reproduce the
+interprocedural constant-pool finding in jd-util.

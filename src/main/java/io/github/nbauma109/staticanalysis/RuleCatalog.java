@@ -34,7 +34,7 @@ final class RuleCatalog {
             "java:S1192", "java:S1066", "java:S1128", "java:S1481", "java:S112");
     private static final Set<String> TEMPLATES = Set.of("java:S124", "java:S2253",
             "java:S3688", "java:S4011");
-    private static final Set<String> SUPPLEMENTAL_ONLY = Set.of("java:S9438", "java:S9398", "java:S7467", "java:S8786", "java:S9412", "java:S7158");
+    private static final Set<String> SUPPLEMENTAL_ONLY = Set.of("java:S9438", "java:S9398", "java:S7467", "java:S8786", "java:S9412", "java:S7158", "java:S6466");
     private static final String RECORD_METHOD_PLACEMENT = "java:S3398";
     private static final Gson GSON = new Gson();
 
@@ -210,6 +210,9 @@ final class RuleCatalog {
             selected.add(RECORD_METHOD_PLACEMENT);
             selected.add("java:S2259");
         }
+        if ("reliability".equals(profile)) {
+            selected.add("java:S6466");
+        }
         for (String key : parseKeys(enabledRules)) {
             if (SUPPLEMENTAL_ONLY.contains(key) || RECORD_METHOD_PLACEMENT.equals(key)) {
                 selected.add(key);
@@ -220,10 +223,13 @@ final class RuleCatalog {
     }
 
     static Set<String> testRules(String profile, String enabledRules, String disabledRules) {
-        Set<String> supported = Set.of("java:S7467", "java:S8786");
+        Set<String> supported = Set.of("java:S7467", "java:S8786", "java:S6466");
         Set<String> selected = new TreeSet<>();
         if ("sonar-way".equals(profile) || "sonar-way-reliability".equals(profile)) {
             selected.addAll(supported);
+        }
+        if ("reliability".equals(profile)) {
+            selected.add("java:S6466");
         }
         for (String key : parseKeys(enabledRules)) {
             if (supported.contains(key)) {

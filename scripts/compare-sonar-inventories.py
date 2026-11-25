@@ -10,7 +10,7 @@ import re
 
 WARNING = re.compile(r"\[WARNING\]\s+(.+?\.java):(\d+)\s+\[(java:S\d+)\]")
 RULE = re.compile(r"(?:java|javabugs):S\d+")
-RULE_ALIASES = {"javabugs:S2259": "java:S2259"}
+RULE_ALIASES = {"javabugs:S2259": "java:S2259", "javabugs:S6466": "java:S6466"}
 
 
 @dataclass(frozen=True)

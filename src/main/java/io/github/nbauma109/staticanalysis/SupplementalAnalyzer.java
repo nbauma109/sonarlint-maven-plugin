@@ -1,5 +1,6 @@
 package io.github.nbauma109.staticanalysis;
 
+import com.sun.source.tree.ArrayAccessTree;
 import com.sun.source.tree.AssignmentTree;
 import com.sun.source.tree.BinaryTree;
 import com.sun.source.tree.BlockTree;
@@ -497,6 +498,15 @@ final class SupplementalAnalyzer {
                 }
             }
             return false;
+        }
+
+        @Override
+        public Void visitArrayAccess(ArrayAccessTree tree, Void unused) {
+            if (enabledRules.contains("java:S6466") && ArrayBounds.isOutOfBounds(trees, getCurrentPath(), tree)) {
+                report(tree, "java:S6466",
+                        "Fix this array access that will throw an ArrayIndexOutOfBoundsException when executed.");
+            }
+            return super.visitArrayAccess(tree, unused);
         }
 
         @Override

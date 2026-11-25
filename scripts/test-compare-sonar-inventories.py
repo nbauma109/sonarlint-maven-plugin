@@ -39,15 +39,17 @@ class ComparisonTest(unittest.TestCase):
             inventory = Path(directory) / "cloud.json"
             inventory.write_text(json.dumps({"issues": [
                 {"rule": "javabugs:S2259", "path": "Example.java", "line": 4},
-                {"rule": "javabugs:S6466", "path": "Example.java", "line": 5}
+                {"rule": "javabugs:S6466", "path": "Example.java", "line": 5},
+                {"rule": "javabugs:S6555", "path": "Example.java", "line": 6}
             ]}), encoding="utf-8")
             cloud = comparison.read_inventory(inventory)
-            self.assertEqual(["java:S2259", "javabugs:S6466"],
+            self.assertEqual(["java:S2259", "java:S6466", "javabugs:S6555"],
                              [finding.rule for finding in cloud])
-            result = comparison.compare([Finding("Example.java", "java:S2259", 4, 4)],
+            result = comparison.compare([Finding("Example.java", "java:S2259", 4, 4),
+                                         Finding("Example.java", "java:S6466", 5, 5)],
                                         cloud, Path("."))
-            self.assertEqual(1, result["same_line_matches"])
-            self.assertEqual({"javabugs:S6466": 1}, result["cloud_only_by_rule"])
+            self.assertEqual(2, result["same_line_matches"])
+            self.assertEqual({"javabugs:S6555": 1}, result["cloud_only_by_rule"])
 
     def test_rejects_incomplete_nested_pagination(self):
         with tempfile.TemporaryDirectory() as directory:
