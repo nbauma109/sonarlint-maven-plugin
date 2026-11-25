@@ -18,9 +18,15 @@ returns a fixed project key, and its
 [AnalysisConfiguration](https://github.com/SonarSource/sonarlint-core/blob/a9d5d6162d37af95a092b2e92126c1c8e1581d86/backend/analysis-engine/src/main/java/org/sonarsource/sonarlint/core/analysis/api/AnalysisConfiguration.java)
 has no supported project-key setter. Setting an extra property cannot change
 that implementation. Merely admitting beta rules would not establish parity.
-We do not replace the detector, patch analyzer internals, or guess a package
-prefix. Revisit when a compatible licensed analyzer and standalone interface
-can supply the required context.
+The native beta detector can be explicitly requested with
+`-DstaticAnalysis.profile=none -DstaticAnalysis.enabledRules=java:S6539`.
+The default profile is unchanged. An independent fixture exercises the
+native same-package type-counting path with 21 distinct dependencies and a
+negative control at the threshold. The fixed standalone key is `sonarlint`;
+both that key and a cloud project key unrelated to the Java package exclude
+ordinary imports from the key-based count. This can permit equivalent results
+for particular projects but does not establish general parity. We do not
+replace the detector, patch analyzer internals, or guess a package prefix.
 
 ## S2259: null-guard verification
 

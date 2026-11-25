@@ -33,6 +33,15 @@ if grep -E '\[WARNING\].*Generated(Main|Test)\.java:[0-9]+ \[java:' "$logs/gener
     exit 1
 fi
 
+coupling_fixture=src/it/class-coupling/pom.xml
+fixture_maven -B -ntp -f "$coupling_fixture" compile \
+    io.github.nbauma109:static-analysis-maven-plugin:"$plugin_version":check \
+    -DstaticAnalysis.profile=none -DstaticAnalysis.enabledRules=java:S6539 \
+    | tee "$logs/experimental-coupling.log"
+grep -F 'Activated 1 local Java rule(s).' "$logs/experimental-coupling.log"
+grep -E '\[WARNING\].*CoupledClass\.java:[0-9]+ \[java:S6539\].*21.*20' "$logs/experimental-coupling.log"
+grep -F 'Sonar analysis: 1 violation(s).' "$logs/experimental-coupling.log"
+
 fixture_maven -B -ntp -f "$fixture" process-test-classes -DstaticAnalysis.profile=complexity | tee "$logs/warnings.log"
 grep -E '\[WARNING\].*ComplexMethod\.java:[0-9]+.*\[java:S3776\]' "$logs/warnings.log"
 grep -F 'Sonar analysis: 1 violation(s).' "$logs/warnings.log"
