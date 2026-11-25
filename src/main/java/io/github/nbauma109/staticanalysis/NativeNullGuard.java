@@ -275,6 +275,7 @@ final class NativeNullGuard {
                     || !variable.equals(trees.getElement(new TreePath(predicate, argument)))
                     || !(trees.getElement(predicate) instanceof ExecutableElement method)
                     || !method.getModifiers().contains(Modifier.STATIC)
+                    || method.isVarArgs()
                     || method.getParameters().size() != 1) {
                 return Optional.empty();
             }

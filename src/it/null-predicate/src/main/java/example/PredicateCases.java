@@ -66,4 +66,12 @@ public final class PredicateCases {
         }
         return 0;
     }
+
+    public static int varargsGuard(boolean available) {
+        String value = nullable(available);
+        if (Predicates.presentArguments(value)) {
+            return value.length();
+        }
+        return 0;
+    }
 }

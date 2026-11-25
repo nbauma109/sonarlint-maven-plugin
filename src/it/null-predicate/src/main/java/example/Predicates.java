@@ -16,4 +16,8 @@ public final class Predicates {
     public static boolean unrelated(String value) {
         return value != null || System.nanoTime() > 0;
     }
+
+    public static boolean presentArguments(String... values) {
+        return values != null;
+    }
 }

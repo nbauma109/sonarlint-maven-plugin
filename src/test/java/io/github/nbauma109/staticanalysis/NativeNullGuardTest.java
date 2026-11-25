@@ -38,8 +38,8 @@ public class NativeNullGuardTest {
                         input, List.of(), List.of(), Optional.empty()));
             }
         }
-        assertEquals(7, issues.size());
-        assertEquals(issues.subList(3, 7), NativeNullGuard.retainUnproven(configuration, issues,
+        assertEquals(8, issues.size());
+        assertEquals(issues.subList(3, 8), NativeNullGuard.retainUnproven(configuration, issues,
                 new MavenLogOutput(new SystemStreamLog())));
     }
 }

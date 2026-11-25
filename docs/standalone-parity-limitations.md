@@ -30,8 +30,9 @@ a single return expression with a null comparison, or a leading null comparison
 that short-circuits an AND or OR expression. It proves that the branch containing
 the reported receiver excludes null, requires the same local variable or
 parameter and exact diagnostic source range, and rejects reassignment within
-the branch. Verification requires source availability and successful semantic
-resolution. All unresolved cases retain the original diagnostic; no rule is
+the branch. Variable-arity methods are excluded because a non-null array of
+arguments does not prove that an individual argument is non-null. Verification
+requires source availability and successful semantic resolution. All unresolved cases retain the original diagnostic; no rule is
 disabled. A verification message identifies a proven receiver in debug output.
 
 ## Comparing inventories
