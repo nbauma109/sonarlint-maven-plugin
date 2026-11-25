@@ -2,6 +2,7 @@
 """Independent comparison regressions for duplicated and relocated findings."""
 
 import importlib.util
+import json
 from pathlib import Path
 import sys
 import tempfile
@@ -19,8 +20,27 @@ class ComparisonTest(unittest.TestCase):
     def test_preserves_same_line_multiplicity(self):
         item = Finding("Example.java", "java:S8786", 4, 4)
         result = comparison.compare([item, item], [item], Path("."))
-        self.assertEqual(1, result["exact_location_matches"])
+        self.assertEqual(0, result["exact_location_matches"])
+        self.assertEqual(1, result["same_line_matches"])
         self.assertEqual(1, result["local_only_count"])
+
+    def test_precise_matches_take_precedence_over_line_only_matches(self):
+        approximate = Finding("Example.java", "java:S8786", 4, 4)
+        precise = Finding("Example.java", "java:S8786", 4, 4, 5, 12)
+        distinct = Finding("Example.java", "java:S8786", 4, 4, 15, 25)
+        result = comparison.compare([approximate, precise], [precise, distinct], Path("."))
+        self.assertEqual(1, result["exact_location_matches"])
+        self.assertEqual(1, result["same_line_matches"])
+        self.assertEqual(0, result["cloud_only_count"])
+        self.assertEqual(15, result["same_line_matches_requiring_review"][0]["cloud"]["start_offset"])
+
+    def test_rejects_incomplete_nested_pagination(self):
+        with tempfile.TemporaryDirectory() as directory:
+            inventory = Path(directory) / "cloud.json"
+            inventory.write_text(json.dumps({"paging": {"total": 2}, "issues": []}),
+                                 encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "Incomplete inventory"):
+                comparison.read_inventory(inventory)
 
     def test_distinct_columns_are_not_automatically_matched(self):
         left = Finding("Example.java", "java:S8786", 4, 4, 5, 12)

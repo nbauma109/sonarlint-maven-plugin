@@ -50,9 +50,11 @@ local findings.
 Use `scripts/compare-sonar-inventories.py` with a complete SonarCloud JSON
 inventory and a single local analysis log (or a normalized JSON inventory
 containing source ranges). Supply the same analyzed source revision for both
-inputs. The script rejects incomplete paginated inventories and mismatched
-revisions, preserves same-line counts, and reports potential relocated issues
-for manual review rather than automatically counting them as matches.
+inputs. The script rejects incomplete paginated inventories (including nested
+paging totals) and mismatched revisions. It distinguishes exact source-range
+matches from tentative same-line matches, preserves occurrence counts, and
+reports potential relocated issues for manual review rather than automatically
+counting them as matches.
 
 ```sh
 python3 scripts/compare-sonar-inventories.py \

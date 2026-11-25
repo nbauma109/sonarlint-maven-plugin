@@ -52,18 +52,24 @@ def read_inventory(path):
         end = location.get("endLine", start)
         findings.append(Finding(file, rule, start, end,
                                 location.get("startOffset"), location.get("endOffset")))
-    if isinstance(data, dict) and data.get("total", len(issues)) > len(issues):
-        raise ValueError("Incomplete inventory: retrieve all issue pages before comparing.")
+    if isinstance(data, dict):
+        totals = [data.get("total", len(issues)), data.get("paging", {}).get("total", len(issues))]
+        if max(totals) > len(issues):
+            raise ValueError("Incomplete inventory: retrieve all issue pages before comparing.")
     return findings
 
 
+def has_range(finding):
+    return finding.start > 0 and finding.start_offset is not None and finding.end_offset is not None
+
+
 def exact(left, right):
-    if left.identity != right.identity or left.start != right.start:
-        return False
-    if left.start_offset is None or right.start_offset is None:
-        return True
-    return (left.end, left.start_offset, left.end_offset) == (
-        right.end, right.start_offset, right.end_offset)
+    return has_range(left) and has_range(right) and left == right
+
+
+def same_line(left, right):
+    return (left.identity == right.identity and left.start == right.start and left.start > 0
+            and not (has_range(left) and has_range(right)))
 
 
 def overlaps(left, right):
@@ -94,14 +100,13 @@ def same_comment_block(left, right, root):
         line.lstrip().startswith("//") for line in lines[first - 1:last])
 
 
-def pair_exact(local, cloud):
+def pair_findings(local, cloud, predicate):
     remaining = list(cloud)
     matches = []
     unmatched = []
-    # Match fully located diagnostics first; line-only logs cannot distinguish columns.
-    for finding in sorted(local, key=lambda item: item.start_offset is None):
+    for finding in local:
         for index, candidate in enumerate(remaining):
-            if exact(finding, candidate):
+            if predicate(finding, candidate):
                 matches.append((finding, remaining.pop(index)))
                 break
         else:
@@ -110,7 +115,10 @@ def pair_exact(local, cloud):
 
 
 def compare(local, cloud, root):
-    matches, local_only, cloud_only = pair_exact(local, cloud)
+    matches, local_remaining, cloud_remaining = pair_findings(local, cloud, exact)
+    line_matches, local_only, cloud_only = pair_findings(
+        sorted(local_remaining, key=lambda item: not has_range(item)),
+        sorted(cloud_remaining, key=has_range), same_line)
     candidates = []
     for left in local_only:
         for right in cloud_only:
@@ -120,6 +128,9 @@ def compare(local, cloud, root):
         "local_count": len(local),
         "cloud_count": len(cloud),
         "exact_location_matches": len(matches),
+        "same_line_matches": len(line_matches),
+        "same_line_matches_requiring_review": [
+            {"local": asdict(left), "cloud": asdict(right)} for left, right in line_matches],
         "local_only_count": len(local_only),
         "cloud_only_count": len(cloud_only),
         "local_only_by_rule": dict(Counter(item.rule for item in local_only)),
