@@ -9,7 +9,8 @@ from pathlib import Path
 import re
 
 WARNING = re.compile(r"\[WARNING\]\s+(.+?\.java):(\d+)\s+\[(java:S\d+)\]")
-RULE = re.compile(r"java:S\d+")
+RULE = re.compile(r"(?:java|javabugs):S\d+")
+RULE_ALIASES = {"javabugs:S2259": "java:S2259"}
 
 
 @dataclass(frozen=True)
@@ -41,7 +42,7 @@ def read_inventory(path):
     issues = data["issues"] if isinstance(data, dict) else data
     findings = []
     for issue in issues:
-        rule = issue["rule"]
+        rule = RULE_ALIASES.get(issue["rule"], issue["rule"])
         if not RULE.fullmatch(rule):
             continue
         if issue.get("resolution") or issue.get("status") in {"RESOLVED", "CLOSED", "ACCEPTED", "FALSE_POSITIVE"}:

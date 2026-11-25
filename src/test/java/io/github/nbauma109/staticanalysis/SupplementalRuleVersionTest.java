@@ -14,7 +14,8 @@ public class SupplementalRuleVersionTest {
     private static final Path FIXTURE = Path.of("src/it/modern-test-rules").toAbsolutePath();
     private static final Map<String, Path> RULE_FIXTURES = Map.of(
             "java:S7467", FIXTURE.resolve("src/test/java/example/ModernTestIssues.java"),
-            "java:S9412", FIXTURE.resolve("../collections-sort/src/main/java/example/CollectionsSortIssues.java"));
+            "java:S9412", FIXTURE.resolve("../collections-sort/src/main/java/example/CollectionsSortIssues.java"),
+            "java:S7158", FIXTURE.resolve("../blank-string/src/main/java/example/BlankStringIssues.java"));
 
     @Test
     public void providesAFixtureForEveryVersionRestrictedSupplementalRule() {

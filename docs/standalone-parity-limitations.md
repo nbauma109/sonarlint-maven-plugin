@@ -64,3 +64,13 @@ python3 scripts/compare-sonar-inventories.py \
 
 Run `python3 scripts/test-compare-sonar-inventories.py` to exercise duplicate
 locations, distinct columns, and contiguous commented-out blocks.
+
+## Master-branch validation observations
+
+The Visual Diff baseline exposes S7158 for a resolved String trim followed by
+length greater than zero. The supplemental check covers that specific pattern
+at Java 11 and above. Its message explicitly describes the difference between
+trim and Unicode whitespace semantics; it does not rewrite source code.
+
+The comparison retains cloud-only javabugs rules, normalizing only the known
+S2259 alias. S6466 is not treated as equivalent to an unrelated local rule.

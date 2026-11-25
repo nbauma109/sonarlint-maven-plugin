@@ -34,6 +34,21 @@ class ComparisonTest(unittest.TestCase):
         self.assertEqual(0, result["cloud_only_count"])
         self.assertEqual(15, result["same_line_matches_requiring_review"][0]["cloud"]["start_offset"])
 
+    def test_preserves_cloud_bug_rules_and_normalizes_known_alias(self):
+        with tempfile.TemporaryDirectory() as directory:
+            inventory = Path(directory) / "cloud.json"
+            inventory.write_text(json.dumps({"issues": [
+                {"rule": "javabugs:S2259", "path": "Example.java", "line": 4},
+                {"rule": "javabugs:S6466", "path": "Example.java", "line": 5}
+            ]}), encoding="utf-8")
+            cloud = comparison.read_inventory(inventory)
+            self.assertEqual(["java:S2259", "javabugs:S6466"],
+                             [finding.rule for finding in cloud])
+            result = comparison.compare([Finding("Example.java", "java:S2259", 4, 4)],
+                                        cloud, Path("."))
+            self.assertEqual(1, result["same_line_matches"])
+            self.assertEqual({"javabugs:S6466": 1}, result["cloud_only_by_rule"])
+
     def test_rejects_incomplete_nested_pagination(self):
         with tempfile.TemporaryDirectory() as directory:
             inventory = Path(directory) / "cloud.json"
