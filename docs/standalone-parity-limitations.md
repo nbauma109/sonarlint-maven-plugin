@@ -92,16 +92,14 @@ unknown allocations, reassigned references, or arbitrary inputs. It is not a
 replacement for the cloud engine and does not claim to reproduce the
 interprocedural constant-pool finding in jd-util.
 
-## S125: commented-out console calls
+## S125: commented-out code classifier version
 
-The pinned recognizer lacks the newer console-print recognition in SonarJava.
-The supplemental detector covers standalone line comments containing an
-explicit System.out or System.err print, println or printf call, including the
-labelled source fragment observed in jd-util. It uses the public Eclipse JDT
-scanner to distinguish comments from Java string literals and text blocks,
-ignores header comments and documentation comments, and avoids duplicating a
-native finding in the same contiguous line-comment block. The native S125
-rule remains enabled. This is a targeted addition, not a replacement for the
-native commented-code classifier. Explanatory source examples can also be
-reported, as in the cloud finding; ordinary prose should describe the action
-instead of embedding a statement-like example.
+The native S125 rule remains enabled in the applicable production and test
+profiles. The pinned JavaFootprint recognizer can miss source examples that
+the newer SonarCloud recognizer reports, including the labelled console-call
+example observed in jd-util PR #229. The newer upstream classifier change
+[SONARJAVA-6511](https://github.com/SonarSource/sonar-java/commit/3a5ee6acf2115bcdf94849f2d45e9c7fa6a748b2)
+is distributed under the Sonar Source-Available License. The plugin does not
+copy that implementation or add a console-specific replacement detector.
+Retain native S125 findings and record this version difference in parity
+reports until a licensing-compatible general improvement is validated.
