@@ -1,6 +1,8 @@
 package io.github.nbauma109.staticanalysis;
 
+import com.sun.source.tree.ArrayAccessTree;
 import com.sun.source.tree.AssignmentTree;
+import com.sun.source.tree.BinaryTree;
 import com.sun.source.tree.BlockTree;
 import com.sun.source.tree.CatchTree;
 import com.sun.source.tree.ClassTree;
@@ -496,6 +498,53 @@ final class SupplementalAnalyzer {
                 }
             }
             return false;
+        }
+
+        @Override
+        public Void visitArrayAccess(ArrayAccessTree tree, Void unused) {
+            if (enabledRules.contains("java:S6466") && ArrayBounds.isOutOfBounds(trees, getCurrentPath(), tree)) {
+                report(tree, "java:S6466",
+                        "Fix this array access that will throw an ArrayIndexOutOfBoundsException when executed.");
+            }
+            return super.visitArrayAccess(tree, unused);
+        }
+
+        @Override
+        public Void visitBinary(BinaryTree tree, Void unused) {
+            if (enabledRules.contains("java:S7158")) {
+                checkBlankString(tree);
+            }
+            return super.visitBinary(tree, unused);
+        }
+
+        private void checkBlankString(BinaryTree tree) {
+            if (tree.getKind() != Tree.Kind.GREATER_THAN
+                    || !(tree.getRightOperand() instanceof LiteralTree literal)
+                    || !Integer.valueOf(0).equals(literal.getValue())) {
+                return;
+            }
+            TreePath lengthPath = new TreePath(getCurrentPath(), tree.getLeftOperand());
+            if (!isStringMethod(lengthPath, "length")
+                    || !(lengthPath.getLeaf() instanceof MethodInvocationTree length)
+                    || !(length.getMethodSelect() instanceof MemberSelectTree selection)) {
+                return;
+            }
+            TreePath trimPath = new TreePath(new TreePath(lengthPath, selection),
+                    selection.getExpression());
+            if (isStringMethod(trimPath, "trim")) {
+                report(tree, "java:S7158",
+                        "Use \"isBlank()\" to check whether a \"String\" is blank or not. "
+                        + "Use this if Unicode whitespace should be treated as blank and control characters as non-blank.");
+            }
+        }
+
+        private boolean isStringMethod(TreePath path, String name) {
+            return path.getLeaf() instanceof MethodInvocationTree invocation
+                    && invocation.getArguments().isEmpty()
+                    && trees.getElement(path) instanceof ExecutableElement method
+                    && method.getEnclosingElement() instanceof TypeElement owner
+                    && "java.lang.String".contentEquals(owner.getQualifiedName())
+                    && name.contentEquals(method.getSimpleName());
         }
 
         private void checkCollectionsSort(MethodInvocationTree tree) {

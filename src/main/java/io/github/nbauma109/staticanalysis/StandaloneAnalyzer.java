@@ -79,7 +79,8 @@ final class StandaloneAnalyzer {
                 engineConfiguration, plugins.getLoadedPlugins());
         try {
             container.startComponents();
-            return runAnalysis(container, configuration);
+            List<Issue> issues = runAnalysis(container, configuration);
+            return NativeNullGuard.retainUnproven(configuration, issues, logger);
         } finally {
             container.stopComponents();
         }

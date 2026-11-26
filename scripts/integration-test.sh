@@ -33,6 +33,33 @@ if grep -E '\[WARNING\].*Generated(Main|Test)\.java:[0-9]+ \[java:' "$logs/gener
     exit 1
 fi
 
+beta_fixture=src/it/beta-design/pom.xml
+fixture_maven -B -ntp -f "$beta_fixture" process-test-classes -DstaticAnalysis.profile=sonar-way | tee "$logs/beta-off.log"
+grep -F 'Activated 395 local Java rule(s).' "$logs/beta-off.log"
+if grep -E '\[WARNING\].*\[java:S65(39|41|48)\]' "$logs/beta-off.log"; then
+    echo "Beta rules must remain disabled in stable Sonar Way." >&2
+    exit 1
+fi
+
+fixture_maven -B -ntp -f "$beta_fixture" process-test-classes -DstaticAnalysis.profile=sonar-way-beta | tee "$logs/beta-on.log"
+grep -F 'Activated 398 local Java rule(s).' "$logs/beta-on.log"
+grep -E '\[WARNING\].*CoupledClass\.java:[0-9]+ \[java:S6539\].*21.*20' "$logs/beta-on.log"
+grep -E '\[WARNING\].*BrainExample\.java:[0-9]+ \[java:S6541\]' "$logs/beta-on.log"
+grep -E '\[WARNING\].*SingletonExample\.java:[0-9]+ \[java:S6548\]' "$logs/beta-on.log"
+for key in S6539 S6541 S6548; do
+    test "$(grep -Ec "\[WARNING\].*\[java:$key\]" "$logs/beta-on.log")" -eq 1
+done
+
+fixture_maven -B -ntp -f "$beta_fixture" process-test-classes \
+    -DstaticAnalysis.profile=none -DstaticAnalysis.enabledRules=java:S6539,java:S6541,java:S6548 \
+    -DstaticAnalysis.disabledRules=java:S6548 | tee "$logs/beta-explicit.log"
+grep -F 'Activated 2 local Java rule(s).' "$logs/beta-explicit.log"
+grep -F 'Sonar analysis: 2 violation(s).' "$logs/beta-explicit.log"
+if grep -E '\[WARNING\].*\[java:S6548\]' "$logs/beta-explicit.log"; then
+    echo "Explicitly disabled beta rule must not run." >&2
+    exit 1
+fi
+
 fixture_maven -B -ntp -f "$fixture" process-test-classes -DstaticAnalysis.profile=complexity | tee "$logs/warnings.log"
 grep -E '\[WARNING\].*ComplexMethod\.java:[0-9]+.*\[java:S3776\]' "$logs/warnings.log"
 grep -F 'Sonar analysis: 1 violation(s).' "$logs/warnings.log"
@@ -138,6 +165,17 @@ grep -F 'Sonar found 1 violation(s).' "$logs/null-safety-strict.log"
 fixture_maven -B -ntp -o -f "$null_fixture" process-test-classes -DstaticAnalysis.disabledRules=java:S2259 \
     | tee "$logs/null-safety-disabled.log"
 grep -F 'Sonar analysis: 0 violation(s).' "$logs/null-safety-disabled.log"
+
+predicate_fixture=src/it/null-predicate/pom.xml
+fixture_maven -B -ntp -f "$predicate_fixture" compile \
+    io.github.nbauma109:static-analysis-maven-plugin:"$plugin_version":check \
+    | tee "$logs/null-predicate.log"
+grep -E '\[WARNING\].*PredicateCases\.java:42 \[java:S2259\]' "$logs/null-predicate.log"
+grep -E '\[WARNING\].*PredicateCases\.java:57 \[java:S2259\]' "$logs/null-predicate.log"
+if grep -E '\[WARNING\].*PredicateCases\.java:(18|26|36) \[java:S2259\]' "$logs/null-predicate.log"; then
+    echo "A proven predicate guard must not report a null dereference." >&2
+    exit 1
+fi
 
 test_fixture=src/it/modern-test-rules/pom.xml
 java_major="$(java -XshowSettings:properties -version 2>&1 \

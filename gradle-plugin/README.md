@@ -52,7 +52,10 @@ staticAnalysis {
 Run `gradle staticAnalysis`. The task is also attached to the Java project's `check`
 lifecycle and runs after `classes`. For additional analysis, set
 `profile = 'sonar-way'` (395 standard and reviewed symbolic checks). To use only
-the standard 392-rule baseline, select `profile = 'sonar-way-standard'`. For explicit
+the standard 392-rule baseline, select `profile = 'sonar-way-standard'`. To opt into
+all three native beta design rules in addition to Sonar Way, select
+`profile = 'sonar-way-beta'` (398 native production rules). Beta rules are off
+by default and follow `failOnViolation`; use `false` for advisory review. For explicit
 rules, set `profile = 'none'` and
 `enabledRules = 'java:S3776,java:S100'`. The `ruleParameters` property accepts
 a nested map of case-sensitive upstream parameter names.

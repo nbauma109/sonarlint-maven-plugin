@@ -141,7 +141,8 @@ public abstract class StaticAnalysisTask extends DefaultTask {
         Path analyzer = analyzerConfiguration.getSingleFile().toPath();
         boolean useSymbolicAnalyzer = "reliability".equals(extension.getProfile())
                 || "sonar-way".equals(extension.getProfile())
-                || "sonar-way-reliability".equals(extension.getProfile());
+                || "sonar-way-reliability".equals(extension.getProfile())
+                || "sonar-way-beta".equals(extension.getProfile());
         Path symbolicAnalyzer = null;
         RuleCatalog catalog;
         if (useSymbolicAnalyzer) {

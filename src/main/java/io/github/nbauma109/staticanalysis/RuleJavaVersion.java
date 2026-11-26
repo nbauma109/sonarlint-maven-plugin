@@ -8,7 +8,8 @@ final class RuleJavaVersion {
 
     private static final Map<String, Integer> MINIMUM_RELEASES = Map.of(
             "java:S7467", 22,
-            "java:S9412", 8);
+            "java:S9412", 8,
+            "java:S7158", 11);
 
     private RuleJavaVersion() {
     }

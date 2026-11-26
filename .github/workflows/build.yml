@@ -26,6 +26,7 @@ jobs:
         run: mvn -B -ntp -Pcentral-release -Dgpg.skip=true clean verify
       - name: Verify standalone analysis
         run: |
+          python3 scripts/test-compare-sonar-inventories.py
           bash scripts/fixture-maven-test.sh
           bash scripts/integration-test.sh
       - name: Upload integration logs

@@ -30,11 +30,12 @@ final class RuleCatalog {
     private static final String COMPLEXITY = "java:S3776";
     private static final Set<String> REVIEWED_SYMBOLIC = Set.of("java:S2095",
             "java:S2259", "java:S3655");
+    private static final Set<String> REVIEWED_BETA = Set.of("java:S6539", "java:S6541", "java:S6548");
     private static final Set<String> PRIORITY = Set.of(COMPLEXITY, "java:S100", "java:S107",
             "java:S1192", "java:S1066", "java:S1128", "java:S1481", "java:S112");
     private static final Set<String> TEMPLATES = Set.of("java:S124", "java:S2253",
             "java:S3688", "java:S4011");
-    private static final Set<String> SUPPLEMENTAL_ONLY = Set.of("java:S9438", "java:S9398", "java:S7467", "java:S8786", "java:S9412");
+    private static final Set<String> SUPPLEMENTAL_ONLY = Set.of("java:S9438", "java:S9398", "java:S7467", "java:S8786", "java:S9412", "java:S7158", "java:S6466");
     private static final String RECORD_METHOD_PLACEMENT = "java:S3398";
     private static final Gson GSON = new Gson();
 
@@ -174,7 +175,7 @@ final class RuleCatalog {
         Set<String> disabled = parseKeys(disabledRules);
         Set<String> candidates = new TreeSet<>(profileRules(profile));
         if ("sonar-way".equals(profile) || "sonar-way-reliability".equals(profile)
-                || "sonar-way-standard".equals(profile)) {
+                || "sonar-way-standard".equals(profile) || "sonar-way-beta".equals(profile)) {
             candidates.addAll(sonarWay);
         }
         candidates.addAll(parseKeys(enabledRules));
@@ -205,10 +206,14 @@ final class RuleCatalog {
 
     static Set<String> supplementalRules(String profile, String enabledRules, String disabledRules) {
         Set<String> selected = new TreeSet<>();
-        if ("sonar-way".equals(profile) || "sonar-way-reliability".equals(profile)) {
+        if ("sonar-way".equals(profile) || "sonar-way-reliability".equals(profile)
+                || "sonar-way-beta".equals(profile)) {
             selected.addAll(SUPPLEMENTAL_ONLY);
             selected.add(RECORD_METHOD_PLACEMENT);
             selected.add("java:S2259");
+        }
+        if ("reliability".equals(profile)) {
+            selected.add("java:S6466");
         }
         for (String key : parseKeys(enabledRules)) {
             if (SUPPLEMENTAL_ONLY.contains(key) || RECORD_METHOD_PLACEMENT.equals(key)) {
@@ -220,10 +225,14 @@ final class RuleCatalog {
     }
 
     static Set<String> testRules(String profile, String enabledRules, String disabledRules) {
-        Set<String> supported = Set.of("java:S7467", "java:S8786");
+        Set<String> supported = Set.of("java:S7467", "java:S8786", "java:S6466");
         Set<String> selected = new TreeSet<>();
-        if ("sonar-way".equals(profile) || "sonar-way-reliability".equals(profile)) {
+        if ("sonar-way".equals(profile) || "sonar-way-reliability".equals(profile)
+                || "sonar-way-beta".equals(profile)) {
             selected.addAll(supported);
+        }
+        if ("reliability".equals(profile)) {
+            selected.add("java:S6466");
         }
         for (String key : parseKeys(enabledRules)) {
             if (supported.contains(key)) {
@@ -241,6 +250,7 @@ final class RuleCatalog {
             case "none" -> Set.of();
             case "sonar-way-standard" -> standardSonarWay();
             case "sonar-way", "sonar-way-reliability" -> sonarWayWithReliability();
+            case "sonar-way-beta" -> sonarWayWithBeta();
             case "reliability" -> REVIEWED_SYMBOLIC;
             default -> throw new IllegalArgumentException("Unknown rule profile: " + profile);
         };
@@ -249,6 +259,12 @@ final class RuleCatalog {
     private Set<String> sonarWayWithReliability() {
         Set<String> rules = new TreeSet<>(standardSonarWay());
         rules.addAll(REVIEWED_SYMBOLIC);
+        return rules;
+    }
+
+    private Set<String> sonarWayWithBeta() {
+        Set<String> rules = new TreeSet<>(sonarWayWithReliability());
+        rules.addAll(REVIEWED_BETA);
         return rules;
     }
 
@@ -271,7 +287,7 @@ final class RuleCatalog {
 
     private void requireEligible(String key) {
         RuleMetadata rule = metadata.get(key);
-        if (!eligible(key, rule)) {
+        if (!eligible(key, rule) && !reviewedBeta(key, rule)) {
             throw new IllegalArgumentException("Rule " + key
                     + " is not an eligible standard production Java rule in the pinned analyzer. "
                     + "Check the rule catalog for symbolic, test, template or server requirements.");
@@ -279,6 +295,12 @@ final class RuleCatalog {
         if ("SECURITY_HOTSPOT".equals(rule.type()) || "VULNERABILITY".equals(rule.type())) {
             throw new IllegalArgumentException("Security review reporting is not implemented for " + key);
         }
+    }
+
+    private static boolean reviewedBeta(String key, RuleMetadata rule) {
+        return rule != null && REVIEWED_BETA.contains(key)
+                && "beta".equals(rule.status()) && "Main".equals(rule.scope())
+                && "CODE_SMELL".equals(rule.type());
     }
 
     private static boolean eligible(String key, RuleMetadata rule) {
