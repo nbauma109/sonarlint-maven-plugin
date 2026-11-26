@@ -18,29 +18,38 @@ returns a fixed project key, and its
 [AnalysisConfiguration](https://github.com/SonarSource/sonarlint-core/blob/a9d5d6162d37af95a092b2e92126c1c8e1581d86/backend/analysis-engine/src/main/java/org/sonarsource/sonarlint/core/analysis/api/AnalysisConfiguration.java)
 has no supported project-key setter. Setting an extra property cannot change
 that implementation. Merely admitting beta rules would not establish parity.
-S6539 is unsupported in standalone mode and is excluded from the default
-profile and explicit rule selection. An earlier experimental native probe
-reproduced all three jd-util master findings (113, 23 and 37 dependencies),
-but that result does not establish general parity because project-key-based
-import counting can differ. We retain the documented limitation instead of
-maintaining an experimental detector or modifying analyzer internals.
+S6539 is available as a native opt-in beta rule in `sonar-way-beta` or
+through explicit rule selection. It is not enabled by the stable profiles.
+An earlier native probe reproduced all three jd-util master findings (113,
+23 and 37 dependencies), but that result does not establish general parity
+because project-key-based import counting can differ. Upstream promoted the
+rule to ready on June 29, 2026; the pinned implementation retains the beta
+status and older utility-class handling. No analyzer internals are modified.
 
 ## S6541: brain methods
 
 [S6541](https://github.com/SonarSource/sonar-java/blob/98ac462d427aec7ae72f13e038a5280d9685e57c/sonar-java-plugin/src/main/resources/org/sonar/l10n/java/rules/java/S6541.json)
 reports methods that perform too many tasks. Its pinned metadata marks it
-as beta, so it is excluded from the supported standalone profiles and
-explicit rule selection. We do not provide a supplemental implementation.
-Supported complexity rules, including S3776, remain available but are not
-equivalent to S6541.
+as beta. It is available only through opt-in beta or explicit rule selection.
+Upstream deprecated it on July 23, 2026. Both versions count variable
+declaration nodes, despite the metric rename. The pinned implementation
+uses `noavThreshold`, and lacks the newer reporting cap and explicit
+post-report state clearing. Results can differ by analysis group or module.
+Supported complexity rules, including S3776, are not equivalent to S6541.
 
 ## S6548: singleton design pattern
 
 [S6548](https://github.com/SonarSource/sonar-java/blob/98ac462d427aec7ae72f13e038a5280d9685e57c/sonar-java-plugin/src/main/resources/org/sonar/l10n/java/rules/java/S6548.json)
 advises caution when using the singleton design pattern. Its pinned metadata
-marks it as beta, so it is excluded from the supported standalone profiles
-and explicit rule selection. We do not provide a supplemental implementation
-or claim that other singleton-related rules are equivalent.
+marks it as beta. It is available only through opt-in beta or explicit rule
+selection. Upstream deprecated it on June 29, 2026 without changing the
+detector itself. It is an architectural advisory rather than proof of a
+defect. No supplemental implementation is provided.
+
+All three beta rules use the pinned native implementations. The beta profile
+adds them to stable Sonar Way, retains its supplemental and test-source
+coverage, and honors individual rule disabling. Beta findings follow the
+existing failure setting; report-only execution is recommended.
 
 ## S2259: null-guard verification
 

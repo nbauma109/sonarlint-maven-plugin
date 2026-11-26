@@ -72,7 +72,7 @@ before the analysis phase.
 The `sonar-way` profile selects **395 local Java rules**: 392 supported rules
 from the pinned Sonar Way snapshot plus three reviewed symbolic checks for
 resource leaks, null dereferences and unsafe `Optional.get()` calls. It is
-the broadest built-in profile, **not** every SonarJava rule and not a live
+the broadest stable built-in profile, **not** every SonarJava rule and not a live
 SonarCloud quality profile. Omitting `<configuration>` uses the lighter
 eight-rule `priority` default.
 
@@ -175,7 +175,7 @@ SonarCloud analyzer. See the [rule coverage policy](docs/sonar-way-versioning-an
 | `staticAnalysis.skip` | `false` | Skip analysis |
 | `staticAnalysis.failOnViolation` | `false` | Fail if any violation is reported |
 | `staticAnalysis.cognitiveComplexityThreshold` | `15` | Maximum allowed cognitive complexity |
-| `staticAnalysis.profile` | `priority` | `priority`, `complexity`, `sonar-way`, `sonar-way-standard`, `reliability`, `sonar-way-reliability` or `none` |
+| `staticAnalysis.profile` | `priority` | `priority`, `complexity`, `sonar-way`, `sonar-way-standard`, `sonar-way-beta`, `reliability`, `sonar-way-reliability` or `none` |
 | `staticAnalysis.enabledRules` | empty | Comma-separated additional rule keys |
 | `staticAnalysis.disabledRules` | empty | Comma-separated exclusions, taking precedence |
 | `staticAnalysis.eclipseEnabled` | `false` | Enable a separate Eclipse cleanup process |
@@ -212,9 +212,24 @@ rewriting. See [the rule selection policy](docs/sonar-way-versioning-and-value.m
 
 ## Rule profiles
 
+The optional beta profile enables S6539 (Monster Class), S6541 (Brain Method)
+and S6548 (Singleton pattern) in production sources only. To review findings
+without failing the build, run:
+
+```sh
+mvn process-test-classes -DstaticAnalysis.profile=sonar-way-beta -DstaticAnalysis.failOnViolation=false
+```
+
+Individual beta rules can also be selected explicitly with
+`-DstaticAnalysis.enabledRules=java:S6539,java:S6541,java:S6548`, or excluded
+with `staticAnalysis.disabledRules`. See the
+[standalone parity limitations](docs/standalone-parity-limitations.md) for
+the pinned beta status, upstream deprecations and reporting differences.
+
 - `priority`: S100, S107, S112, S1128, S1192, S1066, S1481 and S3776.
 - `complexity`: S3776 only.
 - `sonar-way`: the 392 eligible standard Java rules **plus** three verified symbolic correctness checks (395 total); this opt-in profile is not equivalent to a server profile.
+- `sonar-way-beta`: opt-in `sonar-way` plus three native experimental design rules (398 native production rules). Beta findings obey the existing `failOnViolation` setting; use report-only mode for architectural review. The stable profiles are unchanged.
 - `sonar-way-standard`: 392 eligible standard Java rules, without the symbolic analyzer, for comparisons and explicit opt-out.
 - `reliability`: opt-in symbolic execution checks for unclosed resources (`S2095`), null dereferences (`S2259`) and unsafe `Optional.get()` (`S3655`); requires the separately packaged matching symbolic analyzer.
 - `sonar-way-reliability`: backward-compatible alias for the 395-rule `sonar-way` profile.
