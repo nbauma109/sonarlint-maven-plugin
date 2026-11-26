@@ -25,6 +25,23 @@ but that result does not establish general parity because project-key-based
 import counting can differ. We retain the documented limitation instead of
 maintaining an experimental detector or modifying analyzer internals.
 
+## S6541: brain methods
+
+[S6541](https://github.com/SonarSource/sonar-java/blob/98ac462d427aec7ae72f13e038a5280d9685e57c/sonar-java-plugin/src/main/resources/org/sonar/l10n/java/rules/java/S6541.json)
+reports methods that perform too many tasks. Its pinned metadata marks it
+as beta, so it is excluded from the supported standalone profiles and
+explicit rule selection. We do not provide a supplemental implementation.
+Supported complexity rules, including S3776, remain available but are not
+equivalent to S6541.
+
+## S6548: singleton design pattern
+
+[S6548](https://github.com/SonarSource/sonar-java/blob/98ac462d427aec7ae72f13e038a5280d9685e57c/sonar-java-plugin/src/main/resources/org/sonar/l10n/java/rules/java/S6548.json)
+advises caution when using the singleton design pattern. Its pinned metadata
+marks it as beta, so it is excluded from the supported standalone profiles
+and explicit rule selection. We do not provide a supplemental implementation
+or claim that other singleton-related rules are equivalent.
+
 ## S2259: null-guard verification
 
 The native symbolic analyzer may not infer the result of a resolved static
