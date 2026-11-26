@@ -30,6 +30,7 @@ sourceSets {
 
 dependencies {
     implementation 'com.google.code.gson:gson:2.11.0'
+    implementation 'org.eclipse.jdt:org.eclipse.jdt.core:3.47.0'
     implementation 'org.sonarsource.sonarlint.core:sonarlint-analysis-engine:10.13.0.79996'
 
     testImplementation gradleTestKit()

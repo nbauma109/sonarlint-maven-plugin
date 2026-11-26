@@ -209,12 +209,17 @@ final class RuleCatalog {
             selected.addAll(SUPPLEMENTAL_ONLY);
             selected.add(RECORD_METHOD_PLACEMENT);
             selected.add("java:S2259");
+            selected.add("java:S125");
+        }
+        if ("sonar-way-standard".equals(profile)) {
+            selected.add("java:S125");
         }
         if ("reliability".equals(profile)) {
             selected.add("java:S6466");
         }
         for (String key : parseKeys(enabledRules)) {
-            if (SUPPLEMENTAL_ONLY.contains(key) || RECORD_METHOD_PLACEMENT.equals(key)) {
+            if (SUPPLEMENTAL_ONLY.contains(key) || RECORD_METHOD_PLACEMENT.equals(key)
+                    || "java:S125".equals(key)) {
                 selected.add(key);
             }
         }
@@ -223,10 +228,13 @@ final class RuleCatalog {
     }
 
     static Set<String> testRules(String profile, String enabledRules, String disabledRules) {
-        Set<String> supported = Set.of("java:S7467", "java:S8786", "java:S6466");
+        Set<String> supported = Set.of("java:S7467", "java:S8786", "java:S6466", "java:S125");
         Set<String> selected = new TreeSet<>();
         if ("sonar-way".equals(profile) || "sonar-way-reliability".equals(profile)) {
             selected.addAll(supported);
+        }
+        if ("sonar-way-standard".equals(profile)) {
+            selected.add("java:S125");
         }
         if ("reliability".equals(profile)) {
             selected.add("java:S6466");

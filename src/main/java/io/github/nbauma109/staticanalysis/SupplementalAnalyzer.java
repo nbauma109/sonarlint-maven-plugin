@@ -52,7 +52,12 @@ final class SupplementalAnalyzer {
     private SupplementalAnalyzer() {
     }
 
-    record Finding(String file, long line, String rule, String message) {
+    record Finding(String file, long line, String rule, String message,
+            long blockStart, long blockEnd) {
+
+        Finding(String file, long line, String rule, String message) {
+            this(file, line, rule, message, line, line);
+        }
     }
 
     static List<Finding> analyze(Path baseDirectory, List<Path> sources, List<String> classpath,
@@ -84,10 +89,14 @@ final class SupplementalAnalyzer {
             }
             Trees trees = Trees.instance(task);
             List<Finding> findings = new ArrayList<>();
+            CommentedJavaStatements comments = new CommentedJavaStatements(release);
             for (CompilationUnitTree unit : parsed) {
                 Scanner scanner = new Scanner(trees, unit, baseDirectory, eligibleRules);
                 scanner.scan(unit, null);
                 findings.addAll(scanner.finish());
+                if (eligibleRules.contains("java:S125")) {
+                    findings.addAll(comments.analyze(baseDirectory, unit, trees));
+                }
             }
             return List.copyOf(findings);
         } catch (RuntimeException exception) {
@@ -115,12 +124,26 @@ final class SupplementalAnalyzer {
             String location = finding.file() + ":" + finding.line() + ":" + finding.rule();
             int count = remaining.getOrDefault(location, 0);
             if (count == 0) {
-                distinct.add(finding);
+                if (!coveredCommentBlock(finding, nativeLocations)) {
+                    distinct.add(finding);
+                }
             } else {
                 remaining.put(location, count - 1);
             }
         }
         return List.copyOf(distinct);
+    }
+
+    private static boolean coveredCommentBlock(Finding finding, List<String> nativeLocations) {
+        if (!"java:S125".equals(finding.rule())) {
+            return false;
+        }
+        for (long line = finding.blockStart(); line <= finding.blockEnd(); line++) {
+            if (nativeLocations.contains(finding.file() + ":" + line + ":" + finding.rule())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static List<String> compilerOptions(List<String> classpath, String sourceVersion) {

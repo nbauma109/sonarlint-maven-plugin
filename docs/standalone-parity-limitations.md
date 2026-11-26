@@ -99,7 +99,13 @@ profiles. The pinned JavaFootprint recognizer can miss source examples that
 the newer SonarCloud recognizer reports, including the labelled console-call
 example observed in jd-util PR #229. The newer upstream classifier change
 [SONARJAVA-6511](https://github.com/SonarSource/sonar-java/commit/3a5ee6acf2115bcdf94849f2d45e9c7fa6a748b2)
-is distributed under the Sonar Source-Available License. The plugin does not
-copy that implementation or add a console-specific replacement detector.
-Retain native S125 findings and record this version difference in parity
-reports until a licensing-compatible general improvement is validated.
+is distributed under the Sonar Source-Available License. The plugin does not copy that implementation. A separate syntax-based
+extension uses the public Eclipse JDT scanner and parser to recognize
+statement-shaped line comments, including qualified calls, assignments,
+increments and explicit Java statements. It does not depend on the names of
+classes or methods. Unqualified bare calls without a semicolon and fragments
+that cannot be parsed as Java are left to the native rule. Source headers,
+documentation, string literals, text blocks, and suppressed source ranges
+are excluded. Native findings take precedence within the same contiguous
+comment block. This is not a replacement for the native heuristic classifier
+and does not claim complete parity with future cloud versions.
