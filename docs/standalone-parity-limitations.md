@@ -91,3 +91,17 @@ references initialized by an array allocation. It does not infer bounds for
 unknown allocations, reassigned references, or arbitrary inputs. It is not a
 replacement for the cloud engine and does not claim to reproduce the
 interprocedural constant-pool finding in jd-util.
+
+## S125: commented-out console calls
+
+The pinned recognizer lacks the newer console-print recognition in SonarJava.
+The supplemental detector covers standalone line comments containing an
+explicit System.out or System.err print, println or printf call, including the
+labelled source fragment observed in jd-util. It uses the public Eclipse JDT
+scanner to distinguish comments from Java string literals and text blocks,
+ignores header comments and documentation comments, and avoids duplicating a
+native finding in the same contiguous line-comment block. The native S125
+rule remains enabled. This is a targeted addition, not a replacement for the
+native commented-code classifier. Explanatory source examples can also be
+reported, as in the cloud finding; ordinary prose should describe the action
+instead of embedding a statement-like example.
