@@ -277,7 +277,7 @@ final class RuleCatalog {
 
     private void requireEligible(String key) {
         RuleMetadata rule = metadata.get(key);
-        if (!eligible(key, rule) && !isExperimentalCouplingRule(key, rule)) {
+        if (!eligible(key, rule)) {
             throw new IllegalArgumentException("Rule " + key
                     + " is not an eligible standard production Java rule in the pinned analyzer. "
                     + "Check the rule catalog for symbolic, test, template or server requirements.");
@@ -285,11 +285,6 @@ final class RuleCatalog {
         if ("SECURITY_HOTSPOT".equals(rule.type()) || "VULNERABILITY".equals(rule.type())) {
             throw new IllegalArgumentException("Security review reporting is not implemented for " + key);
         }
-    }
-
-    private static boolean isExperimentalCouplingRule(String key, RuleMetadata rule) {
-        return "java:S6539".equals(key) && rule != null
-                && "beta".equals(rule.status()) && "Main".equals(rule.scope());
     }
 
     private static boolean eligible(String key, RuleMetadata rule) {
